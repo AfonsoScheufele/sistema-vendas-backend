@@ -25,6 +25,8 @@ export class ClientesService {
   }
 
   async update(id: number, dto: Partial<CreateClienteDto>) {
+    if ('id' in dto) delete dto.id;
+
     await this.clienteRepo.update(id, dto);
     return this.findOne(id);
   }

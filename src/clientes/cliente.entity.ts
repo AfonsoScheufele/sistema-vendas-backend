@@ -1,22 +1,22 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity('clientes')
+@Entity()
 export class Cliente {
   @PrimaryGeneratedColumn()
-  id!: number;
+  id: number;
 
   @Column()
-  nome!: string;
+  nome: string;
+
+  @Column()
+  email: string;
+
+  @Column()
+  telefone: string;
 
   @Column({ nullable: true })
-  email!: string;
+  endereco?: string;
 
   @Column({ nullable: true })
-  telefone!: string;
-
-  @Column({ nullable: true })
-  endereco!: string;
-
-  @Column({ nullable: true })
-  cpf_cnpj!: string;
+  cpf_cnpj?: string;
 }

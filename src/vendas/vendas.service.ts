@@ -68,10 +68,9 @@ export class VendasService {
     const venda = await this.vendaRepo.findOne({ where: { id }, relations: ['itens', 'itens.produto'] });
     if (!venda) return null;
 
-    // Restituir estoque
     for (const item of venda.itens) {
         const produto = await this.produtoRepo.findOneBy({ id: item.produto.id });
-        if (!produto) continue; // ignora se não existir
+        if (!produto) continue;
         produto.estoque += item.quantidade;
         await this.produtoRepo.save(produto);
     }
