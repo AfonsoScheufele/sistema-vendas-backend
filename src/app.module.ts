@@ -4,11 +4,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProdutosModule } from './produtos/produtos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { VendasModule } from './vendas/vendas.module';
+import { PedidosModule } from './pedidos/pedidos.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { AuthModule } from './auth/auth.module';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Venda } from './vendas/venda.entity';
 import { ItemVenda } from './vendas/item-venda.entity';
+import { Pedido } from './pedidos/pedido.entity';
+import { ItemPedido } from './pedidos/item-pedido.entity';
 import { Usuario } from './auth/usuario.entity';
 
 @Module({
@@ -24,14 +28,19 @@ import { Usuario } from './auth/usuario.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [Produto, Cliente, Venda, ItemVenda, Usuario],
+        entities: [Produto, Cliente, Venda, ItemVenda, Pedido, ItemPedido, Usuario],
         synchronize: true,
-        logging: true,
+        logging: configService.get<string>('NODE_ENV') !== 'production',
+        ssl: configService.get<string>('NODE_ENV') === 'production' ? {
+          rejectUnauthorized: false
+        } : false,
       }),
     }),
     ProdutosModule,
     ClientesModule,
     VendasModule,
+    PedidosModule,
+    DashboardModule,
     AuthModule,
   ],
 })

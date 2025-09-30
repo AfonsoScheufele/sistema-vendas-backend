@@ -3,16 +3,16 @@ import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 @Entity()
 export class Cliente {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  nome: string;
+  nome!: string;
 
   @Column()
-  email: string;
+  email!: string;
 
   @Column()
-  telefone: string;
+  telefone!: string;
 
   @Column({ nullable: true })
   endereco?: string;
