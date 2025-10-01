@@ -1,30 +1,29 @@
-import { Controller, Get, Post, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../common/roles.guard';
-import { Roles } from '../common/roles.decorator';
+import { NotificationsService } from './notifications.service';
 import { Request } from 'express';
 
 interface AuthRequest extends Request {
-  user: { id: number };
+  user: { id: number; email: string; role: string };
 }
 
 @Controller('notifications')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class NotificationsController {
+  constructor(private notificationsService: NotificationsService) {}
+
   @Get()
   getUserNotifications(@Req() req: AuthRequest) {
-    console.log('REQ.USER:', req.user);
-    const userId = req.user.id;
-
-    return [
-      { id: 1, title: 'Nova venda', type: 'success', userId },
-      { id: 2, title: 'Estoque baixo', type: 'warning', userId },
-    ];
+    return this.notificationsService.findByUser(req.user.id);
   }
 
-  @Post('admin')
-  @Roles('Admin')
-  sendSystemNotification() {
-    return { message: 'Notificação enviada para todos os usuários' };
+  @Patch(':id/read')
+  markAsRead(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.notificationsService.markAsRead(req.user.id, +id);
+  }
+
+  @Post('mark-all-read')
+  markAllAsRead(@Req() req: AuthRequest) {
+    return this.notificationsService.markAllAsRead(req.user.id);
   }
 }
