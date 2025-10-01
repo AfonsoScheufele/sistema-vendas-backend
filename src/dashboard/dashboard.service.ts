@@ -5,6 +5,8 @@ import { Pedido } from '../pedidos/pedido.entity';
 import { ItemPedido } from '../pedidos/item-pedido.entity';
 import { Produto } from '../produtos/produto.entity';
 import { Cliente } from '../clientes/cliente.entity';
+import { Orcamento } from '../orcamentos/orcamento.entity';
+import { ItemOrcamento } from '../orcamentos/item-orcamento.entity';
 
 interface DashboardStats {
   totalVendas: number;
@@ -59,6 +61,10 @@ export class DashboardService {
     private produtoRepo: Repository<Produto>,
     @InjectRepository(Cliente)
     private clienteRepo: Repository<Cliente>,
+    @InjectRepository(Orcamento)
+    private orcamentoRepo: Repository<Orcamento>,
+    @InjectRepository(ItemOrcamento)
+    private itemOrcamentoRepo: Repository<ItemOrcamento>,
   ) {}
 
   async getStats(periodo = '30d'): Promise<DashboardStats> {
@@ -193,7 +199,7 @@ export class DashboardService {
       .addSelect('SUM(item.quantidade)', 'quantidadeVendida')
       .addSelect('SUM(item.subtotal + item.valorComissao)', 'faturamento')
       .groupBy('produto.id, produto.nome')
-      .orderBy('quantidadeVendida', 'DESC')
+      .orderBy('SUM(item.quantidade)', 'DESC')
       .limit(limite)
       .getRawMany();
 
@@ -265,7 +271,7 @@ export class DashboardService {
         .addSelect('COUNT(pedido.id)', 'totalPedidos')
         .addSelect('SUM(pedido.total)', 'totalGasto')
         .groupBy('pedido.cliente')
-        .orderBy('totalGasto', 'DESC')
+        .orderBy('SUM(pedido.total)', 'DESC')
         .limit(1)
         .getRawOne()
     ]);
