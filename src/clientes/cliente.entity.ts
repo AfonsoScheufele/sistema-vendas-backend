@@ -1,6 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity()
+@Entity('clientes')
 export class Cliente {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -8,7 +8,7 @@ export class Cliente {
   @Column()
   nome!: string;
 
-  @Column()
+  @Column({ unique: true })
   email!: string;
 
   @Column()
@@ -19,4 +19,10 @@ export class Cliente {
 
   @Column({ nullable: true })
   cpf_cnpj?: string;
+
+  @CreateDateColumn()
+  criadoEm!: Date;
+
+  @UpdateDateColumn()
+  atualizadoEm!: Date;
 }
