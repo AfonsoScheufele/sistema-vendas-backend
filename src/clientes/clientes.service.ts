@@ -31,10 +31,60 @@ export class ClientesService {
     return await this.clienteRepo.save(cliente);
   }
 
-  async findAll(): Promise<Cliente[]> {
-    return await this.clienteRepo.find({
-      order: { criadoEm: 'DESC' },
-    });
+  async findAll(filtros?: { tipo?: string; ativo?: string; search?: string }): Promise<Cliente[]> {
+    const query = this.clienteRepo.createQueryBuilder('cliente');
+    
+    if (filtros?.tipo) {
+      query.andWhere('cliente.tipo = :tipo', { tipo: filtros.tipo });
+    }
+    
+    if (filtros?.ativo !== undefined) {
+      const ativo = filtros.ativo === 'true';
+      query.andWhere('cliente.ativo = :ativo', { ativo });
+    }
+    
+    if (filtros?.search) {
+      query.andWhere('(cliente.nome ILIKE :search OR cliente.email ILIKE :search)', { 
+        search: `%${filtros.search}%` 
+      });
+    }
+    
+    return query.orderBy('cliente.criadoEm', 'DESC').getMany();
+  }
+
+  async getTipos() {
+    const result = await this.clienteRepo
+      .createQueryBuilder('cliente')
+      .select('DISTINCT cliente.tipo', 'tipo')
+      .getRawMany();
+    
+    return result.map(item => item.tipo);
+  }
+
+  async getClientesNovos(periodo?: string) {
+    const query = this.clienteRepo.createQueryBuilder('cliente');
+    
+    if (periodo === 'mes') {
+      query.andWhere('cliente.criadoEm >= :dataInicio', {
+        dataInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      });
+    } else if (periodo === 'semana') {
+      query.andWhere('cliente.criadoEm >= :dataInicio', {
+        dataInicio: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      });
+    }
+    
+    return query.orderBy('cliente.criadoEm', 'DESC').getMany();
+  }
+
+  async getVendasCliente(id: number) {
+    const cliente = await this.findOne(id);
+    // Implementar busca de vendas do cliente
+    return {
+      cliente,
+      vendas: [],
+      totalVendas: 0
+    };
   }
 
   async findOne(id: number): Promise<Cliente> {

@@ -42,7 +42,7 @@ export class AuthController {
     const tokens = await this.authService.login(user);
     
     return {
-      access_token: tokens.access_token,
+      token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       user: {
         id: user.id,
@@ -82,7 +82,7 @@ export class AuthController {
     const tokens = await this.authService.login(user);
 
     return {
-      access_token: tokens.access_token,
+      token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       user: {
         id: user.id,

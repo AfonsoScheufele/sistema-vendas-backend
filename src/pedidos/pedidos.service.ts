@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Pedido } from './pedido.entity';
 import { ItemPedido } from './item-pedido.entity';
 import { Produto } from '../produtos/produto.entity';
+import { Cliente } from '../clientes/cliente.entity';
 import { CreatePedidoDto } from './dto/create-pedido.dto';
 import { UpdatePedidoDto } from './dto/update-pedido.dto';
 
@@ -16,10 +17,12 @@ export class PedidosService {
     private itemPedidoRepo: Repository<ItemPedido>,
     @InjectRepository(Produto)
     private produtoRepo: Repository<Produto>,
+    @InjectRepository(Cliente)
+    private clienteRepo: Repository<Cliente>,
   ) {}
 
   async create(createPedidoDto: CreatePedidoDto) {
-    const { cliente, itens } = createPedidoDto;
+    const { clienteId, itens } = createPedidoDto;
 
     const produtoIds = itens.map(item => item.produtoId);
     const produtos = await this.produtoRepo.findByIds(produtoIds);
@@ -28,8 +31,14 @@ export class PedidosService {
       throw new BadRequestException('Um ou mais produtos não foram encontrados');
     }
 
+    const cliente = await this.clienteRepo.findOneBy({ id: clienteId });
+    if (!cliente) {
+      throw new NotFoundException('Cliente não encontrado');
+    }
+
     const pedido = this.pedidoRepo.create({
       cliente,
+      clienteId,
       status: 'pendente',
     });
 
@@ -110,8 +119,12 @@ export class PedidosService {
       pedido.status = updatePedidoDto.status;
     }
 
-    if (updatePedidoDto.cliente) {
-      pedido.cliente = updatePedidoDto.cliente;
+    if (updatePedidoDto.clienteId) {
+      const cliente = await this.clienteRepo.findOneBy({ id: updatePedidoDto.clienteId });
+      if (cliente) {
+        pedido.cliente = cliente;
+        pedido.clienteId = updatePedidoDto.clienteId;
+      }
     }
 
     if (updatePedidoDto.itens) {

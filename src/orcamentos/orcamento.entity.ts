@@ -1,13 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ItemOrcamento } from './item-orcamento.entity';
+import { Cliente } from '../clientes/cliente.entity';
 
 @Entity('orcamentos')
 export class Orcamento {
   @PrimaryGeneratedColumn()
   id!: number;
 
+  @ManyToOne(() => Cliente)
+  @JoinColumn({ name: 'cliente_id' })
+  cliente!: Cliente;
+
   @Column()
-  cliente!: string;
+  clienteId!: number;
 
   @Column({ nullable: true })
   email?: string;

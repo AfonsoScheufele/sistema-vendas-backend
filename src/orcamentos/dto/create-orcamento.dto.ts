@@ -2,39 +2,39 @@ import { IsNotEmpty, IsString, IsArray, ValidateNested, IsOptional, IsEmail, IsN
 import { Type } from 'class-transformer';
 
 class CreateItemOrcamentoDto {
-  @IsNotEmpty()
-  @IsNumber()
+  @IsNotEmpty({ message: 'ID do produto é obrigatório' })
+  @IsNumber({}, { message: 'ID do produto deve ser um número' })
   produtoId!: number;
 
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(1)
+  @IsNotEmpty({ message: 'Quantidade é obrigatória' })
+  @IsNumber({}, { message: 'Quantidade deve ser um número' })
+  @Min(1, { message: 'Quantidade deve ser pelo menos 1' })
   quantidade!: number;
 }
 
 export class CreateOrcamentoDto {
-  @IsNotEmpty()
-  @IsString()
-  cliente!: string;
+  @IsNotEmpty({ message: 'ID do cliente é obrigatório' })
+  @IsNumber({}, { message: 'ID do cliente deve ser um número' })
+  clienteId!: number;
 
   @IsOptional()
-  @IsEmail()
+  @IsEmail({}, { message: 'Email inválido' })
   email?: string;
 
   @IsOptional()
   @IsString()
   telefone?: string;
 
-  @IsArray()
-  @ArrayMinSize(1)
+  @IsArray({ message: 'Itens deve ser um array' })
+  @ArrayMinSize(1, { message: 'Deve ter pelo menos um item' })
   @ValidateNested({ each: true })
   @Type(() => CreateItemOrcamentoDto)
   itens!: CreateItemOrcamentoDto[];
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(100)
+  @IsNumber({}, { message: 'Desconto deve ser um número' })
+  @Min(0, { message: 'Desconto não pode ser negativo' })
+  @Max(100, { message: 'Desconto não pode ser maior que 100%' })
   desconto?: number;
 
   @IsOptional()

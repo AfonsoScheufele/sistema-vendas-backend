@@ -1,134 +1,332 @@
-# Sistema de Vendas - Backend (API RESTful)
+# 🚀 Sistema de Vendas AXORA - Backend
 
-## 🚀 Visão Geral do Projeto
+Backend completo para sistema de gerenciamento de vendas desenvolvido com NestJS, TypeORM e PostgreSQL.
 
-Este repositório contém a **API RESTful** que serve como o núcleo de dados e lógica de negócios para o **Sistema de Vendas**. É um backend construído com **Node.js** e **TypeScript**, projetado para ser robusto, escalável e fornecer todos os endpoints necessários para o frontend (disponível [aqui](https://www.google.com/search?q=https://github.com/AfonsoScheufele/sistema-vendas-frontend - *Link do outro repo*)) gerenciar vendas, produtos, clientes e autenticação.
+## ✨ Funcionalidades
 
-## ✨ Principais Funcionalidades (Endpoints)
+### 🏪 **Gestão de Produtos**
+- CRUD completo com controle de estoque
+- Categorização e marcação de produtos
+- Controle de estoque mínimo
+- Gestão de preços (venda e custo)
+- Códigos de barras e SKU
+- Dimensões e peso dos produtos
 
-A API é estruturada para gerenciar os principais recursos de um sistema de vendas (funcionalidades presumidas):
+### 👥 **Gestão de Clientes**
+- Cadastro completo de clientes (PF e PJ)
+- Endereços e dados de contato
+- Histórico de vendas por cliente
+- Segmentação por tipo de cliente
 
-| Módulo | Funcionalidades | Endpoints (Exemplo) |
-| :--- | :--- | :--- |
-| **Autenticação** | Login, Registro e Geração de Tokens JWT. | `POST /api/auth/login` |
-| **Produtos** | CRUD completo de itens de estoque. | `GET /api/products`, `POST /api/products` |
-| **Clientes** | Cadastro e listagem de informações de clientes. | `GET /api/clients`, `PUT /api/clients/:id` |
-| **Vendas** | Criação, consulta e detalhamento de transações de venda. | `POST /api/sales`, `GET /api/sales/:id` |
-| **Relatórios** | Endpoints para dados agregados de vendas (Dashboard). | `GET /api/reports/sales-summary` |
+### 💰 **Sistema de Vendas**
+- Processamento de vendas com itens
+- Cálculo automático de totais e descontos
+- Controle de comissões
+- Múltiplas formas de pagamento
+- Relatórios de vendas por vendedor
 
------
+### 📦 **Gestão de Pedidos**
+- Sistema completo de pedidos
+- Controle de status
+- Gestão de entregas
+- Histórico de pedidos
 
-## 🛠️ Tecnologias Utilizadas
+### 📊 **Dashboard Executivo**
+- Métricas em tempo real
+- Vendas mensais e diárias
+- Produtos mais vendidos
+- Distribuição por categorias
+- Insights e alertas
 
-Este backend utiliza uma stack moderna e amplamente utilizada no ecossistema Node.js:
+### 🔐 **Autenticação & Autorização**
+- JWT Authentication
+- Controle de roles (Admin, Vendedor, User)
+- Recuperação de senha
+- Perfis de usuário
 
-  * **Linguagem:** **TypeScript** (100%) - Para tipagem forte e melhor organização do código.
-  * **Runtime:** **Node.js**
-  * **Framework Web:** **Express.js** (ou similar) - Para roteamento e middlewares da API.
-  * **Banco de Dados (Presumido):** **PostgreSQL** ou **MongoDB** - Para persistência de dados.
-  * **ORM/ODM (Presumido):** **Prisma** ou **TypeORM** - Para interação com o banco de dados.
-  * **Execução:** **ts-node** - Para executar arquivos TypeScript diretamente em desenvolvimento.
-  * **Autenticação:** **JSON Web Tokens (JWT)** - Para gerenciamento de sessões seguras.
+### 📢 **Sistema de Notificações**
+- Notificações em tempo real
+- Alertas de estoque baixo
+- Notificações de vendas
 
-## 📌 Pré-requisitos
+### 🏢 **Módulos Adicionais**
+- **CRM**: Leads e oportunidades
+- **Orçamentos**: Sistema de orçamentos
+- **Fornecedores**: Gestão de fornecedores
+- **Cotações**: Sistema de cotações
+- **Estoque**: Controle de movimentações
+- **Financeiro**: Controle financeiro
+- **Fiscal**: Notas fiscais
+- **Logística**: Transportadoras e expedição
 
-Para executar este projeto, você precisará ter instalado:
+## 🛠️ Tecnologias
 
-  * **Node.js:** Versão 18 ou superior.
-  * **npm** (Node Package Manager) ou **Yarn** / **pnpm**.
-  * Um servidor de **Banco de Dados** (PostgreSQL, MySQL, etc.) configurado e em execução.
+### **Backend Core**
+- **NestJS** - Framework Node.js robusto
+- **TypeScript** - Tipagem estática
+- **TypeORM** - ORM para banco de dados
+- **PostgreSQL** - Banco de dados principal
 
-## ⚙️ Instalação e Configuração
+### **Autenticação & Segurança**
+- **JWT** - JSON Web Tokens
+- **Passport** - Estratégias de autenticação
+- **bcryptjs** - Hash de senhas
+- **CORS** - Cross-Origin Resource Sharing
 
-Siga os passos abaixo para configurar e iniciar o backend localmente:
+### **Validação & DTOs**
+- **class-validator** - Validação de dados
+- **class-transformer** - Transformação de objetos
 
-### 1\. Clonar o Repositório
+### **Desenvolvimento**
+- **ESLint** - Linting de código
+- **Prettier** - Formatação de código
+- **Jest** - Testes unitários
 
+## 📋 Pré-requisitos
+
+- **Node.js** (v18 ou superior)
+- **npm** ou **yarn**
+- **PostgreSQL** (v12 ou superior)
+
+## 🔧 Instalação
+
+### 1. Clone o repositório
 ```bash
 git clone https://github.com/AfonsoScheufele/sistema-vendas-backend.git
 cd sistema-vendas-backend
 ```
 
-### 2\. Instalar Dependências
-
-Utilize seu gerenciador de pacotes preferido:
-
+### 2. Instale as dependências
 ```bash
 npm install
-# ou
-yarn install
 ```
 
-### 3\. Configurar Variáveis de Ambiente
-
-Crie um arquivo chamado **`.env`** na raiz do projeto e defina as variáveis de ambiente necessárias. Um arquivo `.env.example` pode ser usado como base.
-
-Exemplo de variáveis cruciais:
-
-```
-# Configuração do Servidor
-PORT=3000
-
-# Configuração do Banco de Dados (Exemplo com PostgreSQL/Prisma)
-DATABASE_URL="postgresql://user:password@localhost:5432/database_name"
-
-# Chave Secreta para JWT
-JWT_SECRET="sua_chave_secreta_aqui"
-```
-
-### 4\. Configurar o Banco de Dados (Se aplicável)
-
-Se o projeto usar um ORM como o Prisma, você precisará configurar o banco e rodar as migrações:
-
+### 3. Configure o banco de dados
 ```bash
-# Se estiver usando Prisma, o comando pode ser:
-npx prisma migrate dev --name init
-npx prisma generate
+# Crie um banco PostgreSQL
+createdb vendas_db
+
+# Ou use o Docker
+docker run --name postgres-vendas -e POSTGRES_DB=vendas_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -p 5432:5432 -d postgres:13
 ```
 
------
+### 4. Configure as variáveis de ambiente
+```bash
+# Copie o arquivo de exemplo
+cp env.example .env
 
-## ▶️ Executando o Projeto
+# Edite o arquivo .env com suas configurações
+```
 
-### Modo de Desenvolvimento
+### 5. Execute o seed para dados iniciais
+```bash
+npm run seed
+```
 
-Para iniciar o servidor com o `ts-node`, que monitora alterações nos arquivos (`hot-reload`):
+## 🚀 Executando o projeto
 
+### Desenvolvimento
 ```bash
 npm run dev
-# ou o comando explícito no README original:
-npx ts-node src/main.ts
 ```
 
-O servidor estará ativo em `http://localhost:3000` (ou na porta definida em seu `.env`).
+### Produção
+```bash
+npm run build
+npm run start:prod
+```
 
-### Modo de Produção
+O servidor será iniciado em `http://localhost:5000`
 
-Para um ambiente de produção, primeiro compile o código e depois execute o arquivo JavaScript compilado:
+## 📚 Endpoints da API
+
+### 🔐 Autenticação
+- `POST /auth/login` - Login do usuário
+- `POST /auth/register` - Registro de novo usuário
+- `GET /auth/me` - Perfil do usuário logado
+- `POST /auth/refresh` - Renovar token
+- `POST /auth/logout` - Logout
+- `POST /auth/recuperar-senha` - Solicitar recuperação de senha
+- `POST /auth/redefinir-senha` - Redefinir senha
+- `POST /auth/change-password` - Alterar senha
+
+### 🏪 Produtos
+- `GET /produtos` - Listar produtos (com filtros)
+- `GET /produtos/categorias` - Listar categorias
+- `GET /produtos/estoque-baixo` - Produtos com estoque baixo
+- `GET /produtos/stats` - Estatísticas de produtos
+- `GET /produtos/:id` - Buscar produto por ID
+- `POST /produtos` - Criar produto
+- `PUT /produtos/:id` - Atualizar produto
+- `PATCH /produtos/:id/estoque` - Atualizar estoque
+- `DELETE /produtos/:id` - Deletar produto
+- `GET /api/produtos` - Listar produtos (compatibilidade)
+
+### 👥 Clientes
+- `GET /clientes` - Listar clientes (com filtros)
+- `GET /clientes/stats` - Estatísticas de clientes
+- `GET /clientes/tipos` - Tipos de clientes
+- `GET /clientes/novos` - Novos clientes por período
+- `GET /clientes/:id` - Buscar cliente por ID
+- `GET /clientes/:id/vendas` - Vendas do cliente
+- `POST /clientes` - Criar cliente
+- `PATCH /clientes/:id` - Atualizar cliente
+- `DELETE /clientes/:id` - Deletar cliente
+- `GET /api/clientes` - Listar clientes (compatibilidade)
+
+### 💰 Vendas
+- `GET /vendas` - Listar vendas (com filtros)
+- `GET /vendas/stats` - Estatísticas de vendas
+- `GET /vendas/vendedores` - Lista de vendedores
+- `GET /vendas/comissoes` - Relatório de comissões
+- `GET /vendas/relatorio` - Relatório de vendas
+- `GET /vendas/:id` - Buscar venda por ID
+- `POST /vendas` - Criar venda
+- `DELETE /vendas/:id` - Deletar venda
+- `GET /api/vendas` - Listar vendas (compatibilidade)
+
+### 📦 Pedidos
+- `GET /pedidos` - Listar pedidos (com filtros)
+- `GET /pedidos/stats` - Estatísticas de pedidos
+- `GET /pedidos/:id` - Buscar pedido por ID
+- `POST /pedidos` - Criar pedido
+- `PATCH /pedidos/:id` - Atualizar pedido
+- `DELETE /pedidos/:id` - Deletar pedido
+- `GET /api/pedidos` - Listar pedidos (compatibilidade)
+
+### 📊 Dashboard
+- `GET /dashboard/stats` - Estatísticas gerais
+- `GET /dashboard/vendas-mensais` - Vendas por mês
+- `GET /dashboard/produtos-mais-vendidos` - Produtos mais vendidos
+- `GET /dashboard/faturamento-diario` - Faturamento diário
+- `GET /dashboard/distribuicao-categorias` - Distribuição por categoria
+- `GET /dashboard/insights` - Insights e alertas
+- `GET /dashboard/resumo` - Resumo executivo
+- `GET /dashboard/metas` - Metas e objetivos
+- `GET /dashboard/alertas` - Alertas do sistema
+- `GET /api/dashboard/*` - Endpoints de compatibilidade
+
+### 📢 Notificações
+- `GET /notifications` - Listar notificações do usuário
+- `GET /notifications/unread-count` - Contador de não lidas
+- `PATCH /notifications/:id/read` - Marcar como lida
+- `POST /notifications/mark-all-read` - Marcar todas como lidas
+- `DELETE /notifications/:id` - Deletar notificação
+
+### 🏢 Módulos Adicionais
+- **CRM**: `/crm/leads`, `/crm/oportunidades`
+- **Orçamentos**: `/orcamentos`
+- **Fornecedores**: `/fornecedores`
+- **Cotações**: `/cotacoes`
+- **Estoque**: `/estoque`
+- **Financeiro**: `/financeiro`
+- **Fiscal**: `/fiscal`
+- **Logística**: `/logistica`
+
+## 🔧 Configuração do Ambiente
+
+### Variáveis de Ambiente (.env)
+```env
+# Servidor
+PORT=5000
+NODE_ENV=development
+
+# Banco de Dados
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=123456
+DB_NAME=vendas_db
+
+# JWT
+JWT_SECRET=meu_jwt_secret_super_seguro_2024_sistema_vendas
+
+# CORS
+CORS_ORIGIN=http://localhost:5173
+```
+
+## 🚀 Scripts Disponíveis
 
 ```bash
-# 1. Compilar o TypeScript para JavaScript
-npm run build
+# Desenvolvimento
+npm run dev              # Inicia servidor de desenvolvimento
+npm run start:dev        # Inicia com watch mode
+npm run start:debug      # Inicia em modo debug
 
-# 2. Iniciar o servidor com o Node.js puro
-npm run start
+# Produção
+npm run build           # Compila o projeto
+npm run start:prod      # Inicia em produção
+
+# Banco de Dados
+npm run seed            # Popula banco com dados de exemplo
+
+# Qualidade de Código
+npm run lint            # Executa ESLint
+npm run format          # Formata código com Prettier
+
+# Testes
+npm run test            # Executa testes
+npm run test:watch      # Executa testes em watch mode
+npm run test:cov        # Executa testes com coverage
 ```
 
-## 📂 Estrutura do Projeto
+## 📊 Dados de Exemplo
 
-A arquitetura do projeto segue o padrão de camadas para melhor separação de responsabilidades:
+Após executar `npm run seed`, você terá:
 
-```
-sistema-vendas-backend/
-├── src/
-│   ├── controllers/   # Lógica de tratamento de requisições (recebe a request, envia a resposta)
-│   ├── services/      # Lógica de negócios pura (cálculos, validações, regras)
-│   ├── repositories/  # Camada de acesso a dados (interação com o ORM/BD)
-│   ├── models/        # Definições de tipos/interfaces e modelos do ORM/DB
-│   ├── middlewares/   # Funções para pré-processamento (e.g., autenticação JWT)
-│   └── main.ts        # Ponto de entrada da aplicação (configuração do Express)
-├── routes/            # Definição das rotas da API
-├── .env.example
-├── package.json
-└── tsconfig.json
-```
+- **👤 Usuários**:
+  - Admin: `admin@axora.com` (senha: `123456`)
+  - Vendedor: `vendedor@axora.com` (senha: `123456`)
+
+- **📦 Produtos**: 5 produtos de exemplo
+- **👥 Clientes**: 4 clientes de exemplo (PF e PJ)
+
+## 🔗 Integração com Frontend
+
+Este backend é totalmente compatível com o frontend em:
+- [sistema-vendas-frontend](https://github.com/AfonsoScheufele/sistema-vendas-frontend)
+
+### Configuração CORS
+O backend está configurado para aceitar requisições de:
+- `http://localhost:5173` (Vite)
+- `http://localhost:3000` (Create React App)
+- `http://localhost:8080` (Vue.js)
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 🆘 Suporte
+
+Para suporte e dúvidas:
+- 📧 Email: suporte@axora.com
+- 🐛 Issues: [GitHub Issues](https://github.com/AfonsoScheufele/sistema-vendas-backend/issues)
+
+---
+
+**Desenvolvido com ❤️ pela equipe AXORA**
+- `POST /notifications` - Criar notificação
+
+### Estoque
+- `GET /estoque/produtos` - Produtos em estoque
+
+### Teste
+- `GET /test` - Teste básico do servidor
+
+## 🔐 Login
+
+Use as seguintes credenciais para fazer login:
+- **Email**: `admin@sistema.com`
+- **Senha**: `password`
+
+## 📄 Licença
+
+Este projeto está sob a licença ISC.

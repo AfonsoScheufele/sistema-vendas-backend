@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsPositive, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive, Min, Max, IsOptional } from 'class-validator';
 
 export class CreateItemPedidoDto {
   @IsNotEmpty()
@@ -10,9 +10,17 @@ export class CreateItemPedidoDto {
   @IsPositive()
   quantidade!: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(100)
-  comissao!: number;
+  comissao?: number;
+
+  @IsOptional()
+  @IsNumber()
+  precoUnitario?: number;
+
+  @IsOptional()
+  @IsNumber()
+  desconto?: number;
 }

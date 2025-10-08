@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Orcamento } from './orcamento.entity';
 import { ItemOrcamento } from './item-orcamento.entity';
 import { Produto } from '../produtos/produto.entity';
+import { Cliente } from '../clientes/cliente.entity';
 import { CreateOrcamentoDto } from './dto/create-orcamento.dto';
 import { UpdateOrcamentoDto } from './dto/update-orcamento.dto';
 
@@ -16,10 +17,18 @@ export class OrcamentosService {
     private itemOrcamentoRepo: Repository<ItemOrcamento>,
     @InjectRepository(Produto)
     private produtoRepo: Repository<Produto>,
+    @InjectRepository(Cliente)
+    private clienteRepo: Repository<Cliente>,
   ) {}
 
   async create(createOrcamentoDto: CreateOrcamentoDto) {
-    const { cliente, email, telefone, itens, desconto = 0, validade, observacoes } = createOrcamentoDto;
+    const { clienteId, email, telefone, itens, desconto = 0, validade, observacoes } = createOrcamentoDto;
+
+    // Verificar se o cliente existe
+    const cliente = await this.clienteRepo.findOne({ where: { id: clienteId } });
+    if (!cliente) {
+      throw new NotFoundException('Cliente não encontrado');
+    }
 
     const produtoIds = itens.map(item => item.produtoId);
     const produtos = await this.produtoRepo.findByIds(produtoIds);
@@ -30,6 +39,7 @@ export class OrcamentosService {
 
     const orcamento = this.orcamentoRepo.create({
       cliente,
+      clienteId,
       email,
       telefone,
       desconto,
@@ -74,6 +84,7 @@ export class OrcamentosService {
   async findAll(status?: string) {
     const query = this.orcamentoRepo
       .createQueryBuilder('orcamento')
+      .leftJoinAndSelect('orcamento.cliente', 'cliente')
       .leftJoinAndSelect('orcamento.itens', 'itens')
       .orderBy('orcamento.criadoEm', 'DESC');
 
@@ -87,7 +98,7 @@ export class OrcamentosService {
   async findOne(id: number) {
     const orcamento = await this.orcamentoRepo.findOne({
       where: { id },
-      relations: ['itens'],
+      relations: ['cliente', 'itens'],
     });
 
     if (!orcamento) {
@@ -100,7 +111,6 @@ export class OrcamentosService {
   async update(id: number, updateOrcamentoDto: UpdateOrcamentoDto) {
     const orcamento = await this.findOne(id);
 
-    if (updateOrcamentoDto.cliente) orcamento.cliente = updateOrcamentoDto.cliente;
     if (updateOrcamentoDto.email !== undefined) orcamento.email = updateOrcamentoDto.email;
     if (updateOrcamentoDto.telefone !== undefined) orcamento.telefone = updateOrcamentoDto.telefone;
     if (updateOrcamentoDto.status) orcamento.status = updateOrcamentoDto.status;
