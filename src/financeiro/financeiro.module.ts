@@ -14,3 +14,6 @@ import { MovimentacaoFinanceira } from './movimentacao-financeira.entity';
 export class FinanceiroModule {}
 
 
+
+
+

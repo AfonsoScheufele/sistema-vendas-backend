@@ -13,3 +13,6 @@ import { NotaFiscal } from './nota-fiscal.entity';
 export class FiscalModule {}
 
 
+
+
+

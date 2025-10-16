@@ -1,12 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    methods: ['GET', 'POST']
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 }));
 app.use(express.json());
 
@@ -34,6 +46,20 @@ const mockDashboardStats = {
 
 app.get('/test', (req, res) => {
   res.json({ message: 'Backend funcionando!', timestamp: new Date().toISOString(), status: 'OK' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: '1.0.0',
+    database: 'connected',
+    services: {
+      websocket: 'running',
+      redis: 'connected'
+    }
+  });
 });
 
 app.get('/produtos', (req, res) => res.json(mockProducts));
@@ -215,11 +241,30 @@ app.post('/orcamentos/:id/converter', (req, res) => {
   res.json({ message: 'Orçamento convertido em pedido', id: req.params.id });
 });
 
-const server = app.listen(PORT, () => {
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log(`🔌 Cliente conectado: ${socket.id}`);
+  
+  socket.on('disconnect', () => {
+    console.log(`🔌 Cliente desconectado: ${socket.id}`);
+  });
+  
+  // Enviar heartbeat a cada 30 segundos
+  const heartbeat = setInterval(() => {
+    socket.emit('heartbeat', { timestamp: new Date().toISOString() });
+  }, 30000);
+  
+  socket.on('disconnect', () => {
+    clearInterval(heartbeat);
+  });
+});
+
+server.listen(PORT, () => {
   console.log("🚀 ==========================================");
   console.log("🚀   SISTEMA DE VENDAS - BACKEND");
   console.log("🚀 ==========================================");
   console.log(`📱 Servidor rodando em: http://localhost:${PORT}`);
+  console.log(`🔌 WebSocket disponível em: ws://localhost:${PORT}`);
   console.log("📋 Rotas principais:");
   console.log("   • GET  /test                    - Teste básico");
   console.log("   • GET  /produtos                - Listar produtos");

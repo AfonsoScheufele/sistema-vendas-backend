@@ -1,4 +1,3 @@
-// Interfaces para resolver problemas de tipos
 export interface DashboardStats {
   totalVendas: number;
   clientesAtivos: number;
@@ -38,4 +37,3 @@ export interface DistribuicaoCategoria {
   percentual: number;
   faturamento: number;
 }
-

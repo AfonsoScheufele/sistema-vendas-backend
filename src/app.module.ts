@@ -41,6 +41,10 @@ import { Transportadora } from './logistica/transportadora.entity';
 import { Expedicao } from './logistica/expedicao.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
+import { WebSocketModule } from './websocket/websocket.module';
+import { DashboardSimpleController, ApiDashboardSimpleController } from './dashboard-simple.controller';
+import { TestController } from './test.controller';
+import { DashboardController, ApiDashboardController } from './dashboard.controller';
 
 @Module({
   imports: [
@@ -96,7 +100,9 @@ import { Notification } from './notifications/entities/notification.entity';
            FinanceiroModule,
            FiscalModule,
            LogisticaModule,
-           NotificationsModule,
+          NotificationsModule,
+          WebSocketModule,
   ],
+  controllers: [DashboardSimpleController, ApiDashboardSimpleController, TestController, DashboardController, ApiDashboardController],
 })
 export class AppModule {}
