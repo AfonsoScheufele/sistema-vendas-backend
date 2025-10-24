@@ -1,69 +1,102 @@
-import { Controller, Get, Post, Body, Param, Delete, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { VendasService } from './vendas.service';
-import { CreateVendaDto } from './dto/create-venda.dto';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { VendasService } from './vendas.service';
 
 @Controller('vendas')
 @UseGuards(JwtAuthGuard)
 export class VendasController {
   constructor(private readonly vendasService: VendasService) {}
 
-  @Post()
+  // Pipeline de Vendas
+  @Get('pipeline')
+  obterPipeline(@Query() filtros: any) {
+    return this.vendasService.obterPipeline(filtros);
+  }
+
+  @Post('pipeline')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateVendaDto) {
-    return this.vendasService.create(dto);
+  criarOportunidade(@Body() createOportunidadeDto: any) {
+    return this.vendasService.criarOportunidade(createOportunidadeDto);
   }
 
-  @Get()
-  findAll(@Query('status') status?: string, @Query('vendedorId') vendedorId?: string, @Query('clienteId') clienteId?: string) {
-    return this.vendasService.findAll({ status, vendedorId, clienteId });
+  @Get('pipeline/:id')
+  obterOportunidade(@Param('id') id: string) {
+    return this.vendasService.obterOportunidade(+id);
   }
 
-  @Get('stats')
-  getStats(@Query('periodo') periodo?: string) {
-    return this.vendasService.getStats(periodo);
+  @Patch('pipeline/:id')
+  atualizarOportunidade(@Param('id') id: string, @Body() updateOportunidadeDto: any) {
+    return this.vendasService.atualizarOportunidade(+id, updateOportunidadeDto);
   }
 
-  @Get('vendedores')
-  getVendedores() {
-    return this.vendasService.getVendedores();
+  @Patch('pipeline/:id/etapa')
+  atualizarEtapa(@Param('id') id: string, @Body() updateEtapaDto: any) {
+    return this.vendasService.atualizarEtapa(+id, updateEtapaDto);
   }
 
-  @Get('comissoes')
-  getComissoes(@Query('vendedorId') vendedorId?: string, @Query('periodo') periodo?: string) {
-    return this.vendasService.getComissoes(vendedorId, periodo);
-  }
-
-  @Get('relatorio')
-  getRelatorio(@Query('dataInicio') dataInicio?: string, @Query('dataFim') dataFim?: string) {
-    return this.vendasService.getRelatorio(dataInicio, dataFim);
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.vendasService.findOne(Number(id));
-  }
-
-  @Delete(':id')
+  @Delete('pipeline/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async delete(@Param('id') id: string) {
-    await this.vendasService.delete(Number(id));
-  }
-}
-
-// Controller adicional para compatibilidade com o frontend
-@Controller('api/vendas')
-@UseGuards(JwtAuthGuard)
-export class ApiVendasController {
-  constructor(private readonly vendasService: VendasService) {}
-
-  @Get()
-  findAll(@Query('status') status?: string, @Query('vendedorId') vendedorId?: string, @Query('clienteId') clienteId?: string) {
-    return this.vendasService.findAll({ status, vendedorId, clienteId });
+  removerOportunidade(@Param('id') id: string) {
+    return this.vendasService.removerOportunidade(+id);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.vendasService.findOne(Number(id));
+  // Comissões
+  @Get('comissoes')
+  obterComissoes(@Query() filtros: any) {
+    return this.vendasService.obterComissoes(filtros);
+  }
+
+  @Get('comissoes/:id')
+  obterComissao(@Param('id') id: string) {
+    return this.vendasService.obterComissao(+id);
+  }
+
+  @Patch('comissoes/:id/pagar')
+  pagarComissao(@Param('id') id: string) {
+    return this.vendasService.pagarComissao(+id);
+  }
+
+  // Metas
+  @Get('metas')
+  obterMetas(@Query() filtros: any) {
+    return this.vendasService.obterMetas(filtros);
+  }
+
+  @Post('metas')
+  @HttpCode(HttpStatus.CREATED)
+  criarMeta(@Body() createMetaDto: any) {
+    return this.vendasService.criarMeta(createMetaDto);
+  }
+
+  @Get('metas/:id')
+  obterMeta(@Param('id') id: string) {
+    return this.vendasService.obterMeta(+id);
+  }
+
+  @Patch('metas/:id')
+  atualizarMeta(@Param('id') id: string, @Body() updateMetaDto: any) {
+    return this.vendasService.atualizarMeta(+id, updateMetaDto);
+  }
+
+  @Delete('metas/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removerMeta(@Param('id') id: string) {
+    return this.vendasService.removerMeta(+id);
+  }
+
+  // Relatórios de Vendas
+  @Get('relatorios/resumo')
+  obterResumoVendas(@Query() filtros: any) {
+    return this.vendasService.obterResumoVendas(filtros);
+  }
+
+  @Get('relatorios/vendedores')
+  obterRelatorioVendedores(@Query() filtros: any) {
+    return this.vendasService.obterRelatorioVendedores(filtros);
+  }
+
+  @Get('relatorios/produtos')
+  obterRelatorioProdutos(@Query() filtros: any) {
+    return this.vendasService.obterRelatorioProdutos(filtros);
   }
 }

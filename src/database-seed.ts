@@ -16,11 +16,12 @@ async function seed() {
 
   try {
     // Criar usuário admin
-    const adminExists = await usuarioRepo.findOne({ where: { email: 'admin@axora.com' } });
+    const adminExists = await usuarioRepo.findOne({ where: { cpf: '08551935909' } });
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash('123456', 10);
       const admin = usuarioRepo.create({
         name: 'Administrador',
+        cpf: '08551935909',
         email: 'admin@axora.com',
         senha: hashedPassword,
         role: 'Admin',
@@ -31,11 +32,12 @@ async function seed() {
     }
 
     // Criar vendedor
-    const vendedorExists = await usuarioRepo.findOne({ where: { email: 'vendedor@axora.com' } });
+    const vendedorExists = await usuarioRepo.findOne({ where: { cpf: '12345678901' } });
     if (!vendedorExists) {
       const hashedPassword = await bcrypt.hash('123456', 10);
       const vendedor = usuarioRepo.create({
         name: 'João Vendedor',
+        cpf: '12345678901',
         email: 'vendedor@axora.com',
         senha: hashedPassword,
         role: 'Vendedor',
@@ -214,7 +216,7 @@ async function seed() {
     console.log('🎉 Seed executado com sucesso!');
     console.log('');
     console.log('📋 Dados criados:');
-    console.log('👤 Usuários: admin@axora.com (senha: 123456)');
+    console.log('👤 Admin: CPF 08551935909 (senha: 123456)');
     console.log('👤 Vendedor: vendedor@axora.com (senha: 123456)');
     console.log('📦 5 produtos de exemplo');
     console.log('👥 4 clientes de exemplo');

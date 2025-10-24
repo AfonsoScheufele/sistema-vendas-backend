@@ -17,7 +17,7 @@ import { Request } from 'express';
 interface AuthRequest extends Request {
   user: {
     id: number;
-    email: string;
+    cpf: string;
     role: string;
   };
 }
@@ -28,12 +28,12 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { email: string; senha: string }) {
-    if (!body.email || !body.senha) {
-      throw new BadRequestException('Email e senha são obrigatórios');
+  async login(@Body() body: { cpf: string; senha: string }) {
+    if (!body.cpf || !body.senha) {
+      throw new BadRequestException('CPF e senha são obrigatórios');
     }
 
-    const user = await this.authService.validateUser(body.email, body.senha);
+    const user = await this.authService.validateUser(body.cpf, body.senha);
     
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
@@ -47,6 +47,7 @@ export class AuthController {
       user: {
         id: user.id,
         name: user.name,
+        cpf: user.cpf,
         email: user.email,
         role: user.role,
         avatar: user.avatar
@@ -58,14 +59,15 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   async register(
     @Body() body: { 
-      email: string; 
+      cpf: string; 
       senha: string; 
       name: string;
+      email?: string;
       role?: string;
     }
   ) {
-    if (!body.email || !body.senha || !body.name) {
-      throw new BadRequestException('Email, senha e nome são obrigatórios');
+    if (!body.cpf || !body.senha || !body.name) {
+      throw new BadRequestException('CPF, senha e nome são obrigatórios');
     }
 
     if (body.senha.length < 6) {
@@ -73,10 +75,11 @@ export class AuthController {
     }
 
     const user = await this.authService.register(
-      body.email,
+      body.cpf,
       body.senha,
       body.name,
-      body.role || 'User'
+      body.role || 'User',
+      body.email
     );
 
     const tokens = await this.authService.login(user);
@@ -87,6 +90,7 @@ export class AuthController {
       user: {
         id: user.id,
         name: user.name,
+        cpf: user.cpf,
         email: user.email,
         role: user.role,
         avatar: user.avatar
@@ -106,6 +110,7 @@ export class AuthController {
     return {
       id: user.id,
       name: user.name,
+      cpf: user.cpf,
       email: user.email,
       role: user.role,
       avatar: user.avatar
@@ -114,12 +119,12 @@ export class AuthController {
 
   @Post('recuperar-senha')
   @HttpCode(HttpStatus.OK)
-  async recuperarSenha(@Body() body: { email: string }) {
-    if (!body.email) {
-      throw new BadRequestException('Email é obrigatório');
+  async recuperarSenha(@Body() body: { cpf: string }) {
+    if (!body.cpf) {
+      throw new BadRequestException('CPF é obrigatório');
     }
 
-    const result = await this.authService.solicitarRecuperacaoSenha(body.email);
+    const result = await this.authService.solicitarRecuperacaoSenha(body.cpf);
     
     return {
       message: result.message,

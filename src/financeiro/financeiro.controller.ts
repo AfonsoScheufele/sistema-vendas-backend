@@ -43,7 +43,86 @@ export class FinanceiroController {
   obterResumoFinanceiro() {
     return this.financeiroService.obterResumoFinanceiro();
   }
+
+  // Investimentos
+  @Get('investimentos')
+  listarInvestimentos(@Query() filtros: any) {
+    return this.financeiroService.listarInvestimentos(filtros);
+  }
+
+  @Post('investimentos')
+  @HttpCode(HttpStatus.CREATED)
+  criarInvestimento(@Body() createInvestimentoDto: any) {
+    return this.financeiroService.criarInvestimento(createInvestimentoDto);
+  }
+
+  @Get('investimentos/:id')
+  obterInvestimento(@Param('id') id: string) {
+    return this.financeiroService.obterInvestimento(+id);
+  }
+
+  @Patch('investimentos/:id')
+  atualizarInvestimento(@Param('id') id: string, @Body() updateInvestimentoDto: any) {
+    return this.financeiroService.atualizarInvestimento(+id, updateInvestimentoDto);
+  }
+
+  @Patch('investimentos/:id/resgatar')
+  resgatarInvestimento(@Param('id') id: string, @Body() resgateDto: any) {
+    return this.financeiroService.resgatarInvestimento(+id, resgateDto);
+  }
+
+  @Delete('investimentos/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removerInvestimento(@Param('id') id: string) {
+    return this.financeiroService.removerInvestimento(+id);
+  }
+
+  // Orçamentos Financeiros
+  @Get('orcamentos')
+  listarOrcamentos(@Query() filtros: any) {
+    return this.financeiroService.listarOrcamentos(filtros);
+  }
+
+  @Post('orcamentos')
+  @HttpCode(HttpStatus.CREATED)
+  criarOrcamento(@Body() createOrcamentoDto: any) {
+    return this.financeiroService.criarOrcamento(createOrcamentoDto);
+  }
+
+  @Get('orcamentos/:id')
+  obterOrcamento(@Param('id') id: string) {
+    return this.financeiroService.obterOrcamento(+id);
+  }
+
+  @Patch('orcamentos/:id')
+  atualizarOrcamento(@Param('id') id: string, @Body() updateOrcamentoDto: any) {
+    return this.financeiroService.atualizarOrcamento(+id, updateOrcamentoDto);
+  }
+
+  @Patch('orcamentos/:id/gastar')
+  registrarGasto(@Param('id') id: string, @Body() gastoDto: any) {
+    return this.financeiroService.registrarGasto(+id, gastoDto);
+  }
+
+  @Delete('orcamentos/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removerOrcamento(@Param('id') id: string) {
+    return this.financeiroService.removerOrcamento(+id);
+  }
+
+  // Relatórios Financeiros
+  @Get('relatorios/investimentos')
+  obterRelatorioInvestimentos(@Query() filtros: any) {
+    return this.financeiroService.obterRelatorioInvestimentos(filtros);
+  }
+
+  @Get('relatorios/orcamentos')
+  obterRelatorioOrcamentos(@Query() filtros: any) {
+    return this.financeiroService.obterRelatorioOrcamentos(filtros);
+  }
 }
+
+
 
 
 

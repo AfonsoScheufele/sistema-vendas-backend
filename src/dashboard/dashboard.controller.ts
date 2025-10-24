@@ -20,18 +20,9 @@ export class DashboardController {
   }
 
   @Get('stats')
-  getStats(@Query('periodo') periodo?: string) {
+  async getStats(@Query('periodo') periodo?: string) {
     try {
-      return {
-        totalVendas: 0,
-        clientesAtivos: 4,
-        produtosEstoque: 5,
-        pedidosPendentes: 0,
-        faturamentoMes: 0,
-        crescimentoVendas: 0,
-        ticketMedio: 0,
-        conversao: 0
-      };
+      return await this.dashboardService.getStats(periodo);
     } catch (error) {
       console.error('Erro no controller:', error);
       throw error;

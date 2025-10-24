@@ -10,6 +10,9 @@ export class Notification {
   @JoinColumn({ name: 'user_id' })
   user!: Usuario;
 
+  @Column({ nullable: true })
+  user_id?: number;
+
   @Column()
   title!: string;
 

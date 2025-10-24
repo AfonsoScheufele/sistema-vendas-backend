@@ -14,8 +14,8 @@ export class AuthService {
     private usuarioRepo: Repository<Usuario>,
   ) {}
 
-  async validateUser(email: string, senha: string): Promise<any> {
-    const user = await this.usuarioRepo.findOne({ where: { email } });
+  async validateUser(cpf: string, senha: string): Promise<any> {
+    const user = await this.usuarioRepo.findOne({ where: { cpf } });
     
     if (user && await bcrypt.compare(senha, user.senha)) {
       // Atualizar último login
@@ -27,16 +27,17 @@ export class AuthService {
     return null;
   }
 
-  async register(email: string, senha: string, name: string, role: string = 'User'): Promise<Usuario> {
-    const existingUser = await this.usuarioRepo.findOne({ where: { email } });
+  async register(cpf: string, senha: string, name: string, role: string = 'User', email?: string): Promise<Usuario> {
+    const existingUser = await this.usuarioRepo.findOne({ where: { cpf } });
     
     if (existingUser) {
-      throw new ConflictException('Email já está em uso');
+      throw new ConflictException('CPF já está em uso');
     }
 
     const hashedPassword = await bcrypt.hash(senha, 10);
     
     const user = this.usuarioRepo.create({
+      cpf,
       email,
       senha: hashedPassword,
       name,
@@ -47,7 +48,7 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const payload = { sub: user.id, cpf: user.cpf, role: user.role };
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
       refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
@@ -55,7 +56,7 @@ export class AuthService {
   }
 
   async refresh(user: any) {
-    const payload = { sub: user.sub, email: user.email, role: user.role };
+    const payload = { sub: user.sub, cpf: user.cpf, role: user.role };
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
     };
@@ -65,12 +66,12 @@ export class AuthService {
     return await this.usuarioRepo.findOne({ where: { id } });
   }
 
-  async solicitarRecuperacaoSenha(email: string): Promise<{ message: string; success: boolean }> {
-    const user = await this.usuarioRepo.findOne({ where: { email } });
+  async solicitarRecuperacaoSenha(cpf: string): Promise<{ message: string; success: boolean }> {
+    const user = await this.usuarioRepo.findOne({ where: { cpf } });
     
     if (!user) {
       return {
-        message: 'Se o email existir em nosso sistema, você receberá instruções para redefinir sua senha.',
+        message: 'Se o CPF existir em nosso sistema, você receberá instruções para redefinir sua senha.',
         success: true
       };
     }
@@ -84,10 +85,10 @@ export class AuthService {
     });
 
     // Aqui você implementaria o envio de email
-    console.log(`Token de recuperação para ${email}: ${resetToken}`);
+    console.log(`Token de recuperação para CPF ${cpf}: ${resetToken}`);
 
     return {
-      message: 'Se o email existir em nosso sistema, você receberá instruções para redefinir sua senha.',
+      message: 'Se o CPF existir em nosso sistema, você receberá instruções para redefinir sua senha.',
       success: true
     };
   }

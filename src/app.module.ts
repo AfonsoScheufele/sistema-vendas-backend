@@ -11,6 +11,7 @@ import { OrcamentosModule } from './orcamentos/orcamentos.module';
 import { FornecedoresModule } from './fornecedores/fornecedores.module';
 import { CotacoesModule } from './cotacoes/cotacoes.module';
 import { RequisicoesModule } from './compras/requisicoes.module';
+import { ComprasModule } from './compras/compras.module';
 import { CrmModule } from './crm/crm.module';
 import { ConfigModule as ConfigModuleApp } from './config/config.module';
 import { EstoqueModule } from './estoque/estoque.module';
@@ -29,6 +30,15 @@ import { ItemOrcamento } from './orcamentos/item-orcamento.entity';
 import { Fornecedor } from './fornecedores/fornecedor.entity';
 import { Cotacao } from './cotacoes/cotacao.entity';
 import { Requisicao } from './compras/requisicao.entity';
+import { PedidoCompra } from './compras/pedido-compra.entity';
+import { AvaliacaoFornecedor } from './compras/avaliacao-fornecedor.entity';
+import { ContratoFornecedor } from './compras/contrato-fornecedor.entity';
+import { Inventario } from './estoque/inventario.entity';
+import { AlertaEstoque } from './estoque/alerta-estoque.entity';
+import { TransferenciaEstoque } from './estoque/transferencia-estoque.entity';
+import { OportunidadeVenda } from './vendas/oportunidade-venda.entity';
+import { Comissao } from './vendas/comissao.entity';
+import { MetaVenda } from './vendas/meta-venda.entity';
 import { Lead } from './crm/lead.entity';
 import { Oportunidade } from './crm/oportunidade.entity';
 import { Perfil } from './config/perfil.entity';
@@ -36,15 +46,14 @@ import { MovimentacaoEstoque } from './estoque/movimentacao-estoque.entity';
 import { Lote } from './estoque/lote.entity';
 import { Banco } from './financeiro/banco.entity';
 import { MovimentacaoFinanceira } from './financeiro/movimentacao-financeira.entity';
+import { Investimento } from './financeiro/investimento.entity';
+import { OrcamentoFinanceiro } from './financeiro/orcamento-financeiro.entity';
 import { NotaFiscal } from './fiscal/nota-fiscal.entity';
 import { Transportadora } from './logistica/transportadora.entity';
 import { Expedicao } from './logistica/expedicao.entity';
 import { NotificationsModule } from './notifications/notifications.module';
 import { Notification } from './notifications/entities/notification.entity';
 import { WebSocketModule } from './websocket/websocket.module';
-import { DashboardSimpleController, ApiDashboardSimpleController } from './dashboard-simple.controller';
-import { TestController } from './test.controller';
-import { DashboardController, ApiDashboardController } from './dashboard.controller';
 
 @Module({
   imports: [
@@ -53,8 +62,12 @@ import { DashboardController, ApiDashboardController } from './dashboard.control
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'sqlite',
-        database: 'database.sqlite',
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USERNAME'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
                entities: [
                  Produto,
                  Cliente,
@@ -68,6 +81,15 @@ import { DashboardController, ApiDashboardController } from './dashboard.control
                  Fornecedor,
                  Cotacao,
                  Requisicao,
+                 PedidoCompra,
+                 AvaliacaoFornecedor,
+                 ContratoFornecedor,
+                 Inventario,
+                 AlertaEstoque,
+                 TransferenciaEstoque,
+                 OportunidadeVenda,
+                 Comissao,
+                 MetaVenda,
                  Lead,
                  Oportunidade,
                  Perfil,
@@ -75,6 +97,8 @@ import { DashboardController, ApiDashboardController } from './dashboard.control
                  Lote,
                  Banco,
                  MovimentacaoFinanceira,
+                 Investimento,
+                 OrcamentoFinanceiro,
                  NotaFiscal,
                  Transportadora,
                  Expedicao,
@@ -94,6 +118,7 @@ import { DashboardController, ApiDashboardController } from './dashboard.control
            FornecedoresModule,
            CotacoesModule,
            RequisicoesModule,
+           ComprasModule,
            CrmModule,
            ConfigModuleApp,
            EstoqueModule,
@@ -103,6 +128,5 @@ import { DashboardController, ApiDashboardController } from './dashboard.control
           NotificationsModule,
           WebSocketModule,
   ],
-  controllers: [DashboardSimpleController, ApiDashboardSimpleController, TestController, DashboardController, ApiDashboardController],
 })
 export class AppModule {}

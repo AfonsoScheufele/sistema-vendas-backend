@@ -9,7 +9,10 @@ export class Usuario {
   name!: string;
 
   @Column({ unique: true })
-  email!: string;
+  cpf!: string;
+
+  @Column({ nullable: true })
+  email?: string;
 
   @Column()
   senha!: string;

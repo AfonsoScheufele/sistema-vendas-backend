@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { MovimentacaoEstoque } from './movimentacao-estoque.entity';
 import { Lote } from './lote.entity';
 import { Produto } from '../produtos/produto.entity';
+import { Inventario } from './inventario.entity';
+import { AlertaEstoque } from './alerta-estoque.entity';
+import { TransferenciaEstoque } from './transferencia-estoque.entity';
 
 @Injectable()
 export class EstoqueService {
@@ -14,6 +17,12 @@ export class EstoqueService {
     private loteRepo: Repository<Lote>,
     @InjectRepository(Produto)
     private produtoRepo: Repository<Produto>,
+    @InjectRepository(Inventario)
+    private inventarioRepo: Repository<Inventario>,
+    @InjectRepository(AlertaEstoque)
+    private alertaRepo: Repository<AlertaEstoque>,
+    @InjectRepository(TransferenciaEstoque)
+    private transferenciaRepo: Repository<TransferenciaEstoque>,
   ) {}
 
   // Movimentações de Estoque
@@ -105,7 +114,7 @@ export class EstoqueService {
       .getMany();
   }
 
-  async obterInventario(): Promise<any[]> {
+  async obterInventarioGeral(): Promise<any[]> {
     return await this.produtoRepo
       .createQueryBuilder('produto')
       .leftJoinAndSelect('produto.lotes', 'lote')
@@ -165,6 +174,242 @@ export class EstoqueService {
     }
 
     return alertas;
+  }
+
+  async obterProdutosEstoqueGeral(): Promise<any[]> {
+    return await this.produtoRepo.find({
+      where: { ativo: true },
+      select: ['id', 'nome', 'estoque', 'estoqueMinimo', 'preco', 'categoria'],
+      order: { nome: 'ASC' },
+    });
+  }
+
+  async obterTransferencias(): Promise<any[]> {
+    // Por enquanto retorna array vazio, pode ser implementado futuramente
+    return [];
+  }
+
+  // Inventários
+  async listarInventarios(filtros?: any): Promise<Inventario[]> {
+    return await this.inventarioRepo.find({
+      relations: ['responsavel'],
+      order: { createdAt: 'DESC' }
+    });
+  }
+
+  async criarInventario(createInventarioDto: any): Promise<Inventario> {
+    const inventario = this.inventarioRepo.create(createInventarioDto);
+    return await this.inventarioRepo.save(inventario) as unknown as Inventario;
+  }
+
+  async obterInventario(id: number): Promise<Inventario> {
+    const inventario = await this.inventarioRepo.findOne({
+      where: { id },
+      relations: ['responsavel'],
+    });
+
+    if (!inventario) {
+      throw new NotFoundException('Inventário não encontrado');
+    }
+
+    return inventario;
+  }
+
+  async atualizarInventario(id: number, updateInventarioDto: any): Promise<Inventario> {
+    const inventario = await this.obterInventario(id);
+    
+    Object.assign(inventario, updateInventarioDto);
+    return await this.inventarioRepo.save(inventario);
+  }
+
+  async removerInventario(id: number): Promise<void> {
+    const inventario = await this.obterInventario(id);
+    await this.inventarioRepo.remove(inventario);
+  }
+
+  // Alertas
+  async listarAlertas(filtros?: any): Promise<AlertaEstoque[]> {
+    const query = this.alertaRepo
+      .createQueryBuilder('alerta')
+      .leftJoinAndSelect('alerta.produto', 'produto')
+      .leftJoinAndSelect('alerta.responsavel', 'responsavel');
+
+    if (filtros?.status) {
+      query.where('alerta.status = :status', { status: filtros.status });
+    }
+
+    if (filtros?.tipo) {
+      query.andWhere('alerta.tipo = :tipo', { tipo: filtros.tipo });
+    }
+
+    if (filtros?.nivel) {
+      query.andWhere('alerta.nivel = :nivel', { nivel: filtros.nivel });
+    }
+
+    return await query
+      .orderBy('alerta.dataAlerta', 'DESC')
+      .getMany();
+  }
+
+  async criarAlerta(createAlertaDto: any): Promise<AlertaEstoque> {
+    const alerta = this.alertaRepo.create(createAlertaDto);
+    return await this.alertaRepo.save(alerta) as unknown as AlertaEstoque;
+  }
+
+  async obterAlerta(id: number): Promise<AlertaEstoque> {
+    const alerta = await this.alertaRepo.findOne({
+      where: { id },
+      relations: ['produto', 'responsavel'],
+    });
+
+    if (!alerta) {
+      throw new NotFoundException('Alerta não encontrado');
+    }
+
+    return alerta;
+  }
+
+  async atualizarAlerta(id: number, updateAlertaDto: any): Promise<AlertaEstoque> {
+    const alerta = await this.obterAlerta(id);
+    
+    Object.assign(alerta, updateAlertaDto);
+    return await this.alertaRepo.save(alerta);
+  }
+
+  async resolverAlerta(id: number): Promise<AlertaEstoque> {
+    const alerta = await this.obterAlerta(id);
+    alerta.status = 'resolvido';
+    return await this.alertaRepo.save(alerta);
+  }
+
+  async removerAlerta(id: number): Promise<void> {
+    const alerta = await this.obterAlerta(id);
+    await this.alertaRepo.remove(alerta);
+  }
+
+  // Transferências
+  async listarTransferencias(filtros?: any): Promise<TransferenciaEstoque[]> {
+    const query = this.transferenciaRepo
+      .createQueryBuilder('transferencia')
+      .leftJoinAndSelect('transferencia.produto', 'produto')
+      .leftJoinAndSelect('transferencia.responsavel', 'responsavel');
+
+    if (filtros?.status) {
+      query.where('transferencia.status = :status', { status: filtros.status });
+    }
+
+    if (filtros?.produtoId) {
+      query.andWhere('transferencia.produtoId = :produtoId', { produtoId: filtros.produtoId });
+    }
+
+    return await query
+      .orderBy('transferencia.createdAt', 'DESC')
+      .getMany();
+  }
+
+  async criarTransferencia(createTransferenciaDto: any): Promise<TransferenciaEstoque> {
+    const produto = await this.produtoRepo.findOne({ where: { id: createTransferenciaDto.produtoId } });
+    
+    if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    if (produto.estoque < createTransferenciaDto.quantidade) {
+      throw new BadRequestException('Estoque insuficiente para transferência');
+    }
+
+    const transferencia = this.transferenciaRepo.create({
+      ...createTransferenciaDto,
+      numero: `TRF-${Date.now()}`,
+      valorTotal: createTransferenciaDto.valorUnitario ? 
+        createTransferenciaDto.valorUnitario * createTransferenciaDto.quantidade : undefined,
+    });
+
+    return await this.transferenciaRepo.save(transferencia) as unknown as TransferenciaEstoque;
+  }
+
+  async obterTransferencia(id: number): Promise<TransferenciaEstoque> {
+    const transferencia = await this.transferenciaRepo.findOne({
+      where: { id },
+      relations: ['produto', 'responsavel'],
+    });
+
+    if (!transferencia) {
+      throw new NotFoundException('Transferência não encontrada');
+    }
+
+    return transferencia;
+  }
+
+  async atualizarTransferencia(id: number, updateTransferenciaDto: any): Promise<TransferenciaEstoque> {
+    const transferencia = await this.obterTransferencia(id);
+    
+    Object.assign(transferencia, updateTransferenciaDto);
+    return await this.transferenciaRepo.save(transferencia);
+  }
+
+  async confirmarTransferencia(id: number): Promise<TransferenciaEstoque> {
+    const transferencia = await this.obterTransferencia(id);
+    
+    if (transferencia.status !== 'pendente') {
+      throw new BadRequestException('Apenas transferências pendentes podem ser confirmadas');
+    }
+
+    // Atualizar estoque do produto
+    const produto = await this.produtoRepo.findOne({ where: { id: transferencia.produtoId } });
+    produto.estoque -= transferencia.quantidade;
+    await this.produtoRepo.save(produto);
+
+    transferencia.status = 'concluida';
+    transferencia.dataTransferencia = new Date();
+    
+    return await this.transferenciaRepo.save(transferencia);
+  }
+
+  async removerTransferencia(id: number): Promise<void> {
+    const transferencia = await this.obterTransferencia(id);
+    await this.transferenciaRepo.remove(transferencia);
+  }
+
+  // Produtos em estoque
+  async obterProdutosEstoque(filtros?: any): Promise<any[]> {
+    const query = this.produtoRepo
+      .createQueryBuilder('produto')
+      .where('produto.ativo = :ativo', { ativo: true });
+
+    if (filtros?.categoria) {
+      query.andWhere('produto.categoria = :categoria', { categoria: filtros.categoria });
+    }
+
+    if (filtros?.estoqueBaixo) {
+      query.andWhere('produto.estoque <= produto.estoqueMinimo');
+    }
+
+    return await query
+      .select(['produto.id', 'produto.nome', 'produto.estoque', 'produto.estoqueMinimo', 'produto.preco', 'produto.categoria'])
+      .orderBy('produto.nome', 'ASC')
+      .getMany();
+  }
+
+  async obterEstoqueProduto(id: number): Promise<any> {
+    const produto = await this.produtoRepo.findOne({
+      where: { id },
+    });
+
+    if (!produto) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    return {
+      produto: {
+        id: produto.id,
+        nome: produto.nome,
+        estoque: produto.estoque,
+        estoqueMinimo: produto.estoqueMinimo,
+      },
+      lotes: [], // TODO: Implementar relação com lotes
+      movimentacoes: await this.listarMovimentacoes({ produtoId: id }),
+    };
   }
 }
 
