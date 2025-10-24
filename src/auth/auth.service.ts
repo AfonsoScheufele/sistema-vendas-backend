@@ -84,7 +84,6 @@ export class AuthService {
     });
 
     
-    console.log(`Token de recuperação para CPF ${cpf}: ${resetToken}`);
 
     return {
       message: 'Se o CPF existir em nosso sistema, você receberá instruções para redefinir sua senha.',

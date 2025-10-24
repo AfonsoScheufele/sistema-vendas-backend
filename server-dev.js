@@ -243,10 +243,8 @@ app.post('/orcamentos/:id/converter', (req, res) => {
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
-  console.log(`🔌 Cliente conectado: ${socket.id}`);
   
   socket.on('disconnect', () => {
-    console.log(`🔌 Cliente desconectado: ${socket.id}`);
   });
   
   // Enviar heartbeat a cada 30 segundos
@@ -260,48 +258,16 @@ io.on('connection', (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log("🚀 ==========================================");
-  console.log("🚀   SISTEMA DE VENDAS - BACKEND");
-  console.log("🚀 ==========================================");
-  console.log(`📱 Servidor rodando em: http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket disponível em: ws://localhost:${PORT}`);
-  console.log("📋 Rotas principais:");
-  console.log("   • GET  /test                    - Teste básico");
-  console.log("   • GET  /produtos                - Listar produtos");
-  console.log("   • GET  /clientes                - Listar clientes");
-  console.log("   • GET  /clientes/stats          - Estatísticas clientes");
-  console.log("   • GET  /vendas                  - Listar vendas");
-  console.log("   • GET  /pedidos                 - Listar pedidos");
-  console.log("   • GET  /pedidos/stats           - Estatísticas pedidos");
-  console.log("   • GET  /orcamentos              - Listar orçamentos");
-  console.log("   • GET  /orcamentos/stats        - Estatísticas orçamentos");
-  console.log("   • GET  /estoque/produtos        - Produtos em estoque");
-  console.log("   • GET  /notifications           - Notificações");
-  console.log("   • GET  /auth/me                 - Usuário atual");
-  console.log("   • GET  /dashboard/stats         - Estatísticas gerais");
-  console.log("   • GET  /dashboard/vendas-mensais - Vendas mensais");
-  console.log("   • GET  /dashboard/produtos-mais-vendidos - Top produtos");
-  console.log("   • GET  /dashboard/faturamento-diario - Faturamento diário");
-  console.log("   • GET  /dashboard/distribuicao-categorias - Distribuição");
-  console.log("   • GET  /dashboard/insights      - Insights");
-  console.log("   • POST /auth/login              - Login");
-  console.log("🔐 Login: admin@sistema.com / password");
-  console.log("✅ Backend pronto para uso!");
-  console.log("🚀 ==========================================");
 });
 
 process.on('SIGINT', () => {
-  console.log('\n🛑 Parando servidor...');
   server.close(() => {
-    console.log('✅ Servidor parado com sucesso!');
     process.exit(0);
   });
 });
 
 process.on('SIGTERM', () => {
-  console.log('\n🛑 Parando servidor...');
   server.close(() => {
-    console.log('✅ Servidor parado com sucesso!');
     process.exit(0);
   });
 });
