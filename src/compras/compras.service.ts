@@ -22,7 +22,7 @@ export class ComprasService {
     private usuarioRepo: Repository<Usuario>,
   ) {}
 
-  // Pedidos de Compra
+  
   async listarPedidosCompra(filtros?: any): Promise<PedidoCompra[]> {
     const query = this.pedidoRepo
       .createQueryBuilder('pedido')
@@ -125,7 +125,7 @@ export class ComprasService {
     await this.pedidoRepo.remove(pedido);
   }
 
-  // Avaliações de Fornecedor
+  
   async listarAvaliacoes(filtros?: any): Promise<AvaliacaoFornecedor[]> {
     const query = this.avaliacaoRepo
       .createQueryBuilder('avaliacao')
@@ -185,7 +185,7 @@ export class ComprasService {
     
     Object.assign(avaliacao, updateAvaliacaoDto);
     
-    // Recalcular nota média
+    
     avaliacao.notaMedia = (
       avaliacao.qualidadeProdutos +
       avaliacao.prazoEntrega +
@@ -201,7 +201,7 @@ export class ComprasService {
     await this.avaliacaoRepo.remove(avaliacao);
   }
 
-  // Contratos de Fornecedor
+  
   async listarContratos(filtros?: any): Promise<ContratoFornecedor[]> {
     const query = this.contratoRepo
       .createQueryBuilder('contrato')
@@ -218,7 +218,7 @@ export class ComprasService {
 
     if (filtros?.vencendo) {
       const dataLimite = new Date();
-      dataLimite.setDate(dataLimite.getDate() + 30); // 30 dias
+      dataLimite.setDate(dataLimite.getDate() + 30); 
       query.andWhere('contrato.dataFim <= :dataLimite', { dataLimite });
     }
 
@@ -280,7 +280,7 @@ export class ComprasService {
     await this.contratoRepo.remove(contrato);
   }
 
-  // Relatórios de Compras
+  
   async obterResumoCompras(filtros?: any): Promise<any> {
     const query = this.pedidoRepo.createQueryBuilder('pedido');
 
@@ -333,7 +333,7 @@ export class ComprasService {
   }
 
   async obterRelatorioProdutos(filtros?: any): Promise<any[]> {
-    // Este método pode ser expandido quando tivermos itens de pedido
+    
     return [];
   }
 }

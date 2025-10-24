@@ -25,7 +25,7 @@ export class EstoqueService {
     private transferenciaRepo: Repository<TransferenciaEstoque>,
   ) {}
 
-  // Movimentações de Estoque
+  
   async criarMovimentacao(createMovimentacaoDto: any): Promise<MovimentacaoEstoque> {
     const produto = await this.produtoRepo.findOne({ where: { id: createMovimentacaoDto.produtoId } });
     
@@ -39,7 +39,7 @@ export class EstoqueService {
         createMovimentacaoDto.valorUnitario * createMovimentacaoDto.quantidade : undefined,
     });
 
-    // Atualizar estoque do produto
+    
     if (createMovimentacaoDto.tipo === 'entrada' || createMovimentacaoDto.tipo === 'ajuste') {
       produto.estoque += createMovimentacaoDto.quantidade;
     } else if (createMovimentacaoDto.tipo === 'saida') {
@@ -78,7 +78,7 @@ export class EstoqueService {
       .getMany();
   }
 
-  // Gestão de Lotes
+  
   async criarLote(createLoteDto: any): Promise<Lote> {
     const produto = await this.produtoRepo.findOne({ where: { id: createLoteDto.produtoId } });
     
@@ -105,7 +105,7 @@ export class EstoqueService {
 
     if (filtros?.vencimentoProximo) {
       const dataLimite = new Date();
-      dataLimite.setDate(dataLimite.getDate() + 30); // 30 dias
+      dataLimite.setDate(dataLimite.getDate() + 30); 
       query.andWhere('lote.dataValidade <= :dataLimite', { dataLimite });
     }
 
@@ -132,7 +132,7 @@ export class EstoqueService {
     const alertas = [];
 
     for (const produto of produtos) {
-      // Estoque baixo
+      
       if (produto.estoque <= 10) {
         alertas.push({
           tipo: 'estoque_baixo',
@@ -142,7 +142,7 @@ export class EstoqueService {
         });
       }
 
-      // Produto sem estoque
+      
       if (produto.estoque === 0) {
         alertas.push({
           tipo: 'sem_estoque',
@@ -153,7 +153,7 @@ export class EstoqueService {
       }
     }
 
-    // Lotes próximos do vencimento
+    
     const lotesVencendo = await this.loteRepo
       .createQueryBuilder('lote')
       .leftJoinAndSelect('lote.produto', 'produto')
@@ -185,11 +185,11 @@ export class EstoqueService {
   }
 
   async obterTransferencias(): Promise<any[]> {
-    // Por enquanto retorna array vazio, pode ser implementado futuramente
+    
     return [];
   }
 
-  // Inventários
+  
   async listarInventarios(filtros?: any): Promise<Inventario[]> {
     return await this.inventarioRepo.find({
       relations: ['responsavel'],
@@ -227,7 +227,7 @@ export class EstoqueService {
     await this.inventarioRepo.remove(inventario);
   }
 
-  // Alertas
+  
   async listarAlertas(filtros?: any): Promise<AlertaEstoque[]> {
     const query = this.alertaRepo
       .createQueryBuilder('alerta')
@@ -287,7 +287,7 @@ export class EstoqueService {
     await this.alertaRepo.remove(alerta);
   }
 
-  // Transferências
+  
   async listarTransferencias(filtros?: any): Promise<TransferenciaEstoque[]> {
     const query = this.transferenciaRepo
       .createQueryBuilder('transferencia')
@@ -355,7 +355,7 @@ export class EstoqueService {
       throw new BadRequestException('Apenas transferências pendentes podem ser confirmadas');
     }
 
-    // Atualizar estoque do produto
+    
     const produto = await this.produtoRepo.findOne({ where: { id: transferencia.produtoId } });
     produto.estoque -= transferencia.quantidade;
     await this.produtoRepo.save(produto);
@@ -371,7 +371,7 @@ export class EstoqueService {
     await this.transferenciaRepo.remove(transferencia);
   }
 
-  // Produtos em estoque
+  
   async obterProdutosEstoque(filtros?: any): Promise<any[]> {
     const query = this.produtoRepo
       .createQueryBuilder('produto')
@@ -407,7 +407,7 @@ export class EstoqueService {
         estoque: produto.estoque,
         estoqueMinimo: produto.estoqueMinimo,
       },
-      lotes: [], // TODO: Implementar relação com lotes
+      lotes: [], 
       movimentacoes: await this.listarMovimentacoes({ produtoId: id }),
     };
   }

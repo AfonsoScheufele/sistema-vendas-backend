@@ -9,7 +9,6 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log'],
   });
 
-  // Configuração de CORS mais permissiva
   app.enableCors({
     origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'],
     credentials: true,
@@ -17,7 +16,6 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
-  // Middleware para parsing JSON - ESSENCIAL para requisições POST
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -29,7 +27,6 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  // Health check endpoint
   app.use('/api/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
@@ -44,14 +41,11 @@ async function bootstrap() {
     });
   });
 
-  // Dashboard endpoints removidos - usando controllers reais
 
 
 
   const port = process.env.PORT || 5000;
   await app.listen(port);
-  console.log(`Servidor rodando em http://localhost:${port}`);
-  console.log(`🏥 Health check: http://localhost:${port}/api/health`);
 }
 
 bootstrap();

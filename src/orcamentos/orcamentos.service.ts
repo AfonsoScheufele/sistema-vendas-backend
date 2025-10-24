@@ -24,7 +24,7 @@ export class OrcamentosService {
   async create(createOrcamentoDto: CreateOrcamentoDto) {
     const { clienteId, email, telefone, itens, desconto = 0, validade, observacoes } = createOrcamentoDto;
 
-    // Verificar se o cliente existe
+    
     const cliente = await this.clienteRepo.findOne({ where: { id: clienteId } });
     if (!cliente) {
       throw new NotFoundException('Cliente não encontrado');

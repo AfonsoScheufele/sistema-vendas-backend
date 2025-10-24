@@ -29,7 +29,7 @@ export class EstoqueController {
     return this.estoqueService.listarLotes(filtros);
   }
 
-  // Inventários
+  
   @Get('inventarios')
   listarInventarios(@Query() filtros: any) {
     return this.estoqueService.listarInventarios(filtros);
@@ -57,7 +57,7 @@ export class EstoqueController {
     return this.estoqueService.removerInventario(+id);
   }
 
-  // Alertas
+  
   @Get('alertas')
   listarAlertas(@Query() filtros: any) {
     return this.estoqueService.listarAlertas(filtros);
@@ -90,7 +90,7 @@ export class EstoqueController {
     return this.estoqueService.removerAlerta(+id);
   }
 
-  // Transferências
+  
   @Get('transferencias')
   listarTransferencias(@Query() filtros: any) {
     return this.estoqueService.listarTransferencias(filtros);
@@ -123,7 +123,7 @@ export class EstoqueController {
     return this.estoqueService.removerTransferencia(+id);
   }
 
-  // Produtos em estoque
+  
   @Get('produtos')
   obterProdutosEstoque(@Query() filtros: any) {
     return this.estoqueService.obterProdutosEstoque(filtros);

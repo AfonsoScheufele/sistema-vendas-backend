@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'],
+    origin: ['http:
     credentials: true,
   },
   namespace: '/',
@@ -24,7 +24,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   server: Server;
 
   private readonly logger = new Logger(RealtimeGateway.name);
-  private connectedUsers = new Map<string, string>(); // socketId -> userId
+  private connectedUsers = new Map<string, string>(); 
 
   constructor(private jwtService: JwtService) {}
 
@@ -44,13 +44,13 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
       
       this.logger.log(`Usuário ${payload.sub || payload.id} conectado via socket ${client.id}`);
       
-      // Notificar que o usuário está online
+      
       client.emit('connected', { 
         message: 'Conectado com sucesso',
         userId: payload.sub || payload.id 
       });
 
-      // Adicionar usuário a uma sala específica
+      
       client.join(`user_${payload.sub || payload.id}`);
 
     } catch (error) {
@@ -89,7 +89,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     client.emit('pong', { timestamp: new Date().toISOString() });
   }
 
-  // Métodos para enviar notificações
+  
   sendToUser(userId: string, event: string, data: any) {
     this.server.to(`user_${userId}`).emit(event, data);
   }
@@ -102,17 +102,17 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     this.server.to(room).emit(event, data);
   }
 
-  // Método para notificar nova venda
+  
   notifyNewSale(saleData: any) {
     this.sendToAll('new_sale', saleData);
   }
 
-  // Método para notificar atualização de estoque
+  
   notifyStockUpdate(stockData: any) {
     this.sendToAll('stock_update', stockData);
   }
 
-  // Método para notificar nova notificação
+  
   notifyNewNotification(userId: string, notification: any) {
     this.sendToUser(userId, 'new_notification', notification);
   }

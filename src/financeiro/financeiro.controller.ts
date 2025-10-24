@@ -44,7 +44,7 @@ export class FinanceiroController {
     return this.financeiroService.obterResumoFinanceiro();
   }
 
-  // Investimentos
+  
   @Get('investimentos')
   listarInvestimentos(@Query() filtros: any) {
     return this.financeiroService.listarInvestimentos(filtros);
@@ -77,7 +77,7 @@ export class FinanceiroController {
     return this.financeiroService.removerInvestimento(+id);
   }
 
-  // Orçamentos Financeiros
+  
   @Get('orcamentos')
   listarOrcamentos(@Query() filtros: any) {
     return this.financeiroService.listarOrcamentos(filtros);
@@ -110,7 +110,7 @@ export class FinanceiroController {
     return this.financeiroService.removerOrcamento(+id);
   }
 
-  // Relatórios Financeiros
+  
   @Get('relatorios/investimentos')
   obterRelatorioInvestimentos(@Query() filtros: any) {
     return this.financeiroService.obterRelatorioInvestimentos(filtros);

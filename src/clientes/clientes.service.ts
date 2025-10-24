@@ -79,7 +79,7 @@ export class ClientesService {
 
   async getVendasCliente(id: number) {
     const cliente = await this.findOne(id);
-    // Implementar busca de vendas do cliente
+    
     return {
       cliente,
       vendas: [],

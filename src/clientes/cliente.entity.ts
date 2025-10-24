@@ -54,7 +54,7 @@ export class Cliente {
   observacoes?: string;
 
   @Column({ default: 'PF' })
-  tipo!: string; // PF ou PJ
+  tipo!: string; 
 
 
   @Column({ default: true })

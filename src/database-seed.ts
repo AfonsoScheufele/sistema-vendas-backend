@@ -15,7 +15,7 @@ async function seed() {
   const usuarioRepo = app.get<Repository<Usuario>>(getRepositoryToken(Usuario));
 
   try {
-    // Criar usuário admin
+    
     const adminExists = await usuarioRepo.findOne({ where: { cpf: '08551935909' } });
     if (!adminExists) {
       const hashedPassword = await bcrypt.hash('123456', 10);
@@ -31,7 +31,7 @@ async function seed() {
       console.log('✅ Usuário admin criado');
     }
 
-    // Criar vendedor
+    
     const vendedorExists = await usuarioRepo.findOne({ where: { cpf: '12345678901' } });
     if (!vendedorExists) {
       const hashedPassword = await bcrypt.hash('123456', 10);
@@ -47,7 +47,7 @@ async function seed() {
       console.log('✅ Usuário vendedor criado');
     }
 
-    // Criar produtos de exemplo
+    
     const produtosExemplo = [
       {
         nome: 'Notebook Dell Inspiron',
@@ -140,7 +140,7 @@ async function seed() {
       }
     }
 
-    // Criar clientes de exemplo
+    
     const clientesExemplo = [
       {
         nome: 'Maria Silva',

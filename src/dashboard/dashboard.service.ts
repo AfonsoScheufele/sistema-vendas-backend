@@ -33,7 +33,7 @@ export class DashboardService {
 
   async getStats(periodo = '30d'): Promise<DashboardStats> {
     try {
-      // Dados básicos sem consultas complexas
+      
       const [
         totalProdutos,
         totalClientes,

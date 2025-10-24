@@ -141,8 +141,8 @@ export class FiscalService {
   async gerarXML(id: number): Promise<string> {
     const notaFiscal = await this.obterNotaFiscal(id);
     
-    // Aqui você implementaria a geração real do XML
-    // Por enquanto, retornamos um XML mock
+    
+    
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <nfeProc>
   <NFe>
@@ -199,7 +199,7 @@ export class FiscalService {
   </NFe>
 </nfeProc>`;
 
-    // Salvar XML na nota fiscal
+    
     notaFiscal.xml = xml;
     await this.notaFiscalRepo.save(notaFiscal);
 
@@ -209,11 +209,11 @@ export class FiscalService {
   async gerarPDF(id: number): Promise<string> {
     const notaFiscal = await this.obterNotaFiscal(id);
     
-    // Aqui você implementaria a geração real do PDF
-    // Por enquanto, retornamos um PDF mock (base64)
+    
+    
     const pdfContent = `PDF da Nota Fiscal ${notaFiscal.numero} - ${notaFiscal.cliente}`;
     
-    // Salvar PDF na nota fiscal
+    
     notaFiscal.pdf = pdfContent;
     await this.notaFiscalRepo.save(notaFiscal);
 

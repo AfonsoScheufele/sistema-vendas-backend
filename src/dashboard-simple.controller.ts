@@ -76,7 +76,7 @@ export class DashboardSimpleController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/dashboard')
 export class ApiDashboardSimpleController {
   

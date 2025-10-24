@@ -80,8 +80,8 @@ export class CotacoesService {
       throw new BadRequestException('Só é possível enviar cotações abertas');
     }
 
-    // Aqui você implementaria a lógica de envio por email/SMS
-    // Por enquanto, apenas atualizamos o status
+    
+    
     cotacao.status = 'em_analise';
     return await this.cotacaoRepo.save(cotacao);
   }
@@ -94,7 +94,7 @@ export class CotacoesService {
     }
 
     const novaProposta = {
-      id: Date.now(), // ID temporário
+      id: Date.now(), 
       ...propostaDto,
       fornecedorNome: cotacao.fornecedores.find(f => f.id === propostaDto.fornecedorId)?.nome || 'Fornecedor',
       dataProposta: new Date(),

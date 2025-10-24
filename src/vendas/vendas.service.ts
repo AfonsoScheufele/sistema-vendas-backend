@@ -142,7 +142,7 @@ export class VendasService {
     
     const vendas = await query.getMany();
     
-    // Transformar vendas em comissões individuais por item
+    
     const comissoes = [];
     
     for (const venda of vendas) {
@@ -155,7 +155,7 @@ export class VendasService {
           quantidade: item.quantidade,
           precoUnitario: item.preco_unitario,
           valorTotal: item.quantidade * item.preco_unitario,
-          percentualComissao: 5, // 5% padrão
+          percentualComissao: 5, 
           valorComissao: (item.quantidade * item.preco_unitario) * 0.05,
           data: venda.data,
           status: 'pendente'
@@ -205,7 +205,7 @@ export class VendasService {
       throw new NotFoundException('Venda não encontrada');
     }
 
-    // Restaurar estoque dos produtos
+    
     for (const item of venda.itens) {
       const produto = await this.produtoRepo.findOneBy({ id: item.produto.id });
       if (produto) {
@@ -217,7 +217,7 @@ export class VendasService {
     await this.vendaRepo.delete(id);
   }
 
-  // Pipeline de Vendas
+  
   async obterPipeline(filtros?: any): Promise<OportunidadeVenda[]> {
     const query = this.oportunidadeRepo
       .createQueryBuilder('oportunidade')
@@ -282,7 +282,7 @@ export class VendasService {
     await this.oportunidadeRepo.remove(oportunidade);
   }
 
-  // Comissões
+  
   async obterComissoes(filtros?: any): Promise<Comissao[]> {
     const query = this.comissaoRepo
       .createQueryBuilder('comissao')
@@ -323,7 +323,7 @@ export class VendasService {
     return await this.comissaoRepo.save(comissao);
   }
 
-  // Metas
+  
   async obterMetas(filtros?: any): Promise<MetaVenda[]> {
     const query = this.metaRepo
       .createQueryBuilder('meta')
@@ -376,7 +376,7 @@ export class VendasService {
     await this.metaRepo.remove(meta);
   }
 
-  // Relatórios de Vendas
+  
   async obterResumoVendas(filtros?: any): Promise<any> {
     const query = this.vendaRepo.createQueryBuilder('venda');
 

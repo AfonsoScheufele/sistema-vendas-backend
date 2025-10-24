@@ -13,7 +13,7 @@ export class LogisticaService {
     private expedicaoRepo: Repository<Expedicao>,
   ) {}
 
-  // Gestão de Transportadoras
+  
   async criarTransportadora(createTransportadoraDto: any): Promise<Transportadora> {
     const transportadora = this.transportadoraRepo.create(createTransportadoraDto);
     return await this.transportadoraRepo.save(transportadora) as unknown as Transportadora;
@@ -36,7 +36,7 @@ export class LogisticaService {
     return transportadora;
   }
 
-  // Gestão de Expedições
+  
   private gerarNumeroExpedicao(): string {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);

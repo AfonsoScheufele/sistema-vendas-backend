@@ -7,7 +7,7 @@ import { ComprasService } from './compras.service';
 export class ComprasController {
   constructor(private readonly comprasService: ComprasService) {}
 
-  // Pedidos de Compra
+  
   @Get('pedidos')
   listarPedidosCompra(@Query() filtros: any) {
     return this.comprasService.listarPedidosCompra(filtros);
@@ -50,7 +50,7 @@ export class ComprasController {
     return this.comprasService.removerPedidoCompra(+id);
   }
 
-  // Avaliações de Fornecedor
+  
   @Get('avaliacoes')
   listarAvaliacoes(@Query() filtros: any) {
     return this.comprasService.listarAvaliacoes(filtros);
@@ -78,7 +78,7 @@ export class ComprasController {
     return this.comprasService.removerAvaliacao(+id);
   }
 
-  // Contratos de Fornecedor
+  
   @Get('contratos')
   listarContratos(@Query() filtros: any) {
     return this.comprasService.listarContratos(filtros);
@@ -111,7 +111,7 @@ export class ComprasController {
     return this.comprasService.removerContrato(+id);
   }
 
-  // Relatórios de Compras
+  
   @Get('relatorios/resumo')
   obterResumoCompras(@Query() filtros: any) {
     return this.comprasService.obterResumoCompras(filtros);

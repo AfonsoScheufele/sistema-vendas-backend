@@ -57,7 +57,7 @@ export class ClientesController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/clientes')
 @UseGuards(JwtAuthGuard)
 export class ApiClientesController {

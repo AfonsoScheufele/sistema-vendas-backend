@@ -42,7 +42,7 @@ export class PedidosController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/pedidos')
 @UseGuards(JwtAuthGuard)
 export class ApiPedidosController {

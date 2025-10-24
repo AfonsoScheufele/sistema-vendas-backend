@@ -55,7 +55,7 @@ export class ProdutosController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/produtos')
 export class ApiProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}

@@ -13,7 +13,7 @@ export class FornecedoresService {
   ) {}
 
   async create(createFornecedorDto: CreateFornecedorDto): Promise<Fornecedor> {
-    // Verificar se CNPJ já existe
+    
     const cnpjExiste = await this.fornecedorRepo.findOne({
       where: { cnpj: createFornecedorDto.cnpj.replace(/\D/g, '') }
     });
@@ -69,7 +69,7 @@ export class FornecedoresService {
   async update(id: number, updateFornecedorDto: UpdateFornecedorDto): Promise<Fornecedor> {
     const fornecedor = await this.findOne(id);
 
-    // Verificar CNPJ se estiver sendo alterado
+    
     if (updateFornecedorDto.cnpj && updateFornecedorDto.cnpj !== fornecedor.cnpj) {
       const cnpjExiste = await this.fornecedorRepo.findOne({
         where: { cnpj: updateFornecedorDto.cnpj.replace(/\D/g, '') }

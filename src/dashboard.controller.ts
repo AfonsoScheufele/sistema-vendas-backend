@@ -81,7 +81,7 @@ export class DashboardController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/dashboard')
 export class ApiDashboardController {
   

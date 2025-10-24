@@ -7,7 +7,7 @@ import { VendasService } from './vendas.service';
 export class VendasController {
   constructor(private readonly vendasService: VendasService) {}
 
-  // Pipeline de Vendas
+  
   @Get('pipeline')
   obterPipeline(@Query() filtros: any) {
     return this.vendasService.obterPipeline(filtros);
@@ -40,7 +40,7 @@ export class VendasController {
     return this.vendasService.removerOportunidade(+id);
   }
 
-  // Comissões
+  
   @Get('comissoes')
   obterComissoes(@Query() filtros: any) {
     return this.vendasService.obterComissoes(filtros);
@@ -56,7 +56,7 @@ export class VendasController {
     return this.vendasService.pagarComissao(+id);
   }
 
-  // Metas
+  
   @Get('metas')
   obterMetas(@Query() filtros: any) {
     return this.vendasService.obterMetas(filtros);
@@ -84,7 +84,7 @@ export class VendasController {
     return this.vendasService.removerMeta(+id);
   }
 
-  // Relatórios de Vendas
+  
   @Get('relatorios/resumo')
   obterResumoVendas(@Query() filtros: any) {
     return this.vendasService.obterResumoVendas(filtros);

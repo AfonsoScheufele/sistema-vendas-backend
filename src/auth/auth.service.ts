@@ -18,7 +18,6 @@ export class AuthService {
     const user = await this.usuarioRepo.findOne({ where: { cpf } });
     
     if (user && await bcrypt.compare(senha, user.senha)) {
-      // Atualizar último login
       await this.usuarioRepo.update(user.id, { ultimoLogin: new Date() });
       
       const { senha, ...result } = user;
@@ -77,14 +76,14 @@ export class AuthService {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 3600000); // 1 hora
+    const resetExpires = new Date(Date.now() + 3600000); 
 
     await this.usuarioRepo.update(user.id, {
       resetPasswordToken: resetToken,
       resetPasswordExpires: resetExpires,
     });
 
-    // Aqui você implementaria o envio de email
+    
     console.log(`Token de recuperação para CPF ${cpf}: ${resetToken}`);
 
     return {

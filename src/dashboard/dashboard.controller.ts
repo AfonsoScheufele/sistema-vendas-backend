@@ -24,7 +24,6 @@ export class DashboardController {
     try {
       return await this.dashboardService.getStats(periodo);
     } catch (error) {
-      console.error('Erro no controller:', error);
       throw error;
     }
   }
@@ -75,7 +74,7 @@ export class DashboardController {
   }
 }
 
-// Controller adicional para compatibilidade com o frontend
+
 @Controller('api/dashboard')
 @UseGuards(JwtAuthGuard)
 export class ApiDashboardController {

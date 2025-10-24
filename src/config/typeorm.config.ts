@@ -5,7 +5,6 @@ import { Venda } from '../vendas/venda.entity';
 import { ItemVenda } from '../vendas/item-venda.entity';
 import { Usuario } from '../auth/usuario.entity';
 
-console.log('DB_PASSWORD:', process.env.DB_PASSWORD);
 
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'postgres',

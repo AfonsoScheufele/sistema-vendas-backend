@@ -22,7 +22,7 @@ export class FinanceiroService {
     private usuarioRepo: Repository<Usuario>,
   ) {}
 
-  // Gestão de Bancos
+  
   async criarBanco(createBancoDto: any): Promise<Banco> {
     const banco = this.bancoRepo.create(createBancoDto);
     return await this.bancoRepo.save(banco) as unknown as Banco;
@@ -45,14 +45,14 @@ export class FinanceiroService {
     return banco;
   }
 
-  // Movimentações Financeiras
+  
   async criarMovimentacao(createMovimentacaoDto: any): Promise<MovimentacaoFinanceira> {
     const banco = await this.obterBanco(createMovimentacaoDto.bancoId);
     
     const movimentacao = this.movimentacaoRepo.create(createMovimentacaoDto);
     const movimentacaoSalva = await this.movimentacaoRepo.save(movimentacao);
 
-    // Atualizar saldo do banco
+    
     if (createMovimentacaoDto.tipo === 'receita') {
       banco.saldo += createMovimentacaoDto.valor;
     } else if (createMovimentacaoDto.tipo === 'despesa') {
@@ -194,7 +194,7 @@ export class FinanceiroService {
     };
   }
 
-  // Investimentos
+  
   async listarInvestimentos(filtros?: any): Promise<Investimento[]> {
     const query = this.investimentoRepo
       .createQueryBuilder('investimento')
@@ -240,7 +240,7 @@ export class FinanceiroService {
     
     Object.assign(investimento, updateInvestimentoDto);
     
-    // Recalcular rentabilidade
+    
     if (updateInvestimentoDto.valorAtual) {
       investimento.rentabilidade = ((investimento.valorAtual - investimento.valorInvestido) / investimento.valorInvestido) * 100;
     }
@@ -267,7 +267,7 @@ export class FinanceiroService {
     await this.investimentoRepo.remove(investimento);
   }
 
-  // Orçamentos Financeiros
+  
   async listarOrcamentos(filtros?: any): Promise<OrcamentoFinanceiro[]> {
     const query = this.orcamentoRepo
       .createQueryBuilder('orcamento')
@@ -320,7 +320,7 @@ export class FinanceiroService {
     
     Object.assign(orcamento, updateOrcamentoDto);
     
-    // Recalcular valor restante
+    
     orcamento.valorRestante = orcamento.valorOrcado - orcamento.valorGasto;
     
     return await this.orcamentoRepo.save(orcamento);
@@ -348,7 +348,7 @@ export class FinanceiroService {
     await this.orcamentoRepo.remove(orcamento);
   }
 
-  // Relatórios Financeiros
+  
   async obterRelatorioInvestimentos(filtros?: any): Promise<any> {
     const query = this.investimentoRepo.createQueryBuilder('investimento');
 
