@@ -27,7 +27,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  app.use('/api/health', (req, res) => {
+  app.use('/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -40,9 +40,6 @@ async function bootstrap() {
       }
     });
   });
-
-
-
 
   const port = process.env.PORT || 5000;
   await app.listen(port);

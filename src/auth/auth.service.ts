@@ -15,15 +15,48 @@ export class AuthService {
   ) {}
 
   async validateUser(cpf: string, senha: string): Promise<any> {
-    const user = await this.usuarioRepo.findOne({ where: { cpf } });
-    
-    if (user && await bcrypt.compare(senha, user.senha)) {
-      await this.usuarioRepo.update(user.id, { ultimoLogin: new Date() });
+    try {
+      const cpfLimpo = cpf.replace(/[^\d]/g, '');
       
-      const { senha, ...result } = user;
-      return result;
+      // Usar query direta para debug
+      const users = await this.usuarioRepo.query(
+        'SELECT id, name, cpf, email, role, avatar, ativo FROM usuarios WHERE cpf = $1',
+        [cpfLimpo]
+      );
+      
+      if (!users || users.length === 0) {
+        return null;
+      }
+
+      const user = users[0];
+      
+      // Buscar a senha separadamente
+      const senhaResult = await this.usuarioRepo.query(
+        'SELECT senha FROM usuarios WHERE cpf = $1',
+        [cpfLimpo]
+      );
+      
+      if (!senhaResult || senhaResult.length === 0) {
+        return null;
+      }
+
+      const isPasswordValid = await bcrypt.compare(senha, senhaResult[0].senha);
+      
+      if (!isPasswordValid) {
+        return null;
+      }
+
+      // Atualizar último login
+      await this.usuarioRepo.query(
+        'UPDATE usuarios SET "ultimoLogin" = NOW() WHERE cpf = $1',
+        [cpfLimpo]
+      );
+      
+      return user;
+    } catch (error) {
+      console.error('Error in validateUser:', error);
+      return null;
     }
-    return null;
   }
 
   async register(cpf: string, senha: string, name: string, role: string = 'User', email?: string): Promise<Usuario> {
