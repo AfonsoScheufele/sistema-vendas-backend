@@ -24,6 +24,16 @@ export class ComprasExpandedController {
     return { total: 0, pendentes: 0, aprovadas: 0, rejeitadas: 0, valorTotal: 0 };
   }
 
+  @Get('compras/pedidos')
+  async listarPedidos() {
+    return [];
+  }
+
+  @Get('compras/pedidos/stats')
+  async obterStatsPedidos() {
+    return { total: 0, rascunho: 0, enviado: 0, confirmado: 0, recebido: 0, cancelado: 0 };
+  }
+
   @Get('fornecedores')
   async listarFornecedores() {
     return [];
