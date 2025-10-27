@@ -10,6 +10,11 @@ export class DashboardController {
     return await this.dashboardService.getStats(periodo);
   }
 
+  @Get('insights')
+  getInsights() {
+    return this.dashboardService.getInsights();
+  }
+
   @Get('vendas-mensais')
   getVendasMensais(@Query('ano') ano?: number) {
     return this.dashboardService.getVendasMensais(ano);

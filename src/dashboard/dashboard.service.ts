@@ -70,4 +70,13 @@ export class DashboardService {
   async getDistribuicaoCategorias(): Promise<DistribuicaoCategoria[]> {
     return [];
   }
+
+  async getInsights() {
+    return {
+      produtosBaixoEstoque: 0,
+      crescimentoSemanal: 0,
+      clienteTop: null,
+      alertas: []
+    };
+  }
 }

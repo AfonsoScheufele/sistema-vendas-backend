@@ -27,6 +27,7 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
+  // Health check before setting global prefix
   app.use('/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
@@ -40,6 +41,9 @@ async function bootstrap() {
       }
     });
   });
+
+  // Set global prefix after health check
+  app.setGlobalPrefix('api');
 
   const port = process.env.PORT || 5000;
   await app.listen(port);
