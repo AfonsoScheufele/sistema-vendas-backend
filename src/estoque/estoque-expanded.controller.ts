@@ -21,6 +21,11 @@ export class EstoqueExpandedController {
     return [];
   }
 
+  @Get('estoque/lotes')
+  async listarLotes() {
+    return [];
+  }
+
   @Get('estoque/transferencias')
   async listarTransferencias() {
     return [];
