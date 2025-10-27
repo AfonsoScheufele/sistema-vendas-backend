@@ -13,8 +13,10 @@ export class PedidosService {
     private itemPedidoRepo: Repository<ItemPedido>,
   ) {}
 
-  async listarPedidos(): Promise<Pedido[]> {
+  async listarPedidos(status?: string): Promise<Pedido[]> {
+    const where = status ? { status } : {};
     return await this.pedidoRepo.find({
+      where,
       relations: ['cliente', 'vendedor', 'itens', 'itens.produto'],
       order: { dataPedido: 'DESC' }
     });
@@ -33,6 +35,23 @@ export class PedidosService {
     return pedido;
   }
 
+  async criar(data: Partial<Pedido>): Promise<Pedido> {
+    const pedido = this.pedidoRepo.create(data);
+    return await this.pedidoRepo.save(pedido);
+  }
+
+  async atualizar(id: number, data: Partial<Pedido>): Promise<Pedido> {
+    await this.pedidoRepo.update(id, data);
+    return await this.obterPedido(id);
+  }
+
+  async excluir(id: number): Promise<void> {
+    const result = await this.pedidoRepo.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+  }
+
   async obterEstatisticas() {
     const total = await this.pedidoRepo.count();
     const pendentes = await this.pedidoRepo.count({ where: { status: 'pendente' } });
@@ -40,13 +59,14 @@ export class PedidosService {
     const cancelados = await this.pedidoRepo.count({ where: { status: 'cancelado' } });
 
     return {
-      total,
-      pendentes,
-      concluidos,
-      cancelados
+      totalPedidos: total,
+      pedidosPendentes: pendentes,
+      totalVendas: 0,
+      totalComissoes: 0
     };
   }
 }
+
 
 
 
