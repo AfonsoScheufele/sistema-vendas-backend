@@ -14,6 +14,8 @@ import { FiscalExpandedModule } from './fiscal/fiscal-expanded.module';
 import { EstoqueExpandedModule } from './estoque/estoque-expanded.module';
 import { LogisticaModule } from './logistica/logistica.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { ComissoesModule } from './comissoes/comissoes.module';
+import { VendedoresModule } from './vendedores/vendedores.module';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
@@ -67,6 +69,8 @@ import { Campanha } from './crm/campanha.entity';
     EstoqueExpandedModule,
     LogisticaModule,
     WebSocketModule,
+    ComissoesModule,
+    VendedoresModule,
   ],
 })
 export class AppModule {}
