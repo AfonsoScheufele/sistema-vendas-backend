@@ -16,6 +16,7 @@ import { LogisticaModule } from './logistica/logistica.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { ComissoesModule } from './comissoes/comissoes.module';
 import { VendedoresModule } from './vendedores/vendedores.module';
+import { FinanceiroModule } from './financeiro/financeiro.module';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
@@ -71,6 +72,7 @@ import { Campanha } from './crm/campanha.entity';
     WebSocketModule,
     ComissoesModule,
     VendedoresModule,
+    FinanceiroModule,
   ],
 })
 export class AppModule {}
