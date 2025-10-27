@@ -8,5 +8,10 @@ export class FinanceiroController {
   async listarContasReceber() {
     return [];
   }
+
+  @Get('pagar')
+  async listarContasPagar() {
+    return [];
+  }
 }
 
