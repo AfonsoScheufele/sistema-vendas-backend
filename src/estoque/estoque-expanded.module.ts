@@ -6,3 +6,5 @@ import { EstoqueExpandedController } from './estoque-expanded.controller';
 })
 export class EstoqueExpandedModule {}
 
+
+

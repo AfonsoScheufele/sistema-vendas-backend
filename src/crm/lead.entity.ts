@@ -33,3 +33,5 @@ export class Lead {
   ultimaAtualizacao: Date;
 }
 
+
+
