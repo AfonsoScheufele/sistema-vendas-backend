@@ -1,8 +1,7 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Inject, forwardRef } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { ProdutosModule } from '../produtos/produtos.module';
 import { ProdutosService } from '../produtos/produtos.service';
-import { Inject, forwardRef } from '@nestjs/common';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -15,6 +14,11 @@ export class EstoqueExpandedController {
   @Get('estoque/produtos')
   async listarProdutosEstoque() {
     return await this.produtosService.findAll();
+  }
+
+  @Get('estoque/movimentacoes')
+  async listarMovimentacoes(@Query('periodo') periodo?: string) {
+    return [];
   }
 
   @Get('estoque/transferencias')
