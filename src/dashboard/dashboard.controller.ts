@@ -39,4 +39,29 @@ export class DashboardController {
   getDistribuicaoCategorias() {
     return this.dashboardService.getDistribuicaoCategorias();
   }
+
+  @Get('relatorios/vendas')
+  getRelatorioVendas(@Query('periodo') periodo?: string) {
+    return this.dashboardService.getRelatorioVendas(periodo);
+  }
+
+  @Get('relatorios/clientes')
+  getRelatorioClientes(@Query('periodo') periodo?: string) {
+    return this.dashboardService.getRelatorioClientes(periodo);
+  }
+
+  @Get('relatorios/estoque')
+  getRelatorioEstoque(@Query('periodo') periodo?: string) {
+    return this.dashboardService.getRelatorioEstoque(periodo);
+  }
+
+  @Get('relatorios/financeiro')
+  getRelatorioFinanceiro(@Query('periodo') periodo?: string, @Query('tipo') tipo?: string) {
+    return this.dashboardService.getRelatorioFinanceiro(periodo, tipo);
+  }
+
+  @Get('relatorios/compras')
+  getRelatorioCompras() {
+    return this.dashboardService.getRelatorioCompras();
+  }
 }

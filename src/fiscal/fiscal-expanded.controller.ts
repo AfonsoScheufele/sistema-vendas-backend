@@ -18,6 +18,16 @@ export class FiscalExpandedController {
   async obterDistribuicaoClientes() {
     return [];
   }
+
+  @Get('fiscal/sped')
+  async listarSped() {
+    return [];
+  }
+
+  @Get('fiscal/relatorios')
+  async listarRelatorios() {
+    return [];
+  }
 }
 
 

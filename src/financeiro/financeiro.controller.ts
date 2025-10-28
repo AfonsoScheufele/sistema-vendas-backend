@@ -13,5 +13,30 @@ export class FinanceiroController {
   async listarContasPagar() {
     return [];
   }
+
+  @Get('fluxo-caixa')
+  async listarFluxoCaixa() {
+    return [];
+  }
+
+  @Get('bancos')
+  async listarBancos() {
+    return [];
+  }
+
+  @Get('conciliacao')
+  async listarConciliacao() {
+    return [];
+  }
+
+  @Get('investimentos')
+  async listarInvestimentos() {
+    return [];
+  }
+
+  @Get('orcamento')
+  async listarOrcamento() {
+    return [];
+  }
 }
 

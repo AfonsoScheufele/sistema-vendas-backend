@@ -17,6 +17,8 @@ import { WebSocketModule } from './websocket/websocket.module';
 import { ComissoesModule } from './comissoes/comissoes.module';
 import { VendedoresModule } from './vendedores/vendedores.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
+import { AutomacaoModule } from './automacao/automacao.module';
+import { UsuarioModule } from './usuario/usuario.module';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
@@ -27,6 +29,7 @@ import { Orcamento } from './orcamentos/orcamento.entity';
 import { Lead } from './crm/lead.entity';
 import { Oportunidade } from './crm/oportunidade.entity';
 import { Campanha } from './crm/campanha.entity';
+import { Workflow } from './automacao/workflow.entity';
 
 @Module({
   imports: [
@@ -52,6 +55,7 @@ import { Campanha } from './crm/campanha.entity';
           Lead,
           Oportunidade,
           Campanha,
+          Workflow,
         ],
         synchronize: true,
         logging: configService.get<string>('NODE_ENV') !== 'production',
@@ -73,6 +77,8 @@ import { Campanha } from './crm/campanha.entity';
     ComissoesModule,
     VendedoresModule,
     FinanceiroModule,
+    AutomacaoModule,
+    UsuarioModule,
   ],
 })
 export class AppModule {}
