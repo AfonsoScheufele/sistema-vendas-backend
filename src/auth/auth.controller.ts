@@ -29,22 +29,19 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: { cpf: string; senha: string }) {
-    // Para teste, vamos aceitar qualquer CPF com senha 123456
-    const mockUser = {
-      id: 1,
-      name: 'Usuário Teste',
-      cpf: body.cpf.replace(/[^\d]/g, ''),
-      email: 'teste@teste.com',
-      role: 'Admin',
-      avatar: null
-    };
+    // Validar usuário e senha
+    const user = await this.authService.validateUser(body.cpf, body.senha);
+    
+    if (!user) {
+      throw new UnauthorizedException('CPF ou senha inválidos');
+    }
 
-    const tokens = await this.authService.login(mockUser);
+    const tokens = await this.authService.login(user);
     
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      user: mockUser
+      user
     };
   }
 
@@ -104,7 +101,10 @@ export class AuthController {
         cpf: req.user.cpf,
         email: 'teste@teste.com',
         role: req.user.role,
-        avatar: null
+        avatar: null,
+        dataCriacao: new Date(),
+        ultimoLogin: new Date(),
+        ativo: true
       };
     }
 
@@ -114,7 +114,10 @@ export class AuthController {
       cpf: user.cpf,
       email: user.email,
       role: user.role,
-      avatar: user.avatar
+      avatar: user.avatar,
+      dataCriacao: user.dataCriacao,
+      ultimoLogin: user.ultimoLogin,
+      ativo: user.ativo
     };
   }
 
@@ -145,8 +148,16 @@ export class AuthController {
       throw new BadRequestException('Token e nova senha são obrigatórios');
     }
 
-    if (body.novaSenha.length < 6) {
-      throw new BadRequestException('A senha deve ter pelo menos 6 caracteres');
+    if (body.novaSenha.length < 8) {
+      throw new BadRequestException('A senha deve ter pelo menos 8 caracteres');
+    }
+
+    if (!/[A-Za-z]/.test(body.novaSenha)) {
+      throw new BadRequestException('A senha deve conter pelo menos uma letra');
+    }
+
+    if (!/[0-9]/.test(body.novaSenha)) {
+      throw new BadRequestException('A senha deve conter pelo menos um número');
     }
 
     const result = await this.authService.redefinirSenha(body.token, body.novaSenha);

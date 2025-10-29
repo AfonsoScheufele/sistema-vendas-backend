@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
+import { EmailService } from '../config/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -12,6 +13,7 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
+    private emailService: EmailService,
   ) {}
 
   async validateUser(cpf: string, senha: string): Promise<any> {
@@ -99,24 +101,39 @@ export class AuthService {
   }
 
   async solicitarRecuperacaoSenha(cpf: string): Promise<{ message: string; success: boolean }> {
-    const user = await this.usuarioRepo.findOne({ where: { cpf } });
+    const cpfLimpo = cpf.replace(/[^\d]/g, '');
     
-    if (!user) {
+    // Buscar usuário usando query direta
+    const users = await this.usuarioRepo.query(
+      'SELECT id, email FROM usuarios WHERE cpf = $1',
+      [cpfLimpo]
+    );
+    
+    if (!users || users.length === 0) {
       return {
         message: 'Se o CPF existir em nosso sistema, você receberá instruções para redefinir sua senha.',
         success: true
       };
     }
 
+    const user = users[0];
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetExpires = new Date(Date.now() + 3600000); 
 
-    await this.usuarioRepo.update(user.id, {
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: resetExpires,
-    });
+    await this.usuarioRepo.query(
+      'UPDATE usuarios SET "resetPasswordToken" = $1, "resetPasswordExpires" = $2 WHERE cpf = $3',
+      [resetToken, resetExpires, cpfLimpo]
+    );
 
-    
+    // Enviar e-mail de recuperação
+    if (user.email) {
+      try {
+        await this.emailService.sendResetPasswordEmail(user.email, resetToken);
+      } catch (error) {
+        console.error('Erro ao enviar e-mail:', error);
+        // Não lança erro, apenas registra no log
+      }
+    }
 
     return {
       message: 'Se o CPF existir em nosso sistema, você receberá instruções para redefinir sua senha.',
