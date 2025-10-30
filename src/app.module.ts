@@ -30,6 +30,8 @@ import { Lead } from './crm/lead.entity';
 import { Oportunidade } from './crm/oportunidade.entity';
 import { Campanha } from './crm/campanha.entity';
 import { Workflow } from './automacao/workflow.entity';
+import { RoleEntity } from './roles/role.entity';
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -56,6 +58,7 @@ import { Workflow } from './automacao/workflow.entity';
           Oportunidade,
           Campanha,
           Workflow,
+          RoleEntity,
         ],
         synchronize: true,
         logging: configService.get<string>('NODE_ENV') !== 'production',
@@ -79,6 +82,7 @@ import { Workflow } from './automacao/workflow.entity';
     FinanceiroModule,
     AutomacaoModule,
     UsuarioModule,
+    RolesModule,
   ],
 })
 export class AppModule {}

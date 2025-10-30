@@ -40,7 +40,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       ...(typeof message === 'object' && message !== null ? message : {}),
     };
 
-    
+
     this.logger.error(
       `${request.method} ${request.url}`,
       exception instanceof Error ? exception.stack : exception,

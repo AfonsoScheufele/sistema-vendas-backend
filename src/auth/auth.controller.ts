@@ -29,15 +29,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: { cpf: string; senha: string }) {
-    // Validar usuário e senha
     const user = await this.authService.validateUser(body.cpf, body.senha);
-    
+
     if (!user) {
       throw new UnauthorizedException('CPF ou senha inválidos');
     }
 
     const tokens = await this.authService.login(user);
-    
+
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -92,8 +91,7 @@ export class AuthController {
   @Get('me')
   async getProfile(@Req() req: AuthRequest) {
     const user = await this.authService.findById(req.user.id);
-    
-    // Se o usuário não for encontrado, retorna os dados do token (usuário mock)
+
     if (!user) {
       return {
         id: req.user.id,
@@ -129,7 +127,7 @@ export class AuthController {
     }
 
     const result = await this.authService.solicitarRecuperacaoSenha(body.cpf);
-    
+
     return {
       message: result.message,
       success: result.success

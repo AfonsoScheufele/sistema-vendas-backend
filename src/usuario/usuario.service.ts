@@ -76,7 +76,6 @@ export class UsuarioService {
     senha: string;
     role: string;
   }): Promise<Usuario> {
-    // Verificar se CPF já existe
     const existingUser = await this.usuarioRepository.findOne({
       where: { cpf: createUsuarioDto.cpf }
     });
@@ -85,17 +84,14 @@ export class UsuarioService {
       throw new ConflictException('CPF já está em uso');
     }
 
-    // Validar role
     if (!AVAILABLE_ROLES[createUsuarioDto.role as keyof typeof AVAILABLE_ROLES]) {
       throw new BadRequestException('Role inválida');
     }
 
-    // Validar senha
     if (!createUsuarioDto.senha || createUsuarioDto.senha.length < 6) {
       throw new BadRequestException('Senha deve ter pelo menos 6 caracteres');
     }
 
-    // Hash da senha
     const hashedPassword = await bcrypt.hash(createUsuarioDto.senha, 10);
 
     const usuario = this.usuarioRepository.create({
@@ -108,8 +104,7 @@ export class UsuarioService {
     });
 
     const saved = await this.usuarioRepository.save(usuario);
-    
-    // Retornar sem senha
+
     const { senha, ...result } = saved;
     return result as Usuario;
   }
@@ -123,12 +118,10 @@ export class UsuarioService {
   }): Promise<Usuario> {
     const usuario = await this.findOne(id);
 
-    // Validar role se fornecida
     if (updateUsuarioDto.role && !AVAILABLE_ROLES[updateUsuarioDto.role as keyof typeof AVAILABLE_ROLES]) {
       throw new BadRequestException('Role inválida');
     }
 
-    // Atualizar senha se fornecida
     if (updateUsuarioDto.senha) {
       if (updateUsuarioDto.senha.length < 6) {
         throw new BadRequestException('Senha deve ter pelo menos 6 caracteres');
@@ -138,8 +131,7 @@ export class UsuarioService {
 
     Object.assign(usuario, updateUsuarioDto);
     const updated = await this.usuarioRepository.save(usuario);
-    
-    // Retornar sem senha
+
     const { senha, ...result } = updated;
     return result as Usuario;
   }
@@ -153,8 +145,7 @@ export class UsuarioService {
     const usuario = await this.findOne(id);
     usuario.ativo = !usuario.ativo;
     const updated = await this.usuarioRepository.save(usuario);
-    
-    // Retornar sem senha
+
     const { senha, ...result } = updated;
     return result as Usuario;
   }

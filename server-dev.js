@@ -241,17 +241,15 @@ app.post('/orcamentos/:id/converter', (req, res) => {
   res.json({ message: 'Orçamento convertido em pedido', id: req.params.id });
 });
 
-// WebSocket connection handling
 io.on('connection', (socket) => {
-  
+
   socket.on('disconnect', () => {
   });
-  
-  // Enviar heartbeat a cada 30 segundos
+
   const heartbeat = setInterval(() => {
     socket.emit('heartbeat', { timestamp: new Date().toISOString() });
   }, 30000);
-  
+
   socket.on('disconnect', () => {
     clearInterval(heartbeat);
   });
@@ -273,5 +271,4 @@ process.on('SIGTERM', () => {
 });
 
 setInterval(() => {
-  // Heartbeat para manter o processo vivo
 }, 1000);

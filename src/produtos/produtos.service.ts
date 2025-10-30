@@ -19,22 +19,22 @@ export class ProdutosService {
 
   findAll(filtros?: { categoria?: string; ativo?: string; search?: string }) {
     const query = this.produtoRepo.createQueryBuilder('produto');
-    
+
     if (filtros?.categoria) {
       query.andWhere('produto.categoria = :categoria', { categoria: filtros.categoria });
     }
-    
+
     if (filtros?.ativo !== undefined) {
       const ativo = filtros.ativo === 'true';
       query.andWhere('produto.ativo = :ativo', { ativo });
     }
-    
+
     if (filtros?.search) {
       query.andWhere('(produto.nome ILIKE :search OR produto.descricao ILIKE :search)', { 
         search: `%${filtros.search}%` 
       });
     }
-    
+
     return query.orderBy('produto.nome', 'ASC').getMany();
   }
 
@@ -44,7 +44,7 @@ export class ProdutosService {
       .select('DISTINCT produto.categoria', 'categoria')
       .where('produto.categoria IS NOT NULL')
       .getRawMany();
-    
+
     return result.map(item => item.categoria);
   }
 
@@ -64,7 +64,7 @@ export class ProdutosService {
       .createQueryBuilder('produto')
       .where('produto.estoque <= produto.estoqueMinimo')
       .getCount();
-    
+
     return {
       total,
       ativos,
@@ -75,7 +75,7 @@ export class ProdutosService {
 
   async updateEstoque(id: number, quantidade: number, tipo: 'entrada' | 'saida') {
     const produto = await this.findOne(id);
-    
+
     if (tipo === 'entrada') {
       produto.estoque += quantidade;
     } else {
@@ -84,13 +84,13 @@ export class ProdutosService {
       }
       produto.estoque -= quantidade;
     }
-    
+
     return this.produtoRepo.save(produto);
   }
 
   async findOne(id: number) {
     const produto = await this.produtoRepo.findOneBy({ id });
-    
+
     if (!produto) {
       throw new NotFoundException('Produto não encontrado');
     }
@@ -100,7 +100,7 @@ export class ProdutosService {
 
   async update(id: number, dto: UpdateProdutoDto) {
     const produto = await this.findOne(id);
-    
+
     Object.assign(produto, dto);
     return this.produtoRepo.save(produto);
   }
