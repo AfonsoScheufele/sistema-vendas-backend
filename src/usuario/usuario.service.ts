@@ -2,51 +2,15 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { Usuario } from '../auth/usuario.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { RolesService } from '../roles/roles.service';
 import * as bcrypt from 'bcrypt';
-
-export const AVAILABLE_ROLES = {
-  Admin: {
-    label: 'Administrador',
-    description: 'Acesso total ao sistema',
-    permissions: ['*']
-  },
-  Gerente: {
-    label: 'Gerente',
-    description: 'Acesso a relatórios e gestão de equipe',
-    permissions: ['vendas', 'clientes', 'produtos', 'relatorios', 'estoque']
-  },
-  Vendedor: {
-    label: 'Vendedor',
-    description: 'Acesso a vendas e clientes',
-    permissions: ['vendas', 'clientes', 'orcamentos']
-  },
-  Fornecedor: {
-    label: 'Fornecedor',
-    description: 'Acesso apenas a suas cotações e produtos',
-    permissions: ['cotacoes', 'produtos:view']
-  },
-  Financeiro: {
-    label: 'Financeiro',
-    description: 'Acesso ao módulo financeiro',
-    permissions: ['financeiro', 'relatorios:financeiro']
-  },
-  Estoque: {
-    label: 'Estoque',
-    description: 'Acesso ao controle de estoque',
-    permissions: ['estoque', 'produtos']
-  },
-  User: {
-    label: 'Usuário',
-    description: 'Acesso básico',
-    permissions: []
-  }
-};
 
 @Injectable()
 export class UsuarioService {
   constructor(
     @InjectRepository(Usuario)
-    private usuarioRepository: Repository<Usuario>
+    private usuarioRepository: Repository<Usuario>,
+    private rolesService: RolesService
   ) {}
 
   async findAll(): Promise<Usuario[]> {
@@ -84,7 +48,8 @@ export class UsuarioService {
       throw new ConflictException('CPF já está em uso');
     }
 
-    if (!AVAILABLE_ROLES[createUsuarioDto.role as keyof typeof AVAILABLE_ROLES]) {
+    const roleExists = await this.rolesService.findBySlug(createUsuarioDto.role);
+    if (!roleExists) {
       throw new BadRequestException('Role inválida');
     }
 
@@ -118,8 +83,11 @@ export class UsuarioService {
   }): Promise<Usuario> {
     const usuario = await this.findOne(id);
 
-    if (updateUsuarioDto.role && !AVAILABLE_ROLES[updateUsuarioDto.role as keyof typeof AVAILABLE_ROLES]) {
-      throw new BadRequestException('Role inválida');
+    if (updateUsuarioDto.role) {
+      const roleExists = await this.rolesService.findBySlug(updateUsuarioDto.role);
+      if (!roleExists) {
+        throw new BadRequestException('Role inválida');
+      }
     }
 
     if (updateUsuarioDto.senha) {
@@ -148,15 +116,6 @@ export class UsuarioService {
 
     const { senha, ...result } = updated;
     return result as Usuario;
-  }
-
-  getAvailableRoles() {
-    return Object.entries(AVAILABLE_ROLES).map(([key, value]) => ({
-      value: key,
-      label: value.label,
-      description: value.description,
-      permissions: value.permissions
-    }));
   }
 }
 

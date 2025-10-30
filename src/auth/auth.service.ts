@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { EmailService } from '../config/email.service';
+import { RolesService } from '../roles/roles.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -14,6 +15,7 @@ export class AuthService {
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
     private emailService: EmailService,
+    private rolesService: RolesService,
   ) {}
 
   async validateUser(cpf: string, senha: string): Promise<any> {
@@ -95,6 +97,20 @@ export class AuthService {
 
   async findById(id: number): Promise<Usuario | null> {
     return await this.usuarioRepo.findOne({ where: { id } });
+  }
+
+  async getUserWithPermissions(id: number): Promise<any> {
+    const user = await this.usuarioRepo.findOne({ where: { id } });
+    if (!user) return null;
+
+    const roleSlug = user.role.toLowerCase();
+    const role = await this.rolesService.findBySlug(roleSlug);
+    const permissions = role ? JSON.parse(role.permissions || '[]') : [];
+
+    return {
+      ...user,
+      permissions
+    };
   }
 
   async solicitarRecuperacaoSenha(cpf: string): Promise<{ message: string; success: boolean }> {

@@ -31,6 +31,10 @@ export class RolesService {
     return role;
   }
 
+  async findBySlug(slug: string): Promise<RoleEntity | null> {
+    return await this.repo.findOne({ where: { slug } });
+  }
+
   async create(data: Partial<RoleEntity>): Promise<RoleEntity> {
     const role = this.repo.create({
       slug: data.slug?.trim().toLowerCase()!,

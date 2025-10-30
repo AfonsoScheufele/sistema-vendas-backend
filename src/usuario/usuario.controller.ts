@@ -3,11 +3,15 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UsuarioService } from './usuario.service';
 import { RolesGuard } from '../common/roles.guard';
 import { Roles } from '../common/roles.decorator';
+import { RolesService } from '../roles/roles.service';
 
 @Controller('usuarios')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsuarioController {
-  constructor(private readonly usuarioService: UsuarioService) {}
+  constructor(
+    private readonly usuarioService: UsuarioService,
+    private readonly rolesService: RolesService
+  ) {}
 
   @Get()
   @Roles('Admin', 'Gerente')
@@ -18,7 +22,13 @@ export class UsuarioController {
   @Get('roles/list')
   @UseGuards(JwtAuthGuard)
   async getRoles() {
-    return this.usuarioService.getAvailableRoles();
+    const roles = await this.rolesService.findAll();
+    return roles.map(role => ({
+      value: role.slug,
+      label: role.name,
+      description: role.description,
+      permissions: Array.isArray(role.permissions) ? role.permissions : JSON.parse(role.permissions || '[]')
+    }));
   }
 
   @Get(':id')

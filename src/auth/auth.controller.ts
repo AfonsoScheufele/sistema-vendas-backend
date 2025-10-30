@@ -90,9 +90,9 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Req() req: AuthRequest) {
-    const user = await this.authService.findById(req.user.id);
+    const userWithPermissions = await this.authService.getUserWithPermissions(req.user.id);
 
-    if (!user) {
+    if (!userWithPermissions) {
       return {
         id: req.user.id,
         name: 'Usuário Teste',
@@ -102,20 +102,22 @@ export class AuthController {
         avatar: null,
         dataCriacao: new Date(),
         ultimoLogin: new Date(),
-        ativo: true
+        ativo: true,
+        permissions: []
       };
     }
 
     return {
-      id: user.id,
-      name: user.name,
-      cpf: user.cpf,
-      email: user.email,
-      role: user.role,
-      avatar: user.avatar,
-      dataCriacao: user.dataCriacao,
-      ultimoLogin: user.ultimoLogin,
-      ativo: user.ativo
+      id: userWithPermissions.id,
+      name: userWithPermissions.name,
+      cpf: userWithPermissions.cpf,
+      email: userWithPermissions.email,
+      role: userWithPermissions.role,
+      avatar: userWithPermissions.avatar,
+      dataCriacao: userWithPermissions.dataCriacao,
+      ultimoLogin: userWithPermissions.ultimoLogin,
+      ativo: userWithPermissions.ativo,
+      permissions: userWithPermissions.permissions || []
     };
   }
 
