@@ -33,22 +33,22 @@ export class ClientesService {
 
   async findAll(filtros?: { tipo?: string; ativo?: string; search?: string }): Promise<Cliente[]> {
     const query = this.clienteRepo.createQueryBuilder('cliente');
-    
+
     if (filtros?.tipo) {
       query.andWhere('cliente.tipo = :tipo', { tipo: filtros.tipo });
     }
-    
+
     if (filtros?.ativo !== undefined) {
       const ativo = filtros.ativo === 'true';
       query.andWhere('cliente.ativo = :ativo', { ativo });
     }
-    
+
     if (filtros?.search) {
       query.andWhere('(cliente.nome ILIKE :search OR cliente.email ILIKE :search)', { 
         search: `%${filtros.search}%` 
       });
     }
-    
+
     return query.orderBy('cliente.criadoEm', 'DESC').getMany();
   }
 
@@ -57,13 +57,13 @@ export class ClientesService {
       .createQueryBuilder('cliente')
       .select('DISTINCT cliente.tipo', 'tipo')
       .getRawMany();
-    
+
     return result.map(item => item.tipo);
   }
 
   async getClientesNovos(periodo?: string) {
     const query = this.clienteRepo.createQueryBuilder('cliente');
-    
+
     if (periodo === 'mes') {
       query.andWhere('cliente.criadoEm >= :dataInicio', {
         dataInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -73,13 +73,13 @@ export class ClientesService {
         dataInicio: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
       });
     }
-    
+
     return query.orderBy('cliente.criadoEm', 'DESC').getMany();
   }
 
   async getVendasCliente(id: number) {
     const cliente = await this.findOne(id);
-    
+
     return {
       cliente,
       vendas: [],
@@ -89,11 +89,11 @@ export class ClientesService {
 
   async findOne(id: number): Promise<Cliente> {
     const cliente = await this.clienteRepo.findOne({ where: { id } });
-    
+
     if (!cliente) {
       throw new NotFoundException(`Cliente com ID ${id} não encontrado`);
     }
-    
+
     return cliente;
   }
 
@@ -129,13 +129,13 @@ export class ClientesService {
 
   async getStats() {
     const totalClientes = await this.clienteRepo.count();
-    
+
     const clientesRecentes = await this.clienteRepo.count({
       where: {
         criadoEm: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) as any
       }
     });
-    
+
     return {
       totalClientes,
       clientesRecentes,

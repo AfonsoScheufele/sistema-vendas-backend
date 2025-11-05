@@ -52,7 +52,7 @@ export class WorkflowsService {
     const total = await this.workflowRepo.count();
     const ativos = await this.workflowRepo.count({ where: { status: 'ativo' } });
     const pausados = await this.workflowRepo.count({ where: { status: 'pausado' } });
-    
+
     const workflows = await this.findAll();
     const totalExecucoes = workflows.reduce((acc, w) => acc + w.execucoes, 0);
     const totalSucessos = workflows.reduce((acc, w) => acc + w.sucessos, 0);
