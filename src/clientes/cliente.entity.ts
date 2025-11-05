@@ -55,8 +55,6 @@ export class Cliente {
 
   @Column({ default: 'PF' })
   tipo!: string; 
-
-
   @Column({ default: true })
   ativo!: boolean;
 

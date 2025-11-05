@@ -37,7 +37,3 @@ export class PedidosController {
     return await this.pedidosService.excluir(+id);
   }
 }
-
-
-
-

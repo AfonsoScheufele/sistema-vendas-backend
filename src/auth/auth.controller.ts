@@ -29,7 +29,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() body: { cpf: string; senha: string }) {
-    // Validar usuário e senha
+    
     const user = await this.authService.validateUser(body.cpf, body.senha);
     
     if (!user) {
@@ -41,7 +41,16 @@ export class AuthController {
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      user
+      user: {
+        id: user.id,
+        name: user.name,
+        nome: user.name,
+        cpf: user.cpf,
+        email: user.email || '',
+        role: user.role,
+        avatar: user.avatar,
+        ativo: user.ativo
+      }
     };
   }
 
@@ -80,10 +89,12 @@ export class AuthController {
       user: {
         id: user.id,
         name: user.name,
+        nome: user.name,
         cpf: user.cpf,
-        email: user.email,
+        email: user.email || '',
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        ativo: user.ativo
       }
     };
   }
@@ -92,8 +103,6 @@ export class AuthController {
   @Get('me')
   async getProfile(@Req() req: AuthRequest) {
     const user = await this.authService.findById(req.user.id);
-    
-    // Se o usuário não for encontrado, retorna os dados do token (usuário mock)
     if (!user) {
       return {
         id: req.user.id,
@@ -111,8 +120,9 @@ export class AuthController {
     return {
       id: user.id,
       name: user.name,
+      nome: user.name, 
       cpf: user.cpf,
-      email: user.email,
+      email: user.email || '',
       role: user.role,
       avatar: user.avatar,
       dataCriacao: user.dataCriacao,

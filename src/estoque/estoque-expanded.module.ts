@@ -7,7 +7,3 @@ import { ProdutosModule } from '../produtos/produtos.module';
   controllers: [EstoqueExpandedController],
 })
 export class EstoqueExpandedModule {}
-
-
-
-

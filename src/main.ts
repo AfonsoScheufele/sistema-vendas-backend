@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import * as express from 'express';
+import * as dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -10,7 +12,7 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'],
+    origin: ['http:
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
@@ -26,9 +28,7 @@ async function bootstrap() {
   }));
 
   app.useGlobalFilters(new GlobalExceptionFilter());
-
-  // Health check before setting global prefix
-  app.use('/health', (req, res) => {
+  app.getHttpAdapter().get('/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -41,9 +41,20 @@ async function bootstrap() {
       }
     });
   });
-
-  // Set global prefix after health check
   app.setGlobalPrefix('api');
+  app.getHttpAdapter().get('/api/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: '1.0.0',
+      database: 'connected',
+      services: {
+        websocket: 'running',
+        redis: 'connected'
+      }
+    });
+  });
 
   const port = process.env.PORT || 5000;
   await app.listen(port);

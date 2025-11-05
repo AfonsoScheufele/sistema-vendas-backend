@@ -54,8 +54,6 @@ export class ProdutosController {
     return this.produtosService.delete(+id);
   }
 }
-
-
 @Controller('api/produtos')
 export class ApiProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}

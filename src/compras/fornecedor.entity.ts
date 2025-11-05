@@ -23,7 +23,3 @@ export class Fornecedor {
   @CreateDateColumn()
   createdAt: Date;
 }
-
-
-
-

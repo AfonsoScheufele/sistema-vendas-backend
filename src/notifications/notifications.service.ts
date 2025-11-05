@@ -11,26 +11,38 @@ export class NotificationsService {
   ) {}
 
   async listarNotificacoes(usuarioId?: number): Promise<Notification[]> {
-    const where = usuarioId ? { usuarioId } : {};
-    return await this.notificationRepo.find({
-      where,
-      relations: ['usuario'],
-      order: { createdAt: 'DESC' }
-    });
+    try {
+      const where = usuarioId ? { usuarioId } : {};
+      const notifications = await this.notificationRepo.find({
+        where,
+        relations: ['usuario'],
+        order: { createdAt: 'DESC' }
+      });
+      return notifications || [];
+    } catch (error) {
+      console.error('Erro ao listar notificações:', error);
+      return [];
+    }
   }
 
   async contarNaoLidas(usuarioId: number): Promise<number> {
-    return await this.notificationRepo.count({
-      where: { usuarioId, lida: false }
-    });
+    try {
+      if (!usuarioId) return 0;
+      return await this.notificationRepo.count({
+        where: { usuarioId, lida: false }
+      });
+    } catch (error) {
+      console.error('Erro ao contar não lidas:', error);
+      return 0;
+    }
   }
 
   async marcarComoLida(id: number): Promise<void> {
-    await this.notificationRepo.update(id, { lida: true });
+    try {
+      await this.notificationRepo.update(id, { lida: true });
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+      throw error;
+    }
   }
 }
-
-
-
-
-

@@ -6,7 +6,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "dev": "node server-dev.js",
+    "dev": "NODE_OPTIONS=\"--dns-result-order=ipv4first\" nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",

@@ -36,7 +36,3 @@ export class EstoqueExpandedController {
     return { total: 0, pendentes: 0, concluidas: 0 };
   }
 }
-
-
-
-

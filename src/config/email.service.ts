@@ -18,7 +18,7 @@ export class EmailService {
   }
 
   async sendResetPasswordEmail(to: string, resetToken: string): Promise<void> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/redefinir-senha?token=${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http:
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Sistema de Vendas <noreply@axora.com>',
@@ -116,4 +116,3 @@ export class EmailService {
     }
   }
 }
-

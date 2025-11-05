@@ -29,16 +29,46 @@ export class Pedido {
   @Column({ type: 'timestamp', nullable: true })
   dataEntrega: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  dataEntregaPrevista: Date;
+
   @Column({ nullable: true })
   observacoes: string;
+
+  @Column({ nullable: true })
+  enderecoEntrega: string;
+
+  @Column({ nullable: true })
+  transportadora: string;
+
+  @Column({ nullable: true })
+  codigoRastreamento: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  desconto: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  frete: number;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  condicaoPagamento: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  formaPagamento: string;
+
+  @Column({ type: 'varchar', length: 20, default: 'pendente' })
+  statusPagamento: string;
+
+  @Column({ nullable: true })
+  origem: string;
 
   @OneToMany(() => ItemPedido, item => item.pedido)
   itens: ItemPedido[];
 
-  @ManyToOne(() => Usuario)
+  @ManyToOne(() => Usuario, { nullable: true })
   vendedor: Usuario;
 
-  @Column()
+  @Column({ nullable: true })
   vendedorId: number;
 
   @CreateDateColumn()
@@ -47,5 +77,3 @@ export class Pedido {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-
-

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as dns from 'dns';
 import { ProdutosModule } from './produtos/produtos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -19,6 +20,7 @@ import { VendedoresModule } from './vendedores/vendedores.module';
 import { FinanceiroModule } from './financeiro/financeiro.module';
 import { AutomacaoModule } from './automacao/automacao.module';
 import { UsuarioModule } from './usuario/usuario.module';
+import { PerfisModule } from './perfis/perfis.module';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
@@ -30,6 +32,8 @@ import { Lead } from './crm/lead.entity';
 import { Oportunidade } from './crm/oportunidade.entity';
 import { Campanha } from './crm/campanha.entity';
 import { Workflow } from './automacao/workflow.entity';
+import { Perfil } from './perfis/perfil.entity';
+dns.setDefaultResultOrder('ipv4first');
 
 @Module({
   imports: [
@@ -37,29 +41,49 @@ import { Workflow } from './automacao/workflow.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        entities: [
-          Produto,
-          Cliente,
-          Usuario,
-          Pedido,
-          ItemPedido,
-          Notification,
-          Orcamento,
-          Lead,
-          Oportunidade,
-          Campanha,
-          Workflow,
-        ],
-        synchronize: true,
-        logging: configService.get<string>('NODE_ENV') !== 'production',
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const host = configService.get<string>('DB_HOST');
+        const port = configService.get<number>('DB_PORT');
+        const username = configService.get<string>('DB_USERNAME');
+        const password = configService.get<string>('DB_PASSWORD');
+        const database = configService.get<string>('DB_NAME');
+
+        console.log(`🔌 Conectando ao Supabase Pooler: ${host}:${port}`);
+
+        return {
+          type: 'postgres',
+          host: host,
+          port: port,
+          username: username,
+          password: password,
+          database: database,
+          entities: [
+            Produto,
+            Cliente,
+            Usuario,
+            Pedido,
+            ItemPedido,
+            Notification,
+            Orcamento,
+            Lead,
+            Oportunidade,
+            Campanha,
+            Workflow,
+            Perfil,
+          ],
+          synchronize: true,
+          logging: false,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          extra: {
+            options: '--client_encoding=UTF8',
+            max: 20, 
+            idleTimeoutMillis: 30000, 
+            connectionTimeoutMillis: 10000, 
+          },
+        };
+      },
     }),
     ProdutosModule,
     ClientesModule,
@@ -79,6 +103,7 @@ import { Workflow } from './automacao/workflow.entity';
     FinanceiroModule,
     AutomacaoModule,
     UsuarioModule,
+    PerfisModule,
   ],
 })
 export class AppModule {}

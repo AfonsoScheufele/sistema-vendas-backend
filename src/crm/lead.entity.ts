@@ -32,8 +32,3 @@ export class Lead {
   @UpdateDateColumn()
   ultimaAtualizacao: Date;
 }
-
-
-
-
-

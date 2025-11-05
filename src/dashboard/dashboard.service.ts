@@ -81,7 +81,7 @@ export class DashboardService {
   }
 
   async getRelatorioVendas(periodo = '30d') {
-    // Retorna arrays vazios até implementar integração com banco de dados
+    
     return {
       vendas: [],
       vendedores: []
@@ -89,7 +89,7 @@ export class DashboardService {
   }
 
   async getRelatorioClientes(periodo = '30d') {
-    // Retorna arrays vazios até implementar integração com banco de dados
+    
     return {
       clientes: [],
       porEstado: [],
@@ -98,7 +98,7 @@ export class DashboardService {
   }
 
   async getRelatorioEstoque(periodo = '30d') {
-    // Retorna arrays vazios até implementar integração com banco de dados
+    
     return {
       produtos: [],
       movimentacoes: [],
@@ -107,7 +107,7 @@ export class DashboardService {
   }
 
   async getRelatorioFinanceiro(periodo = '30d', tipo = 'todos') {
-    // Retorna arrays vazios até implementar integração com banco de dados
+    
     return {
       movimentacoes: [],
       categorias: [],
@@ -116,7 +116,7 @@ export class DashboardService {
   }
 
   async getRelatorioCompras() {
-    // Retorna arrays vazios até implementar integração com banco de dados
+    
     return {
       relatorios: []
     };

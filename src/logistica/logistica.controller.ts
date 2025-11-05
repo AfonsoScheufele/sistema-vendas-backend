@@ -24,8 +24,3 @@ export class LogisticaController {
     return [];
   }
 }
-
-
-
-
-

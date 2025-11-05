@@ -44,7 +44,3 @@ export class ComprasExpandedController {
     return { total: 0, ativos: 0, inativos: 0 };
   }
 }
-
-
-
-

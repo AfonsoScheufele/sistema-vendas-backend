@@ -26,8 +26,3 @@ export class Campanha {
   @CreateDateColumn()
   createdAt: Date;
 }
-
-
-
-
-

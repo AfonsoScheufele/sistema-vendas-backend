@@ -19,8 +19,6 @@ export class AuthService {
   async validateUser(cpf: string, senha: string): Promise<any> {
     try {
       const cpfLimpo = cpf.replace(/[^\d]/g, '');
-      
-      // Usar query direta para debug
       const users = await this.usuarioRepo.query(
         'SELECT id, name, cpf, email, role, avatar, ativo FROM usuarios WHERE cpf = $1',
         [cpfLimpo]
@@ -31,8 +29,6 @@ export class AuthService {
       }
 
       const user = users[0];
-      
-      // Buscar a senha separadamente
       const senhaResult = await this.usuarioRepo.query(
         'SELECT senha FROM usuarios WHERE cpf = $1',
         [cpfLimpo]
@@ -47,8 +43,6 @@ export class AuthService {
       if (!isPasswordValid) {
         return null;
       }
-
-      // Atualizar último login
       await this.usuarioRepo.query(
         'UPDATE usuarios SET "ultimoLogin" = NOW() WHERE cpf = $1',
         [cpfLimpo]
@@ -102,8 +96,6 @@ export class AuthService {
 
   async solicitarRecuperacaoSenha(cpf: string): Promise<{ message: string; success: boolean }> {
     const cpfLimpo = cpf.replace(/[^\d]/g, '');
-    
-    // Buscar usuário usando query direta
     const users = await this.usuarioRepo.query(
       'SELECT id, email FROM usuarios WHERE cpf = $1',
       [cpfLimpo]
@@ -124,14 +116,12 @@ export class AuthService {
       'UPDATE usuarios SET "resetPasswordToken" = $1, "resetPasswordExpires" = $2 WHERE cpf = $3',
       [resetToken, resetExpires, cpfLimpo]
     );
-
-    // Enviar e-mail de recuperação
     if (user.email) {
       try {
         await this.emailService.sendResetPasswordEmail(user.email, resetToken);
       } catch (error) {
         console.error('Erro ao enviar e-mail:', error);
-        // Não lança erro, apenas registra no log
+        
       }
     }
 

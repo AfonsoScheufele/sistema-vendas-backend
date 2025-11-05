@@ -101,16 +101,7 @@ cd sistema-vendas-backend
 npm install
 ```
 
-### 3. Configure o banco de dados
-```bash
-# Crie um banco PostgreSQL
-createdb vendas_db
-
-# Ou use o Docker
-docker run --name postgres-vendas -e POSTGRES_DB=vendas_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=123456 -p 5432:5432 -d postgres:13
-```
-
-### 4. Configure as variáveis de ambiente
+### 3. Configure as variáveis de ambiente
 ```bash
 # Copie o arquivo de exemplo
 cp env.example .env
@@ -231,12 +222,12 @@ O servidor será iniciado em `http://localhost:5000`
 PORT=5000
 NODE_ENV=development
 
-# Banco de Dados
-DB_HOST=localhost
+# Banco de Dados (Supabase)
+DB_HOST=db.ejiyizaxmdfqqwpmchxe.supabase.co
 DB_PORT=5432
 DB_USERNAME=postgres
-DB_PASSWORD=123456
-DB_NAME=vendas_db
+DB_PASSWORD=sua_senha_aqui
+DB_NAME=postgres
 
 # JWT
 JWT_SECRET=meu_jwt_secret_super_seguro_2024_sistema_vendas

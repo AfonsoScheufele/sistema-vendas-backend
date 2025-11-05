@@ -40,8 +40,3 @@ export class CrmController {
     return { total: 0, ativas, pausadas: 0, concluidas: 0 };
   }
 }
-
-
-
-
-

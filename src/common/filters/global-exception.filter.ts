@@ -39,8 +39,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message: typeof message === 'string' ? message : (message as any).message || message,
       ...(typeof message === 'object' && message !== null ? message : {}),
     };
-
-    
     this.logger.error(
       `${request.method} ${request.url}`,
       exception instanceof Error ? exception.stack : exception,

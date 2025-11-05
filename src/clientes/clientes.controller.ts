@@ -56,8 +56,6 @@ export class ClientesController {
     await this.clientesService.remove(+id);
   }
 }
-
-
 @Controller('api/clientes')
 @UseGuards(JwtAuthGuard)
 export class ApiClientesController {
