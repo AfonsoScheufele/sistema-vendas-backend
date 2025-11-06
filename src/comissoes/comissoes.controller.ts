@@ -13,3 +13,17 @@ export class ComissoesController {
   }
 }
 
+@Controller('metas')
+@UseGuards(JwtAuthGuard)
+export class MetasController {
+  @Get()
+  async listarMetas() {
+    return [];
+  }
+
+  @Get('stats')
+  async obterStatsMetas() {
+    return { total: 0, ativas: 0, concluidas: 0, pendentes: 0 };
+  }
+}
+

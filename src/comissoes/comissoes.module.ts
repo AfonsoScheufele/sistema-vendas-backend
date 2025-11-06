@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ComissoesController } from './comissoes.controller';
+import { ComissoesController, MetasController } from './comissoes.controller';
 import { ComissoesService } from './comissoes.service';
 
 @Module({
-  controllers: [ComissoesController],
+  controllers: [ComissoesController, MetasController],
   providers: [ComissoesService],
   exports: [ComissoesService],
 })

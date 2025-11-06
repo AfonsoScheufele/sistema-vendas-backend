@@ -39,4 +39,9 @@ export class CrmController {
     const ativas = await this.crmService.contarCampanhasAtivas();
     return { total: 0, ativas, pausadas: 0, concluidas: 0 };
   }
+
+  @Get('pipeline')
+  async listarPipeline() {
+    return await this.crmService.listarOportunidades();
+  }
 }
