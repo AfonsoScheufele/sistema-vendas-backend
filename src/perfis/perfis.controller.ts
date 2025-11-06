@@ -9,7 +9,12 @@ export class PerfisController {
 
   @Get()
   async findAll() {
-    return this.perfisService.findAll();
+    const perfis = await this.perfisService.findAll();
+    const perfisComContagem = await Promise.all(perfis.map(async perfil => ({
+      ...perfil,
+      usuariosVinculados: await this.perfisService.countUsuariosVinculados(perfil.id),
+    })));
+    return perfisComContagem;
   }
 
   @Get('all')
@@ -19,7 +24,9 @@ export class PerfisController {
 
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.perfisService.findOne(id);
+    const perfil = await this.perfisService.findOne(id);
+    const usuariosVinculados = await this.perfisService.countUsuariosVinculados(id);
+    return { ...perfil, usuariosVinculados };
   }
 
   @Post()
