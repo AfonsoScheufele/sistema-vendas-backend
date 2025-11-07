@@ -5,3 +5,5 @@ import { ComprasExpandedController } from './compras-expanded.controller';
   controllers: [ComprasExpandedController],
 })
 export class ComprasExpandedModule {}
+
+

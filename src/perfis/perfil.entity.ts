@@ -11,7 +11,7 @@ export class Perfil {
   @Column({ type: 'text', nullable: true })
   descricao?: string;
 
-  @Column({ type: 'simple-array', default: '' })
+  @Column({ type: 'text', array: true, default: () => 'ARRAY[]::text[]' })
   permissoes!: string[];
 
   @Column({ default: true })
@@ -26,4 +26,6 @@ export class Perfil {
   @UpdateDateColumn()
   dataAtualizacao!: Date;
 }
+
+
 

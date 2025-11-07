@@ -40,3 +40,5 @@ export class PedidoHistorico {
   @CreateDateColumn()
   createdAt: Date;
 }
+
+

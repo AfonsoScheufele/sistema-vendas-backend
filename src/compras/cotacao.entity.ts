@@ -26,3 +26,5 @@ export class Cotacao {
   @CreateDateColumn()
   createdAt: Date;
 }
+
+

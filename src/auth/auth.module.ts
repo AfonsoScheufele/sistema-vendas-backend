@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { Usuario } from './usuario.entity';
+import { Perfil } from '../perfis/perfil.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { EmailService } from '../config/email.service';
 import { RolesModule } from '../roles/roles.module';
@@ -13,7 +14,7 @@ import { RolesModule } from '../roles/roles.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forFeature([Usuario]),
+    TypeOrmModule.forFeature([Usuario, Perfil]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

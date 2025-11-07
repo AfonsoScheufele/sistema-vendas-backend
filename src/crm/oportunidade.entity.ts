@@ -32,3 +32,5 @@ export class Oportunidade {
   @UpdateDateColumn()
   ultimaAtualizacao: Date;
 }
+
+

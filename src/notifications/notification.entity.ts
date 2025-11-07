@@ -30,3 +30,5 @@ export class Notification {
   @CreateDateColumn()
   createdAt: Date;
 }
+
+

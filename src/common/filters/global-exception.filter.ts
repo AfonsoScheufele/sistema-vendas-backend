@@ -31,13 +31,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'Erro interno do servidor';
     }
 
+    // Extrair mensagens de validação se existirem
+    let errorMessage: string | string[] = 'Erro na requisição';
+    if (typeof message === 'object' && message !== null) {
+      const msgObj = message as any;
+      if (Array.isArray(msgObj.message)) {
+        errorMessage = msgObj.message;
+      } else if (msgObj.message) {
+        errorMessage = msgObj.message;
+      } else if (msgObj.error) {
+        errorMessage = msgObj.error;
+      }
+    } else if (typeof message === 'string') {
+      errorMessage = message;
+    }
+
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message: typeof message === 'string' ? message : (message as any).message || message,
-      ...(typeof message === 'object' && message !== null ? message : {}),
+      message: errorMessage,
+      ...(typeof message === 'object' && message !== null && !Array.isArray((message as any).message) ? message : {}),
     };
     this.logger.error(
       `${request.method} ${request.url}`,

@@ -5,3 +5,5 @@ import { LogisticaController } from './logistica.controller';
   controllers: [LogisticaController],
 })
 export class LogisticaModule {}
+
+

@@ -20,3 +20,5 @@ export class Requisicao {
   @CreateDateColumn()
   createdAt: Date;
 }
+
+

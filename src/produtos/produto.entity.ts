@@ -35,6 +35,9 @@ export class Produto {
   @Column({ nullable: true })
   unidade?: string;
 
+  @Column('int', { nullable: true })
+  quantidadePorCaixa?: number;
+
   @Column({ nullable: true })
   marca?: string;
 

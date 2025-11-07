@@ -40,3 +40,5 @@ export class CrmService {
     return await this.campanhaRepo.count({ where: { status: 'ativa' } });
   }
 }
+
+
