@@ -18,7 +18,8 @@ export class EmailService {
   }
 
   async sendResetPasswordEmail(to: string, resetToken: string): Promise<void> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http:
+    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendBase}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Sistema de Vendas <noreply@axora.com>',
@@ -109,10 +110,10 @@ export class EmailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log(`✅ E-mail de recuperação enviado para: ${to}`);
     } catch (error) {
       console.error('❌ Erro ao enviar e-mail:', error);
       throw new Error('Falha ao enviar e-mail de recuperação');
     }
   }
 }
+

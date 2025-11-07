@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
+import { Perfil } from '../perfis/perfil.entity';
 import { EmailService } from '../config/email.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -13,8 +14,44 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
+    @InjectRepository(Perfil)
+    private perfilRepo: Repository<Perfil>,
     private emailService: EmailService,
   ) {}
+
+  private async getPermissoesByRole(role?: string): Promise<string[]> {
+    if (!role) return [];
+    const perfil = await this.perfilRepo.findOne({ where: { nome: role } });
+    if (!perfil) {
+      console.warn(`[AuthService] Perfil não encontrado para role: ${role}`);
+      return [];
+    }
+    if (perfil.permissoes === null || perfil.permissoes === undefined) {
+      return [];
+    }
+    const perms = (perfil.permissoes || [])
+      .map((permissao) => (permissao || '').trim())
+      .filter((permissao) => permissao.length > 0);
+    if (perms.length === 0) {
+      console.warn(`[AuthService] Perfil ${role} sem permissões configuradas.`);
+    }
+    return perms;
+  }
+
+  async buildUserResponse(user: any) {
+    const permissoes = await this.getPermissoesByRole(user.role);
+    return {
+      id: user.id,
+      name: user.name,
+      nome: user.name,
+      cpf: user.cpf,
+      email: user.email || '',
+      role: user.role,
+      avatar: user.avatar,
+      ativo: user.ativo,
+      permissoes,
+    };
+  }
 
   async validateUser(cpf: string, senha: string): Promise<any> {
     try {
@@ -48,7 +85,10 @@ export class AuthService {
         [cpfLimpo]
       );
       
-      return user;
+      return {
+        ...user,
+        permissoes: await this.getPermissoesByRole(user.role),
+      };
     } catch (error) {
       console.error('Error in validateUser:', error);
       return null;
@@ -76,7 +116,8 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { sub: user.id, cpf: user.cpf, role: user.role };
+    const permissoes = await this.getPermissoesByRole(user.role);
+    const payload = { sub: user.id, cpf: user.cpf, role: user.role, permissoes };
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
       refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
@@ -84,7 +125,8 @@ export class AuthService {
   }
 
   async refresh(user: any) {
-    const payload = { sub: user.sub, cpf: user.cpf, role: user.role };
+    const permissoes = await this.getPermissoesByRole(user.role);
+    const payload = { sub: user.sub, cpf: user.cpf, role: user.role, permissoes };
     return {
       access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
     };

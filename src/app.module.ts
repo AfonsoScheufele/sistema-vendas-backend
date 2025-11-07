@@ -47,12 +47,22 @@ dns.setDefaultResultOrder('ipv4first');
         const username = configService.get<string>('DB_USERNAME');
         const password = configService.get<string>('DB_PASSWORD');
         const database = configService.get<string>('DB_NAME');
+        const useSsl = configService.get<string>('DB_SSL') === 'true';
 
-        console.log(`🔌 Conectando ao Supabase Pooler: ${host}:${port}`);
+        // Resolve DNS to IPv4 only
+        let resolvedHost = host;
+        try {
+          const addresses = await dns.promises.resolve4(host);
+          if (addresses.length > 0) {
+            resolvedHost = addresses[0];
+          }
+        } catch (error) {
+          // fallback to original host
+        }
 
         return {
           type: 'postgres',
-          host: host,
+          host: resolvedHost,
           port: port,
           username: username,
           password: password,
@@ -73,9 +83,11 @@ dns.setDefaultResultOrder('ipv4first');
           ],
           synchronize: true,
           logging: false,
-          ssl: {
+          ssl: useSsl
+            ? {
             rejectUnauthorized: false,
-          },
+              }
+            : false,
           extra: {
             options: '--client_encoding=UTF8',
             max: 20, 

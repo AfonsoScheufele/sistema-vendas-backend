@@ -37,20 +37,12 @@ export class AuthController {
     }
 
     const tokens = await this.authService.login(user);
-    
+    const userResponse = await this.authService.buildUserResponse(user);
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      user: {
-        id: user.id,
-        name: user.name,
-        nome: user.name,
-        cpf: user.cpf,
-        email: user.email || '',
-        role: user.role,
-        avatar: user.avatar,
-        ativo: user.ativo
-      }
+      user: userResponse,
+      permissions: userResponse.permissoes,
     };
   }
 
@@ -82,20 +74,12 @@ export class AuthController {
     );
 
     const tokens = await this.authService.login(user);
-
+    const userResponse = await this.authService.buildUserResponse(user);
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
-      user: {
-        id: user.id,
-        name: user.name,
-        nome: user.name,
-        cpf: user.cpf,
-        email: user.email || '',
-        role: user.role,
-        avatar: user.avatar,
-        ativo: user.ativo
-      }
+      user: userResponse,
+      permissions: userResponse.permissoes,
     };
   }
 
@@ -104,30 +88,29 @@ export class AuthController {
   async getProfile(@Req() req: AuthRequest) {
     const user = await this.authService.findById(req.user.id);
     if (!user) {
-      return {
+      const fallbackUser = {
         id: req.user.id,
         name: 'Usuário Teste',
         cpf: req.user.cpf,
         email: 'teste@teste.com',
         role: req.user.role,
         avatar: null,
+        ativo: true,
+      };
+
+      const formattedFallback = await this.authService.buildUserResponse(fallbackUser);
+      return {
+        ...formattedFallback,
         dataCriacao: new Date(),
         ultimoLogin: new Date(),
-        ativo: true
       };
     }
 
+    const response = await this.authService.buildUserResponse(user);
     return {
-      id: user.id,
-      name: user.name,
-      nome: user.name, 
-      cpf: user.cpf,
-      email: user.email || '',
-      role: user.role,
-      avatar: user.avatar,
+      ...response,
       dataCriacao: user.dataCriacao,
       ultimoLogin: user.ultimoLogin,
-      ativo: user.ativo
     };
   }
 
