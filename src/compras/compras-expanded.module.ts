@@ -7,3 +7,4 @@ import { ComprasExpandedController } from './compras-expanded.controller';
 export class ComprasExpandedModule {}
 
 
+
