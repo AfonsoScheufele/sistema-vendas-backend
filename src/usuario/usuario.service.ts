@@ -33,6 +33,21 @@ export class UsuarioService {
     }
   }
 
+  async findOne(id: number): Promise<any> {
+    const usuario = await this.usuarioRepository.findOne({ where: { id } });
+    if (!usuario) {
+      throw new NotFoundException('Usuário não encontrado');
+    }
+    const { senha, resetPasswordToken, resetPasswordExpires, ...usuarioSemSenha } = usuario;
+    return {
+      ...usuarioSemSenha,
+      nome: usuario.name,
+      name: usuario.name,
+      email: usuario.email || '',
+      telefone: '',
+    };
+  }
+
   async create(data: { name: string; cpf: string; email?: string; senha: string; role?: string }): Promise<Usuario> {
     const existingUser = await this.usuarioRepository.findOne({ where: { cpf: data.cpf } });
     

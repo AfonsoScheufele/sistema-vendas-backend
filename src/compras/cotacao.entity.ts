@@ -1,33 +1,35 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('cotacoes')
-export class Cotacao {
+export class CotacaoEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 64 })
+  @Index()
+  empresaId: string;
+
+  @Column({ type: 'varchar', length: 50 })
   numero: string;
 
-  @Column()
-  fornecedor: string;
-
-  @Column({ type: 'timestamp' })
-  dataCotacao: Date;
+  @Column({ type: 'int' })
+  fornecedorId: number;
 
   @Column({ type: 'varchar', length: 20, default: 'aberta' })
-  status: string;
+  status: string; // 'aberta' | 'fechada' | 'cancelada'
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   valorTotal: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  dataValidade: Date;
+
+  @Column({ type: 'text', nullable: true })
   observacoes: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  criadoEm: Date;
+
+  @UpdateDateColumn()
+  atualizadoEm: Date;
 }
-
-
-
-
-

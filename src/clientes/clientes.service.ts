@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { Cliente } from './cliente.entity';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
@@ -12,9 +12,9 @@ export class ClientesService {
     private clienteRepo: Repository<Cliente>,
   ) {}
 
-  async create(createClienteDto: CreateClienteDto): Promise<Cliente> {
+  async create(createClienteDto: CreateClienteDto, empresaId: string): Promise<Cliente> {
     const emailExiste = await this.clienteRepo.findOne({
-      where: { email: createClienteDto.email.toLowerCase() }
+      where: { email: createClienteDto.email.toLowerCase(), empresaId }
     });
 
     if (emailExiste) {
@@ -26,13 +26,16 @@ export class ClientesService {
       email: createClienteDto.email.toLowerCase(),
       telefone: createClienteDto.telefone.replace(/\D/g, ''),
       cpf_cnpj: createClienteDto.cpf_cnpj ? createClienteDto.cpf_cnpj.replace(/\D/g, '') : undefined,
+      empresaId,
     });
 
     return await this.clienteRepo.save(cliente);
   }
 
-  async findAll(filtros?: { tipo?: string; ativo?: string; search?: string }): Promise<Cliente[]> {
+  async findAll(empresaId: string, filtros?: { tipo?: string; ativo?: string; search?: string }): Promise<Cliente[]> {
     const query = this.clienteRepo.createQueryBuilder('cliente');
+
+    query.where('cliente.empresaId = :empresaId', { empresaId });
 
     if (filtros?.tipo) {
       query.andWhere('cliente.tipo = :tipo', { tipo: filtros.tipo });
@@ -52,17 +55,20 @@ export class ClientesService {
     return query.orderBy('cliente.criadoEm', 'DESC').getMany();
   }
 
-  async getTipos() {
+  async getTipos(empresaId: string) {
     const result = await this.clienteRepo
       .createQueryBuilder('cliente')
+      .where('cliente.empresaId = :empresaId', { empresaId })
       .select('DISTINCT cliente.tipo', 'tipo')
       .getRawMany();
 
     return result.map(item => item.tipo);
   }
 
-  async getClientesNovos(periodo?: string) {
+  async getClientesNovos(empresaId: string, periodo?: string) {
     const query = this.clienteRepo.createQueryBuilder('cliente');
+
+    query.where('cliente.empresaId = :empresaId', { empresaId });
 
     if (periodo === 'mes') {
       query.andWhere('cliente.criadoEm >= :dataInicio', {
@@ -77,8 +83,8 @@ export class ClientesService {
     return query.orderBy('cliente.criadoEm', 'DESC').getMany();
   }
 
-  async getVendasCliente(id: number) {
-    const cliente = await this.findOne(id);
+  async getVendasCliente(id: number, empresaId: string) {
+    const cliente = await this.findOne(id, empresaId);
 
     return {
       cliente,
@@ -87,8 +93,8 @@ export class ClientesService {
     };
   }
 
-  async findOne(id: number): Promise<Cliente> {
-    const cliente = await this.clienteRepo.findOne({ where: { id } });
+  async findOne(id: number, empresaId: string): Promise<Cliente> {
+    const cliente = await this.clienteRepo.findOne({ where: { id, empresaId } });
 
     if (!cliente) {
       throw new NotFoundException(`Cliente com ID ${id} não encontrado`);
@@ -97,12 +103,12 @@ export class ClientesService {
     return cliente;
   }
 
-  async update(id: number, updateClienteDto: UpdateClienteDto): Promise<Cliente> {
-    const cliente = await this.findOne(id);
+  async update(id: number, empresaId: string, updateClienteDto: UpdateClienteDto): Promise<Cliente> {
+    const cliente = await this.findOne(id, empresaId);
 
     if (updateClienteDto.email && updateClienteDto.email.toLowerCase() !== cliente.email) {
       const emailExiste = await this.clienteRepo.findOne({
-        where: { email: updateClienteDto.email.toLowerCase() }
+        where: { email: updateClienteDto.email.toLowerCase(), empresaId }
       });
 
       if (emailExiste) {
@@ -121,19 +127,22 @@ export class ClientesService {
     return await this.clienteRepo.save(cliente);
   }
 
-  async remove(id: number): Promise<{ message: string }> {
-    const cliente = await this.findOne(id);
+  async remove(id: number, empresaId: string): Promise<{ message: string }> {
+    const cliente = await this.findOne(id, empresaId);
     await this.clienteRepo.remove(cliente);
     return { message: 'Cliente removido com sucesso' };
   }
 
-  async getStats() {
-    const totalClientes = await this.clienteRepo.count();
+  async getStats(empresaId: string) {
+    const totalClientes = await this.clienteRepo.count({ where: { empresaId } });
+
+    const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const clientesRecentes = await this.clienteRepo.count({
       where: {
-        criadoEm: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) as any
-      }
+        empresaId,
+        criadoEm: MoreThan(trintaDiasAtras),
+      },
     });
 
     return {

@@ -4,12 +4,13 @@ import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { Produto } from '../produtos/produto.entity';
 import { Cliente } from '../clientes/cliente.entity';
+import { FinanceiroModule } from '../financeiro/financeiro.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    Produto,
-    Cliente
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([Produto, Cliente]),
+    FinanceiroModule,
+  ],
   controllers: [DashboardController],
   providers: [DashboardService],
   exports: [DashboardService],

@@ -17,6 +17,9 @@ export class Pedido {
   @Column()
   clienteId: number;
 
+  @Column({ name: 'empresa_id' })
+  empresaId: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total: number;
 

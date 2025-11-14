@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Query, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { PedidosService } from './pedidos.service';
 
@@ -8,32 +8,38 @@ export class PedidosController {
   constructor(private readonly pedidosService: PedidosService) {}
 
   @Get()
-  async listarPedidos(@Query('status') status?: string) {
-    return await this.pedidosService.listarPedidos(status);
+  async listarPedidos(@Req() req: any, @Query('status') status?: string) {
+    return this.pedidosService.listarPedidos(req.empresaId, status);
   }
 
   @Get('stats')
-  async obterEstatisticas() {
-    return await this.pedidosService.obterEstatisticas();
+  async obterEstatisticas(@Req() req: any) {
+    return this.pedidosService.obterEstatisticas(req.empresaId);
+  }
+
+  @Get('pipeline/snapshot')
+  async obterPipeline(@Req() req: any) {
+    return this.pedidosService.obterPipelineSnapshot(req.empresaId);
   }
 
   @Get(':id')
-  async obterPedido(@Param('id') id: string) {
-    return await this.pedidosService.obterPedido(+id);
+  async obterPedido(@Param('id') id: string, @Req() req: any) {
+    return this.pedidosService.obterPedido(+id, req.empresaId);
   }
 
   @Post()
-  async criar(@Body() data: any) {
-    return await this.pedidosService.criar(data);
+  async criar(@Body() data: any, @Req() req: any) {
+    return this.pedidosService.criar(data, req.empresaId);
   }
 
   @Patch(':id')
-  async atualizar(@Param('id') id: string, @Body() data: any) {
-    return await this.pedidosService.atualizar(+id, data);
+  async atualizar(@Param('id') id: string, @Body() data: any, @Req() req: any) {
+    return this.pedidosService.atualizar(+id, req.empresaId, data);
   }
 
   @Delete(':id')
-  async excluir(@Param('id') id: string) {
-    return await this.pedidosService.excluir(+id);
+  async excluir(@Param('id') id: string, @Req() req: any) {
+    await this.pedidosService.excluir(+id, req.empresaId);
+    return { sucesso: true };
   }
 }

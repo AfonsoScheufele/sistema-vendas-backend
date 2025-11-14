@@ -1,46 +1,64 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, Req } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { ComprasAvancadasService } from './compras-avancadas.service';
 
-@Controller()
+@Controller('compras')
 @UseGuards(JwtAuthGuard)
 export class ComprasExpandedController {
+  constructor(private readonly comprasAvancadasService: ComprasAvancadasService) {}
+
   @Get('cotacoes')
-  async listarCotacoes() {
-    return [];
+  async listarCotacoes(@Req() req: any, @Query('status') status?: string) {
+    return this.comprasAvancadasService.listarCotacoes(req.empresaId, { status });
   }
 
   @Get('cotacoes/stats')
-  async obterStatsCotacoes() {
-    return { total: 0, abertas: 0, fechadas: 0, canceladas: 0 };
+  async obterStatsCotacoes(@Req() req: any) {
+    return this.comprasAvancadasService.obterStatsCotacoes(req.empresaId);
   }
 
-  @Get('compras/requisicoes')
-  async listarRequisicoes() {
-    return [];
+  @Post('cotacoes')
+  async criarCotacao(@Body() body: any, @Req() req: any) {
+    return this.comprasAvancadasService.criarCotacao(req.empresaId, body);
   }
 
-  @Get('compras/requisicoes/stats')
-  async obterStatsRequisicoes() {
-    return { total: 0, pendentes: 0, aprovadas: 0, rejeitadas: 0, valorTotal: 0 };
+  @Get('requisicoes')
+  async listarRequisicoes(@Req() req: any, @Query('status') status?: string) {
+    return this.comprasAvancadasService.listarRequisicoes(req.empresaId, { status });
   }
 
-  @Get('compras/pedidos')
-  async listarPedidos() {
-    return [];
+  @Get('requisicoes/stats')
+  async obterStatsRequisicoes(@Req() req: any) {
+    return this.comprasAvancadasService.obterStatsRequisicoes(req.empresaId);
   }
 
-  @Get('compras/pedidos/stats')
-  async obterStatsPedidos() {
-    return { total: 0, rascunho: 0, enviado: 0, confirmado: 0, recebido: 0, cancelado: 0 };
+  @Post('requisicoes')
+  async criarRequisicao(@Body() body: any, @Req() req: any) {
+    return this.comprasAvancadasService.criarRequisicao(req.empresaId, body);
   }
 
-  @Get('fornecedores')
-  async listarFornecedores() {
-    return [];
+  @Patch('requisicoes/:id')
+  async atualizarRequisicao(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.comprasAvancadasService.atualizarRequisicao(+id, req.empresaId, body);
   }
 
-  @Get('fornecedores/stats')
-  async obterStatsFornecedores() {
-    return { total: 0, ativos: 0, inativos: 0 };
+  @Get('pedidos')
+  async listarPedidos(@Req() req: any, @Query('status') status?: string) {
+    return this.comprasAvancadasService.listarPedidosCompra(req.empresaId, { status });
+  }
+
+  @Get('pedidos/stats')
+  async obterStatsPedidos(@Req() req: any) {
+    return this.comprasAvancadasService.obterStatsPedidosCompra(req.empresaId);
+  }
+
+  @Post('pedidos')
+  async criarPedido(@Body() body: any, @Req() req: any) {
+    return this.comprasAvancadasService.criarPedidoCompra(req.empresaId, body);
+  }
+
+  @Patch('pedidos/:id')
+  async atualizarPedido(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.comprasAvancadasService.atualizarPedidoCompra(+id, req.empresaId, body);
   }
 }

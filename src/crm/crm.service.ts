@@ -16,30 +16,42 @@ export class CrmService {
     private campanhaRepo: Repository<Campanha>,
   ) {}
 
-  async listarLeads() {
-    return await this.leadRepo.find({ order: { dataCriacao: 'DESC' } });
+  async listarLeads(empresaId: string) {
+    return await this.leadRepo.find({
+      where: { empresaId },
+      order: { dataCriacao: 'DESC' },
+    });
   }
 
-  async contarLeadsNaoConvertidos() {
-    return await this.leadRepo.count({ where: { status: 'novo' } });
+  async contarLeadsNaoConvertidos(empresaId: string) {
+    return await this.leadRepo.count({ where: { empresaId, status: 'novo' } });
   }
 
-  async listarOportunidades() {
-    return await this.oportunidadeRepo.find({ order: { dataCriacao: 'DESC' } });
+  async listarOportunidades(empresaId: string) {
+    return await this.oportunidadeRepo.find({
+      where: { empresaId },
+      order: { dataCriacao: 'DESC' },
+    });
   }
 
-  async contarOportunidadesAtivas() {
-    return await this.oportunidadeRepo.count({ where: { status: 'ativa' } });
+  async contarOportunidadesAtivas(empresaId: string) {
+    return await this.oportunidadeRepo.count({ where: { empresaId, status: 'ativa' } });
   }
 
-  async listarCampanhas() {
-    return await this.campanhaRepo.find({ order: { dataInicio: 'DESC' } });
+  async listarCampanhas(empresaId: string) {
+    return await this.campanhaRepo.find({
+      where: { empresaId },
+      order: { dataInicio: 'DESC' },
+    });
   }
 
-  async contarCampanhasAtivas() {
-    return await this.campanhaRepo.count({ where: { status: 'ativa' } });
+  async contarCampanhasAtivas(empresaId: string) {
+    return await this.campanhaRepo.count({ where: { empresaId, status: 'ativa' } });
   }
 }
+
+
+
 
 
 

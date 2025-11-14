@@ -50,6 +50,9 @@ export class Cliente {
   @Column({ nullable: true })
   contato?: string;
 
+  @Column({ name: 'empresa_id' })
+  empresaId!: string;
+
   @Column({ nullable: true })
   observacoes?: string;
 

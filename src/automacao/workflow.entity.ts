@@ -1,10 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, Index } from 'typeorm';
 import { Usuario } from '../auth/usuario.entity';
 
 @Entity('workflows')
 export class Workflow {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'varchar', length: 64 })
+  @Index()
+  empresaId: string;
 
   @Column()
   nome: string;

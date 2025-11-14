@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as dns from 'dns';
 import { ProdutosModule } from './produtos/produtos.module';
@@ -14,6 +15,7 @@ import { ComprasExpandedModule } from './compras/compras-expanded.module';
 import { FiscalExpandedModule } from './fiscal/fiscal-expanded.module';
 import { EstoqueExpandedModule } from './estoque/estoque-expanded.module';
 import { LogisticaModule } from './logistica/logistica.module';
+import { ContabilModule } from './contabil/contabil.module';
 import { WebSocketModule } from './websocket/websocket.module';
 import { ComissoesModule } from './comissoes/comissoes.module';
 import { VendedoresModule } from './vendedores/vendedores.module';
@@ -21,6 +23,31 @@ import { FinanceiroModule } from './financeiro/financeiro.module';
 import { AutomacaoModule } from './automacao/automacao.module';
 import { UsuarioModule } from './usuario/usuario.module';
 import { PerfisModule } from './perfis/perfis.module';
+import { MetasModule } from './metas/metas.module';
+import { MetaEntity } from './metas/meta.entity';
+import { MetaProgressoEntity } from './metas/meta-progresso.entity';
+import { FornecedorEntity } from './compras/fornecedores/fornecedor.entity';
+import { FornecedorProdutoEntity } from './compras/fornecedores/fornecedor-produto.entity';
+import { ContratoEntity } from './compras/contratos/contrato.entity';
+import { CotacaoEntity } from './compras/cotacao.entity';
+import { RequisicaoEntity } from './compras/requisicao.entity';
+import { PedidoCompraEntity } from './compras/pedido-compra.entity';
+import { EstoqueModule } from './estoque/estoque.module';
+import { EstoqueDepositoEntity } from './estoque/entities/estoque-deposito.entity';
+import { EstoqueMovimentacaoEntity } from './estoque/entities/estoque-movimentacao.entity';
+import { LoteEntity } from './estoque/lote.entity';
+import { InventarioEntity } from './estoque/inventario.entity';
+import { ExpedicaoEntity } from './logistica/expedicao.entity';
+import { TransportadoraEntity } from './logistica/transportadora.entity';
+import { RoteiroEntity } from './logistica/roteiro.entity';
+import { PlanoContaEntity } from './contabil/plano-conta.entity';
+import { FornecedorAvaliacaoEntity } from './compras/fornecedor-avaliacao.entity';
+import { RelatoriosModule } from './relatorios/relatorios.module';
+import { ConfiguracoesModule } from './configuracoes/configuracoes.module';
+import { ConfiguracaoEmpresaEntity } from './configuracoes/configuracao-empresa.entity';
+import { NotaFiscalEntity } from './fiscal/nota-fiscal.entity';
+import { SpedEntity } from './fiscal/sped.entity';
+import { ImpostoEntity } from './fiscal/imposto.entity';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
@@ -33,6 +60,19 @@ import { Oportunidade } from './crm/oportunidade.entity';
 import { Campanha } from './crm/campanha.entity';
 import { Workflow } from './automacao/workflow.entity';
 import { Perfil } from './perfis/perfil.entity';
+import { InvestimentoCarteira } from './financeiro/investimento-carteira.entity';
+import { InvestimentoAtivo } from './financeiro/investimento-ativo.entity';
+import { InvestimentoHistorico } from './financeiro/investimento-historico.entity';
+import { InvestimentoAlerta } from './financeiro/investimento-alerta.entity';
+import { OrcamentoCentroCustoEntity } from './financeiro/orcamento-centro.entity';
+import { OrcamentoMetaMensal } from './financeiro/orcamento-meta.entity';
+import { OrcamentoAlertaEntity } from './financeiro/orcamento-alerta.entity';
+import { ContratosModule } from './compras/contratos/contratos.module';
+import { FornecedoresModule } from './compras/fornecedores/fornecedores.module';
+import { EmpresaContextInterceptor } from './common/interceptors/empresa-context.interceptor';
+import { EmpresasModule } from './empresas/empresas.module';
+import { ComissaoEntity } from './comissoes/comissao.entity';
+import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
 dns.setDefaultResultOrder('ipv4first');
 
 @Module({
@@ -80,6 +120,36 @@ dns.setDefaultResultOrder('ipv4first');
             Campanha,
             Workflow,
             Perfil,
+            InvestimentoCarteira,
+            InvestimentoAtivo,
+            InvestimentoHistorico,
+            InvestimentoAlerta,
+            OrcamentoCentroCustoEntity,
+            OrcamentoMetaMensal,
+            OrcamentoAlertaEntity,
+            ComissaoEntity,
+            ComissaoVendedorEntity,
+            MetaEntity,
+            MetaProgressoEntity,
+            FornecedorEntity,
+            FornecedorProdutoEntity,
+            ContratoEntity,
+            CotacaoEntity,
+            RequisicaoEntity,
+            PedidoCompraEntity,
+            EstoqueDepositoEntity,
+            EstoqueMovimentacaoEntity,
+            LoteEntity,
+            InventarioEntity,
+            ConfiguracaoEmpresaEntity,
+            NotaFiscalEntity,
+            SpedEntity,
+            ImpostoEntity,
+            ExpedicaoEntity,
+            TransportadoraEntity,
+            RoteiroEntity,
+            PlanoContaEntity,
+            FornecedorAvaliacaoEntity,
           ],
           synchronize: true,
           logging: false,
@@ -106,6 +176,9 @@ dns.setDefaultResultOrder('ipv4first');
     OrcamentosModule,
     CrmModule,
     ComprasExpandedModule,
+    ContratosModule,
+    FornecedoresModule,
+    EmpresasModule,
     FiscalExpandedModule,
     EstoqueExpandedModule,
     LogisticaModule,
@@ -116,6 +189,14 @@ dns.setDefaultResultOrder('ipv4first');
     AutomacaoModule,
     UsuarioModule,
     PerfisModule,
+    MetasModule,
+    EstoqueModule,
+    RelatoriosModule,
+    ConfiguracoesModule,
+    ContabilModule,
+  ],
+  providers: [
+    { provide: APP_INTERCEPTOR, useClass: EmpresaContextInterceptor },
   ],
 })
 export class AppModule {}

@@ -1,27 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('requisicoes')
-export class Requisicao {
+export class RequisicaoEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'varchar', length: 64 })
+  @Index()
+  empresaId: string;
+
+  @Column({ type: 'varchar', length: 50 })
   numero: string;
 
+  @Column({ type: 'varchar', length: 100 })
+  solicitante: string;
+
   @Column({ type: 'varchar', length: 20, default: 'pendente' })
-  status: string;
+  status: string; // 'pendente' | 'aprovada' | 'rejeitada' | 'cancelada'
 
-  @Column({ type: 'varchar', length: 20, default: 'normal' })
-  prioridade: string;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  valorTotal: number;
 
-  @Column({ type: 'timestamp' })
-  dataSolicitacao: Date;
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  aprovador: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dataAprovacao: Date;
+
+  @Column({ type: 'text', nullable: true })
+  observacoes: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  criadoEm: Date;
+
+  @UpdateDateColumn()
+  atualizadoEm: Date;
 }
-
-
-
-
-

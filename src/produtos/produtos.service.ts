@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Produto } from './produto.entity';
@@ -12,25 +12,37 @@ export class ProdutosService {
     private produtoRepo: Repository<Produto>,
   ) {}
 
-  create(dto: CreateProdutoDto) {
-    const produto = this.produtoRepo.create(dto);
+  async create(dto: CreateProdutoDto, empresaId: string) {
+    const produto = this.produtoRepo.create({
+      ...dto,
+      empresaId,
+      estoque: dto.estoque ?? 0,
+      estoqueMinimo: dto.estoqueMinimo ?? 0,
+    });
     return this.produtoRepo.save(produto);
   }
 
-  findAll(filtros?: { categoria?: string; ativo?: string; search?: string }) {
+  findAll(empresaId: string, filtros?: { categoria?: string; ativo?: string; search?: string }) {
     const query = this.produtoRepo.createQueryBuilder('produto');
+
+    query.where('produto.empresaId = :empresaId', { empresaId });
 
     if (filtros?.categoria) {
       query.andWhere('produto.categoria = :categoria', { categoria: filtros.categoria });
     }
 
-    if (filtros?.ativo !== undefined) {
+    if (filtros?.ativo && filtros.ativo !== 'todos') {
       const ativo = filtros.ativo === 'true';
       query.andWhere('produto.ativo = :ativo', { ativo });
     }
 
     if (filtros?.search) {
-      query.andWhere('(produto.nome ILIKE :search OR produto.descricao ILIKE :search)', { 
+      query.andWhere(`(
+        produto.nome ILIKE :search OR
+        produto.descricao ILIKE :search OR
+        produto.sku ILIKE :search OR
+        produto.codigoBarras ILIKE :search
+      )`, {
         search: `%${filtros.search}%` 
       });
     }
@@ -38,31 +50,34 @@ export class ProdutosService {
     return query.orderBy('produto.nome', 'ASC').getMany();
   }
 
-  async getCategorias() {
+  async getCategorias(empresaId: string) {
     const result = await this.produtoRepo
       .createQueryBuilder('produto')
+      .where('produto.empresaId = :empresaId', { empresaId })
+      .andWhere('produto.categoria IS NOT NULL')
       .select('DISTINCT produto.categoria', 'categoria')
-      .where('produto.categoria IS NOT NULL')
       .getRawMany();
 
     return result.map(item => item.categoria);
   }
 
-  async getEstoqueBaixo() {
+  async getEstoqueBaixo(empresaId: string) {
     return this.produtoRepo
       .createQueryBuilder('produto')
-      .where('produto.estoque <= produto.estoqueMinimo')
+      .where('produto.empresaId = :empresaId', { empresaId })
+      .andWhere('produto.estoque <= produto.estoqueMinimo')
       .andWhere('produto.ativo = :ativo', { ativo: true })
       .orderBy('produto.estoque', 'ASC')
       .getMany();
   }
 
-  async getStats() {
-    const total = await this.produtoRepo.count();
-    const ativos = await this.produtoRepo.count({ where: { ativo: true } });
+  async getStats(empresaId: string) {
+    const total = await this.produtoRepo.count({ where: { empresaId } });
+    const ativos = await this.produtoRepo.count({ where: { empresaId, ativo: true } });
     const estoqueBaixo = await this.produtoRepo
       .createQueryBuilder('produto')
-      .where('produto.estoque <= produto.estoqueMinimo')
+      .where('produto.empresaId = :empresaId', { empresaId })
+      .andWhere('produto.estoque <= produto.estoqueMinimo')
       .getCount();
 
     return {
@@ -73,14 +88,17 @@ export class ProdutosService {
     };
   }
 
-  async updateEstoque(id: number, quantidade: number, tipo: 'entrada' | 'saida') {
-    const produto = await this.findOne(id);
+  async updateEstoque(id: number, empresaId: string, quantidade: number, tipo: 'entrada' | 'saida') {
+    if (!quantidade || quantidade <= 0) {
+      throw new BadRequestException('Quantidade deve ser maior que zero');
+    }
+    const produto = await this.findOne(id, empresaId);
 
     if (tipo === 'entrada') {
       produto.estoque += quantidade;
     } else {
       if (produto.estoque < quantidade) {
-        throw new Error('Estoque insuficiente');
+        throw new BadRequestException('Estoque insuficiente');
       }
       produto.estoque -= quantidade;
     }
@@ -88,8 +106,8 @@ export class ProdutosService {
     return this.produtoRepo.save(produto);
   }
 
-  async findOne(id: number) {
-    const produto = await this.produtoRepo.findOneBy({ id });
+  async findOne(id: number, empresaId: string) {
+    const produto = await this.produtoRepo.findOne({ where: { id, empresaId } });
 
     if (!produto) {
       throw new NotFoundException('Produto não encontrado');
@@ -98,15 +116,15 @@ export class ProdutosService {
     return produto;
   }
 
-  async update(id: number, dto: UpdateProdutoDto) {
-    const produto = await this.findOne(id);
+  async update(id: number, empresaId: string, dto: UpdateProdutoDto) {
+    const produto = await this.findOne(id, empresaId);
 
     Object.assign(produto, dto);
     return this.produtoRepo.save(produto);
   }
 
-  async delete(id: number) {
-    const produto = await this.findOne(id);
-    await this.produtoRepo.delete(id);
+  async delete(id: number, empresaId: string) {
+    const produto = await this.findOne(id, empresaId);
+    await this.produtoRepo.remove(produto);
   }
 }

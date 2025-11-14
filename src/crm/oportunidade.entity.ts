@@ -1,9 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('oportunidades')
 export class Oportunidade {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column({ type: 'varchar', length: 64 })
+  @Index()
+  empresaId: string;
 
   @Column()
   titulo: string;
@@ -32,6 +36,9 @@ export class Oportunidade {
   @UpdateDateColumn()
   ultimaAtualizacao: Date;
 }
+
+
+
 
 
 

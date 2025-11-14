@@ -12,6 +12,11 @@ export class UsuarioController {
     return this.usuarioService.findAll();
   }
 
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.usuarioService.findOne(id);
+  }
+
   @Post()
   async create(@Body() body: { name: string; cpf: string; email?: string; senha: string; role?: string }) {
     return this.usuarioService.create(body);

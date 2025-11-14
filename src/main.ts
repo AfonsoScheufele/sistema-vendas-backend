@@ -18,7 +18,16 @@ async function bootstrap() {
     origin: corsOrigin,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+      'x-empresa-id',
+      'X-Empresa-Id',
+      'empresa-id',
+    ],
+    exposedHeaders: ['Content-Disposition'],
   });
 
   app.use(express.json({ limit: '10mb' }));

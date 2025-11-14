@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { VendedoresService } from './vendedores.service';
 
@@ -8,13 +8,9 @@ export class VendedoresController {
   constructor(private readonly vendedoresService: VendedoresService) {}
 
   @Get()
-  async listar() {
-    return await this.vendedoresService.listar();
+  async listar(@Req() req: any) {
+    return await this.vendedoresService.listar(req.empresaId);
   }
 }
-
-
-
-
 
 

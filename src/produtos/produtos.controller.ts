@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
@@ -10,70 +10,70 @@ export class ProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}
 
   @Post()
-  create(@Body() createProdutoDto: CreateProdutoDto) {
-    return this.produtosService.create(createProdutoDto);
+  create(@Body() createProdutoDto: CreateProdutoDto, @Req() req: any) {
+    return this.produtosService.create(createProdutoDto, req.empresaId);
   }
 
   @Get()
-  findAll(@Query('categoria') categoria?: string, @Query('ativo') ativo?: string) {
-    return this.produtosService.findAll({ categoria, ativo });
+  findAll(@Req() req: any, @Query('categoria') categoria?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
+    return this.produtosService.findAll(req.empresaId, { categoria, ativo, search });
   }
 
   @Get('stats')
-  getStats() {
-    return this.produtosService.getStats();
+  getStats(@Req() req: any) {
+    return this.produtosService.getStats(req.empresaId);
   }
 
   @Get('categorias')
-  getCategorias() {
-    return this.produtosService.getCategorias();
+  getCategorias(@Req() req: any) {
+    return this.produtosService.getCategorias(req.empresaId);
   }
 
   @Get('estoque-baixo')
-  getEstoqueBaixo() {
-    return this.produtosService.getEstoqueBaixo();
+  getEstoqueBaixo(@Req() req: any) {
+    return this.produtosService.getEstoqueBaixo(req.empresaId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.produtosService.findOne(+id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.produtosService.findOne(+id, req.empresaId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProdutoDto: UpdateProdutoDto) {
-    return this.produtosService.update(+id, updateProdutoDto);
+  update(@Param('id') id: string, @Body() updateProdutoDto: UpdateProdutoDto, @Req() req: any) {
+    return this.produtosService.update(+id, req.empresaId, updateProdutoDto);
   }
 
   @Patch(':id/estoque')
-  updateEstoque(@Param('id') id: string, @Body() body: { estoque: number }) {
-    return this.produtosService.updateEstoque(+id, body.estoque, 'entrada');
+  updateEstoque(@Param('id') id: string, @Body() body: { quantidade: number; tipo?: 'entrada' | 'saida' }, @Req() req: any) {
+    const quantidade = Number(body.quantidade ?? 0);
+    const tipo = body.tipo ?? 'entrada';
+    return this.produtosService.updateEstoque(+id, req.empresaId, quantidade, tipo);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.produtosService.delete(+id);
+  remove(@Param('id') id: string, @Req() req: any) {
+    return this.produtosService.delete(+id, req.empresaId);
   }
 }
 @Controller('api/produtos')
+@UseGuards(JwtAuthGuard)
 export class ApiProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}
 
   @Get()
-  findAll() {
-    return this.produtosService.findAll();
+  findAll(@Req() req: any, @Query('categoria') categoria?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
+    return this.produtosService.findAll(req.empresaId, { categoria, ativo, search });
   }
 
   @Get('dashboard/stats')
-  getDashboardStats() {
+  async getDashboardStats(@Req() req: any) {
+    const stats = await this.produtosService.getStats(req.empresaId);
     return {
-      totalVendas: 0,
-      clientesAtivos: 4,
-      produtosEstoque: 5,
-      pedidosPendentes: 0,
-      faturamentoMes: 0,
-      crescimentoVendas: 0,
-      ticketMedio: 0,
-      conversao: 0
+      totalProdutos: stats.total,
+      produtosAtivos: stats.ativos,
+      produtosInativos: stats.inativos,
+      estoqueBaixo: stats.estoqueBaixo,
     };
   }
 
@@ -136,7 +136,7 @@ export class ApiProdutosController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.produtosService.findOne(+id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.produtosService.findOne(+id, req.empresaId);
   }
 }

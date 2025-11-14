@@ -32,6 +32,9 @@ export class Produto {
   @Column({ nullable: true })
   sku?: string;
 
+  @Column({ name: 'empresa_id' })
+  empresaId!: string;
+
   @Column({ nullable: true })
   unidade?: string;
 

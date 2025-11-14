@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
@@ -11,49 +11,49 @@ export class ClientesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createClienteDto: CreateClienteDto) {
-    return this.clientesService.create(createClienteDto);
+  create(@Body() createClienteDto: CreateClienteDto, @Req() req: any) {
+    return this.clientesService.create(createClienteDto, req.empresaId);
   }
 
   @Get()
-  findAll(@Query('tipo') tipo?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
-    return this.clientesService.findAll({ tipo, ativo, search });
+  findAll(@Req() req: any, @Query('tipo') tipo?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
+    return this.clientesService.findAll(req.empresaId, { tipo, ativo, search });
   }
 
   @Get('stats')
-  getStats() {
-    return this.clientesService.getStats();
+  getStats(@Req() req: any) {
+    return this.clientesService.getStats(req.empresaId);
   }
 
   @Get('tipos')
-  getTipos() {
-    return this.clientesService.getTipos();
+  getTipos(@Req() req: any) {
+    return this.clientesService.getTipos(req.empresaId);
   }
 
   @Get('novos')
-  getClientesNovos(@Query('periodo') periodo?: string) {
-    return this.clientesService.getClientesNovos(periodo);
+  getClientesNovos(@Req() req: any, @Query('periodo') periodo?: string) {
+    return this.clientesService.getClientesNovos(req.empresaId, periodo);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.clientesService.findOne(+id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.clientesService.findOne(+id, req.empresaId);
   }
 
   @Get(':id/vendas')
-  getVendasCliente(@Param('id') id: string) {
-    return this.clientesService.getVendasCliente(+id);
+  getVendasCliente(@Param('id') id: string, @Req() req: any) {
+    return this.clientesService.getVendasCliente(+id, req.empresaId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateClienteDto: UpdateClienteDto) {
-    return this.clientesService.update(+id, updateClienteDto);
+  update(@Param('id') id: string, @Body() updateClienteDto: UpdateClienteDto, @Req() req: any) {
+    return this.clientesService.update(+id, req.empresaId, updateClienteDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
-    await this.clientesService.remove(+id);
+  async remove(@Param('id') id: string, @Req() req: any) {
+    await this.clientesService.remove(+id, req.empresaId);
   }
 }
 @Controller('api/clientes')
@@ -62,12 +62,12 @@ export class ApiClientesController {
   constructor(private readonly clientesService: ClientesService) {}
 
   @Get()
-  findAll(@Query('tipo') tipo?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
-    return this.clientesService.findAll({ tipo, ativo, search });
+  findAll(@Req() req: any, @Query('tipo') tipo?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
+    return this.clientesService.findAll(req.empresaId, { tipo, ativo, search });
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.clientesService.findOne(+id);
+  findOne(@Param('id') id: string, @Req() req: any) {
+    return this.clientesService.findOne(+id, req.empresaId);
   }
 }

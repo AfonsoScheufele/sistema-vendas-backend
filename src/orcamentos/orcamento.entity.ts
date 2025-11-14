@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Cliente } from '../clientes/cliente.entity';
 import { Usuario } from '../auth/usuario.entity';
 
@@ -37,12 +37,17 @@ export class Orcamento {
   @Column()
   vendedorId: number;
 
+  @Column({ type: 'varchar', length: 64 })
+  @Index()
+  empresaId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
 }
+
 
 
 
