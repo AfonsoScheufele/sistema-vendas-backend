@@ -482,9 +482,9 @@ export class RelatoriosService {
 
       const mes = new Date(mov.criadoEm).toISOString().slice(0, 7);
       const mesAtual = movimentacoesPorMes.get(mes) || { entradas: 0, saidas: 0 };
-      if (mov.tipo === 'entrada' || mov.tipo === 'compra') {
+      if (mov.tipo === 'entrada') {
         mesAtual.entradas += mov.quantidade;
-      } else {
+      } else if (mov.tipo === 'saida' || mov.tipo === 'transferencia' || mov.tipo === 'ajuste') {
         mesAtual.saidas += mov.quantidade;
       }
       movimentacoesPorMes.set(mes, mesAtual);

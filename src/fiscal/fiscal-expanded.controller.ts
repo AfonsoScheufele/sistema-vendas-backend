@@ -31,6 +31,16 @@ export class FiscalExpandedController {
     return this.fiscalService.criarNotaFiscal(req.empresaId, body);
   }
 
+  @Patch('notas-fiscais/:id')
+  async atualizarNotaFiscal(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.fiscalService.atualizarNotaFiscal(+id, req.empresaId, body);
+  }
+
+  @Patch('notas-fiscais/:id/cancelar')
+  async cancelarNotaFiscal(@Param('id') id: string, @Req() req: any) {
+    return this.fiscalService.cancelarNotaFiscal(+id, req.empresaId);
+  }
+
   @Get('sped')
   async listarSped(
     @Req() req: any,

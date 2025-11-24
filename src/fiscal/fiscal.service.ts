@@ -44,6 +44,27 @@ export class FiscalService {
     return this.notaFiscalRepo.save(nota);
   }
 
+  async atualizarNotaFiscal(id: number, empresaId: string, data: Partial<NotaFiscalEntity>) {
+    const nota = await this.notaFiscalRepo.findOne({ where: { id, empresaId } });
+    if (!nota) {
+      throw new NotFoundException('Nota fiscal não encontrada');
+    }
+    Object.assign(nota, data);
+    return this.notaFiscalRepo.save(nota);
+  }
+
+  async cancelarNotaFiscal(id: number, empresaId: string) {
+    const nota = await this.notaFiscalRepo.findOne({ where: { id, empresaId } });
+    if (!nota) {
+      throw new NotFoundException('Nota fiscal não encontrada');
+    }
+    if (nota.status === 'cancelada') {
+      throw new Error('Nota fiscal já está cancelada');
+    }
+    nota.status = 'cancelada';
+    return this.notaFiscalRepo.save(nota);
+  }
+
   async obterStatsNotasFiscais(empresaId: string) {
     const total = await this.notaFiscalRepo.count({ where: { empresaId } });
     const autorizadas = await this.notaFiscalRepo.count({ where: { empresaId, status: 'autorizada' } });

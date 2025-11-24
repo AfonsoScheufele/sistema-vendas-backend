@@ -1,22 +1,120 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { EmpresaEntity } from './empresa.entity';
+import { CreateEmpresaDto } from './dto/create-empresa.dto';
+import { UpdateEmpresaDto } from './dto/update-empresa.dto';
 
 @Injectable()
 export class EmpresasService {
-  listarEmpresas() {
-    return [
-      {
-        id: 'default-empresa',
-        nome: 'Axora Matriz',
-        cnpj: '12.345.678/0001-90',
-        papel: 'admin',
-      },
-      {
-        id: 'empresa-sul',
-        nome: 'Axora Regional Sul',
-        cnpj: '98.765.432/0001-10',
-        papel: 'viewer',
-      },
-    ];
+  constructor(
+    @InjectRepository(EmpresaEntity)
+    private readonly empresaRepo: Repository<EmpresaEntity>,
+  ) {}
+
+  async listarEmpresas() {
+    const empresas = await this.empresaRepo.find({
+      order: { nome: 'ASC' },
+    });
+    return empresas.map((emp) => this.mapToResponse(emp));
+  }
+
+  async obterPorId(id: string) {
+    const empresa = await this.empresaRepo.findOne({ where: { id } });
+    if (!empresa) {
+      throw new NotFoundException('Empresa não encontrada');
+    }
+    return this.mapToResponse(empresa);
+  }
+
+  async criar(dto: CreateEmpresaDto) {
+    // Verificar se CNPJ já existe
+    if (dto.cnpj) {
+      const cnpjLimpo = dto.cnpj.replace(/\D/g, '');
+      const empresaExistente = await this.empresaRepo.findOne({
+        where: { cnpj: cnpjLimpo },
+      });
+      if (empresaExistente) {
+        throw new ConflictException('CNPJ já cadastrado');
+      }
+      dto.cnpj = cnpjLimpo;
+    }
+
+    const empresa = this.empresaRepo.create({
+      ...dto,
+      ativo: dto.ativo ?? true,
+    });
+
+    const salva = await this.empresaRepo.save(empresa);
+    return this.mapToResponse(salva);
+  }
+
+  async atualizar(id: string, dto: UpdateEmpresaDto) {
+    const empresa = await this.empresaRepo.findOne({ where: { id } });
+    if (!empresa) {
+      throw new NotFoundException('Empresa não encontrada');
+    }
+
+    // Verificar se CNPJ já existe em outra empresa
+    if (dto.cnpj) {
+      const cnpjLimpo = dto.cnpj.replace(/\D/g, '');
+      const empresaExistente = await this.empresaRepo.findOne({
+        where: { cnpj: cnpjLimpo },
+      });
+      if (empresaExistente && empresaExistente.id !== id) {
+        throw new ConflictException('CNPJ já cadastrado em outra empresa');
+      }
+      dto.cnpj = cnpjLimpo;
+    }
+
+    Object.assign(empresa, dto);
+    const atualizada = await this.empresaRepo.save(empresa);
+    return this.mapToResponse(atualizada);
+  }
+
+  async excluir(id: string) {
+    const empresa = await this.empresaRepo.findOne({ where: { id } });
+    if (!empresa) {
+      throw new NotFoundException('Empresa não encontrada');
+    }
+
+    await this.empresaRepo.remove(empresa);
+    return { message: 'Empresa excluída com sucesso' };
+  }
+
+  async alterarStatus(id: string, ativo: boolean) {
+    const empresa = await this.empresaRepo.findOne({ where: { id } });
+    if (!empresa) {
+      throw new NotFoundException('Empresa não encontrada');
+    }
+
+    empresa.ativo = ativo;
+    const atualizada = await this.empresaRepo.save(empresa);
+    return this.mapToResponse(atualizada);
+  }
+
+  private mapToResponse(empresa: EmpresaEntity) {
+    return {
+      id: empresa.id,
+      nome: empresa.nome,
+      cnpj: empresa.cnpj,
+      razaoSocial: empresa.razaoSocial,
+      email: empresa.email,
+      telefone: empresa.telefone,
+      endereco: empresa.endereco,
+      numero: empresa.numero,
+      complemento: empresa.complemento,
+      bairro: empresa.bairro,
+      cidade: empresa.cidade,
+      estado: empresa.estado,
+      cep: empresa.cep,
+      inscricaoEstadual: empresa.inscricaoEstadual,
+      inscricaoMunicipal: empresa.inscricaoMunicipal,
+      observacoes: empresa.observacoes,
+      ativo: empresa.ativo,
+      criadoEm: empresa.criadoEm,
+      atualizadoEm: empresa.atualizadoEm,
+    };
   }
 }
 

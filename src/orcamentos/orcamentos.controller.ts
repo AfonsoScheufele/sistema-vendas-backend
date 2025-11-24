@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, Query, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, Query, Req, Res } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { OrcamentosService } from './orcamentos.service';
+import { PdfService } from '../common/services/pdf.service';
+import { Response } from 'express';
 
 @Controller('orcamentos')
 @UseGuards(JwtAuthGuard)
 export class OrcamentosController {
-  constructor(private readonly orcamentosService: OrcamentosService) {}
+  constructor(
+    private readonly orcamentosService: OrcamentosService,
+    private readonly pdfService: PdfService,
+  ) {}
 
   @Get()
   async listarOrcamentos(
@@ -24,6 +29,16 @@ export class OrcamentosController {
   @Get(':id')
   async buscarPorId(@Param('id') id: number, @Req() req: any) {
     return this.orcamentosService.buscarPorId(id, req.empresaId);
+  }
+
+  @Get(':id/pdf')
+  async gerarPdf(@Param('id') id: number, @Req() req: any, @Res() res: Response) {
+    const orcamento = await this.orcamentosService.buscarPorId(id, req.empresaId);
+    const pdfBuffer = this.pdfService.gerarPdfOrcamento(orcamento as any);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="orcamento-${orcamento.numero}.pdf"`);
+    res.send(pdfBuffer);
   }
 
   @Post()

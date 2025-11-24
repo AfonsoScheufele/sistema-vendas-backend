@@ -1,32 +1,20 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfiguracaoEmpresaEntity } from './configuracao-empresa.entity';
 import { UpdateConfiguracaoDto } from './dto/update-configuracao.dto';
 
 @Injectable()
-export class ConfiguracoesService implements OnModuleInit {
+export class ConfiguracoesService {
   constructor(
     @InjectRepository(ConfiguracaoEmpresaEntity)
     private readonly configRepository: Repository<ConfiguracaoEmpresaEntity>,
   ) {}
 
-  async onModuleInit() {
-    // Seed inicial para empresas existentes
-    const empresas = ['default-empresa', 'empresa-sul'];
-    for (const empresaId of empresas) {
-      const existe = await this.configRepository.findOne({ where: { empresaId } });
-      if (!existe) {
-        const config = this.configRepository.create({
-          empresaId,
-          nomeFantasia: empresaId === 'default-empresa' ? 'Axora Matriz' : 'Axora Regional Sul',
-          razaoSocial: empresaId === 'default-empresa' ? 'Axora Matriz Ltda' : 'Axora Regional Sul Ltda',
-          cnpj: empresaId === 'default-empresa' ? '12.345.678/0001-90' : '98.765.432/0001-10',
-        });
-        await this.configRepository.save(config);
-      }
-    }
-  }
+  // Seed removido - não criar dados automaticamente
+  // async onModuleInit() {
+  //   // Seed removido para evitar dados hardcoded
+  // }
 
   async obterConfiguracao(empresaId: string): Promise<ConfiguracaoEmpresaEntity> {
     let config = await this.configRepository.findOne({ where: { empresaId } });

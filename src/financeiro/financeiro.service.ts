@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -33,160 +33,15 @@ import { UpdateOrcamentoMetaDto } from './dto/update-orcamento-meta.dto';
 import { CreateOrcamentoAlertaDto } from './dto/create-orcamento-alerta.dto';
 
 @Injectable()
-export class FinanceiroService implements OnModuleInit {
-  private contas: ContaReceber[] = [
-    {
-      id: randomUUID(),
-      titulo: 'Fatura 2024-001',
-      cliente: 'Empresa Alfa Ltda',
-      valor: 12500,
-      valorPago: 7500,
-      emissao: '2024-01-05',
-      vencimento: '2024-02-05',
-      pagamento: '2024-01-25',
-      status: 'negociada',
-      categoria: 'Serviços',
-      formaPagamento: 'Boleto',
-      responsavel: 'João Batista',
-      observacoes: 'Renegociação em 2 parcelas restantes',
-      empresaId: 'default-empresa',
-      criadoEm: new Date('2024-01-05T09:00:00Z').toISOString(),
-      atualizadoEm: new Date('2024-01-25T11:00:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      titulo: 'Contrato Logística Q1',
-      cliente: 'Axora Regional Sul',
-      valor: 8200,
-      valorPago: 0,
-      emissao: '2024-02-01',
-      vencimento: '2024-02-28',
-      status: 'vencida',
-      categoria: 'Logística',
-      formaPagamento: 'PIX',
-      responsavel: 'Maria Santos',
-      observacoes: 'Cliente solicitou prazo adicional de 5 dias',
-      empresaId: 'default-empresa',
-      criadoEm: new Date('2024-02-01T10:30:00Z').toISOString(),
-      atualizadoEm: new Date('2024-03-01T08:15:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      titulo: 'Manutenção Centro-Sul',
-      cliente: 'Distribuidora Sul BR',
-      valor: 4500,
-      valorPago: 4500,
-      emissao: '2024-01-15',
-      vencimento: '2024-01-30',
-      pagamento: '2024-01-28',
-      status: 'recebida',
-      categoria: 'Manutenção',
-      formaPagamento: 'TED',
-      responsavel: 'Patrícia Lopes',
-      empresaId: 'empresa-sul',
-      criadoEm: new Date('2024-01-15T13:00:00Z').toISOString(),
-      atualizadoEm: new Date('2024-01-28T14:45:00Z').toISOString(),
-    },
-  ];
+export class FinanceiroService {
+  // Arrays em memória - dados hardcoded removidos
+  private contas: ContaReceber[] = [];
 
-  private contasPagar: ContaPagar[] = [
-    {
-      id: randomUUID(),
-      titulo: 'Fornecedor TI Janeiro',
-      fornecedor: 'Tech Solutions S.A.',
-      valor: 9800,
-      valorPago: 0,
-      emissao: '2024-01-10',
-      vencimento: '2024-02-10',
-      status: 'aberta',
-      centroCusto: 'TI',
-      formaPagamento: 'Boleto',
-      responsavel: 'Carlos Pereira',
-      observacoes: 'Pagamento programado para dia 05',
-      empresaId: 'default-empresa',
-      criadoEm: new Date('2024-01-10T09:30:00Z').toISOString(),
-      atualizadoEm: new Date('2024-01-10T09:30:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      titulo: 'Aluguel Centro Operações',
-      fornecedor: 'Imobiliária Brasil',
-      valor: 15000,
-      valorPago: 15000,
-      emissao: '2024-01-01',
-      vencimento: '2024-01-05',
-      pagamento: '2024-01-04',
-      status: 'paga',
-      centroCusto: 'Infraestrutura',
-      formaPagamento: 'PIX',
-      responsavel: 'Ana Cristina',
-      empresaId: 'default-empresa',
-      criadoEm: new Date('2024-01-01T12:00:00Z').toISOString(),
-      atualizadoEm: new Date('2024-01-04T15:00:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      titulo: 'Contrato Frete Regional',
-      fornecedor: 'LogTrans Transporte',
-      valor: 6200,
-      valorPago: 0,
-      emissao: '2024-01-20',
-      vencimento: '2024-02-05',
-      status: 'atrasada',
-      centroCusto: 'Logística',
-      formaPagamento: 'TED',
-      responsavel: 'Patrícia Lopes',
-      observacoes: 'Fornecedor aguarda confirmação de reajuste',
-      empresaId: 'empresa-sul',
-      criadoEm: new Date('2024-01-20T11:40:00Z').toISOString(),
-      atualizadoEm: new Date('2024-02-07T08:20:00Z').toISOString(),
-    },
-  ];
+  // Arrays em memória - dados hardcoded removidos
+  private contasPagar: ContaPagar[] = [];
 
-  private contasBancarias: ContaBancaria[] = [
-    {
-      id: randomUUID(),
-      banco: 'Banco do Brasil',
-      agencia: '1234-5',
-      conta: '98765-4',
-      tipo: 'corrente',
-      saldoAtual: 52000,
-      saldoDisponivel: 48000,
-      saldoProjetado: 61000,
-      moeda: 'BRL',
-      titular: 'Axora Matriz',
-      empresaId: 'default-empresa',
-      atualizadoEm: new Date('2024-03-01T09:30:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      banco: 'Itaú',
-      agencia: '5566',
-      conta: '11223-0',
-      tipo: 'corrente',
-      saldoAtual: 24500,
-      saldoDisponivel: 20000,
-      saldoProjetado: 28000,
-      moeda: 'BRL',
-      titular: 'Axora Matriz',
-      empresaId: 'default-empresa',
-      atualizadoEm: new Date('2024-03-02T16:45:00Z').toISOString(),
-    },
-    {
-      id: randomUUID(),
-      banco: 'Bradesco',
-      agencia: '9876',
-      conta: '54321-0',
-      tipo: 'corrente',
-      saldoAtual: 18200,
-      saldoDisponivel: 15000,
-      saldoProjetado: 21000,
-      moeda: 'BRL',
-      titular: 'Axora Regional Sul',
-      empresaId: 'empresa-sul',
-      atualizadoEm: new Date('2024-03-03T12:10:00Z').toISOString(),
-    },
-  ];
+  // Arrays em memória - dados hardcoded removidos
+  private contasBancarias: ContaBancaria[] = [];
 
   constructor(
     @InjectRepository(InvestimentoCarteira)
@@ -205,12 +60,23 @@ export class FinanceiroService implements OnModuleInit {
     private readonly orcamentoAlertasRepository: Repository<OrcamentoAlertaEntity>,
   ) {}
 
-  async onModuleInit() {
-    await this.seedInvestimentos();
-    await this.seedOrcamento();
-  }
+  // Seed removido - não criar dados automaticamente
+  // async onModuleInit() {
+  //   // Seed removido para evitar dados hardcoded
+  // }
 
+  // Método seed removido - não criar dados automaticamente
+  /*
   private async seedInvestimentos() {
+    // Seed removido para evitar dados hardcoded
+  }
+  */
+
+  // Método seed desabilitado - não criar dados automaticamente
+  private async seedInvestimentos() {
+    // Seed desabilitado - não criar dados automaticamente
+    return;
+    /* COMENTADO - Seed removido para evitar dados hardcoded
     const totalCarteiras = await this.carteirasRepository.count();
     if (totalCarteiras > 0) {
       return;
@@ -371,9 +237,14 @@ export class FinanceiroService implements OnModuleInit {
         },
       ]),
     );
+    */ // FIM COMENTÁRIO seedInvestimentos
   }
 
+  // Método seed desabilitado - não criar dados automaticamente
   private async seedOrcamento() {
+    // Seed desabilitado - não criar dados automaticamente
+    return;
+    /* COMENTADO - Seed removido para evitar dados hardcoded
     const totalCentros = await this.orcamentoCentroRepository.count();
     if (totalCentros > 0) {
       return;
@@ -526,6 +397,7 @@ export class FinanceiroService implements OnModuleInit {
         },
       ]),
     );
+    */ // FIM COMENTÁRIO seedOrcamento
   }
 
   listarContasReceber(empresaId: string, filtros?: { status?: StatusReceber | 'todas'; search?: string }) {

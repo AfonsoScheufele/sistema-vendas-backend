@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateContratoDto } from './dto/create-contrato.dto';
@@ -6,77 +6,16 @@ import { CONTRATO_STATUS, Contrato, ContratoStats, ContratoStatus } from './cont
 import { ContratoEntity } from './contrato.entity';
 
 @Injectable()
-export class ContratosService implements OnModuleInit {
+export class ContratosService {
   constructor(
     @InjectRepository(ContratoEntity)
     private readonly contratoRepo: Repository<ContratoEntity>,
   ) {}
 
-  async onModuleInit() {
-    try {
-      const total = await this.contratoRepo.count();
-      if (total > 0) {
-        return;
-      }
-
-      const seeds: CreateContratoDto[] = [
-        {
-          numero: 'CONT-2024-001',
-          fornecedor: 'Fornecedor ABC Ltda',
-          descricao: 'Fornecimento de materiais de escritório',
-          valor: 50000,
-          dataInicio: '2024-01-01',
-          dataFim: '2024-12-31',
-          status: 'ativo',
-          tipo: 'compra',
-          responsavel: 'João Silva',
-        },
-        {
-          numero: 'CONT-2024-002',
-          fornecedor: 'TechCorp S.A.',
-          descricao: 'Licenciamento anual de ERP',
-          valor: 120000,
-          dataInicio: '2024-02-01',
-          dataFim: '2025-01-31',
-          status: 'ativo',
-          tipo: 'licenca',
-          responsavel: 'Maria Santos',
-        },
-        {
-          numero: 'CONT-2023-015',
-          fornecedor: 'Manutenção XYZ',
-          descricao: 'Serviços de manutenção predial',
-          valor: 25000,
-          dataInicio: '2023-06-01',
-          dataFim: '2023-12-31',
-          status: 'vencido',
-          tipo: 'servico',
-          responsavel: 'Carlos Oliveira',
-        },
-        {
-          numero: 'CONT-2024-050',
-          fornecedor: 'LogTech Serviços',
-          descricao: 'Contrato de logística para região Sul',
-          valor: 36000,
-          dataInicio: '2024-03-01',
-          dataFim: '2025-02-28',
-          status: 'ativo',
-          tipo: 'servico',
-          responsavel: 'Patrícia Lopes',
-        },
-      ];
-
-      for (const contrato of seeds) {
-        try {
-          await this.criar(contrato, contrato.fornecedor === 'LogTech Serviços' ? 'empresa-sul' : 'default-empresa');
-        } catch (err) {
-          console.error(`Erro ao criar contrato seed ${contrato.numero}:`, err);
-        }
-      }
-    } catch (err) {
-      console.error('Erro no onModuleInit de ContratosService:', err);
-    }
-  }
+  // Seed removido - não criar dados automaticamente
+  // async onModuleInit() {
+  //   // Seed removido para evitar dados hardcoded
+  // }
 
   async listar(empresaId: string): Promise<Contrato[]> {
     if (!empresaId) {

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateFornecedorDto } from './dto/create-fornecedor.dto';
@@ -13,7 +13,7 @@ import { FornecedorEntity } from './fornecedor.entity';
 import { FornecedorProdutoEntity } from './fornecedor-produto.entity';
 
 @Injectable()
-export class FornecedoresService implements OnModuleInit {
+export class FornecedoresService {
   constructor(
     @InjectRepository(FornecedorEntity)
     private readonly fornecedorRepo: Repository<FornecedorEntity>,
@@ -21,121 +21,10 @@ export class FornecedoresService implements OnModuleInit {
     private readonly produtoRepo: Repository<FornecedorProdutoEntity>,
   ) {}
 
-  async onModuleInit() {
-    const total = await this.fornecedorRepo.count();
-    if (total > 0) {
-      return;
-    }
-
-    const agora = new Date();
-    const fornecedoresSeed: Array<{
-      dados: CreateFornecedorDto;
-      empresaId: string;
-    }> = [
-      {
-        empresaId: 'default-empresa',
-        dados: {
-          nome: 'Fornecedor ABC Ltda',
-          razaoSocial: 'Fornecedor ABC Soluções Empresariais Ltda',
-          cnpj: '12.345.678/0001-99',
-          endereco: {
-            logradouro: 'Rua das Flores',
-            numero: '123',
-            bairro: 'Centro',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01000-000',
-          },
-          contato: {
-            nome: 'Ana Ribeiro',
-            cargo: 'Executiva de Contas',
-            telefone: '(11) 3333-4444',
-            email: 'ana.ribeiro@fornecedorabc.com',
-            celular: '(11) 95555-6666',
-          },
-          bancario: {
-            banco: 'Itaú',
-            agencia: '1234',
-            conta: '56789-0',
-            tipoConta: 'corrente',
-          },
-          categoria: 'materiais',
-          status: 'ativo',
-          observacoes: 'Fornecedor estratégico para materiais de escritório.',
-          produtos: [
-            { id: 1, nome: 'Papel A4 500 folhas', categoria: 'Papelaria', precoMedio: 18.5 },
-            { id: 2, nome: 'Cartucho de tinta preto HP', categoria: 'Insumos', precoMedio: 95.9 },
-          ],
-        },
-      },
-      {
-        empresaId: 'default-empresa',
-        dados: {
-          nome: 'TechCorp S.A.',
-          razaoSocial: 'TechCorp Tecnologia S.A.',
-          cnpj: '98.765.432/0001-55',
-          endereco: {
-            logradouro: 'Av. Paulista',
-            numero: '1500',
-            bairro: 'Bela Vista',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01310-200',
-          },
-          contato: {
-            nome: 'Bruno Mendes',
-            cargo: 'Diretor Comercial',
-            telefone: '(11) 4000-5000',
-            email: 'bruno.mendes@techcorp.com',
-          },
-          bancario: {
-            banco: 'Bradesco',
-            agencia: '4567',
-            conta: '12345-6',
-            tipoConta: 'corrente',
-          },
-          categoria: 'tecnologia',
-          status: 'ativo',
-          produtos: [{ id: 10, nome: 'ERP Empresarial', categoria: 'Software', precoMedio: 120000 }],
-        },
-      },
-      {
-        empresaId: 'empresa-sul',
-        dados: {
-          nome: 'LogTech Serviços',
-          razaoSocial: 'LogTech Serviços Logísticos Ltda',
-          cnpj: '11.222.333/0001-44',
-          endereco: {
-            logradouro: 'Rua das Indústrias',
-            numero: '800',
-            bairro: 'Distrito Industrial',
-            cidade: 'Curitiba',
-            estado: 'PR',
-            cep: '80000-000',
-          },
-          contato: {
-            nome: 'Carla Souza',
-            cargo: 'Gerente de Contas',
-            telefone: '(41) 3333-2211',
-            email: 'carla.souza@logtech.com',
-          },
-          bancario: {
-            banco: 'Santander',
-            agencia: '3210',
-            conta: '98765-4',
-            tipoConta: 'corrente',
-          },
-          categoria: 'logistica',
-          status: 'ativo',
-          produtos: [{ id: 30, nome: 'Transporte rodoviário', categoria: 'Serviço', precoMedio: 3500 }],
-        },
-      },
-    ];
-
-    for (const seed of fornecedoresSeed) {
-      await this.criar(seed.dados, seed.empresaId);
-    }
-  }
+  // Seed removido - não criar dados automaticamente
+  // async onModuleInit() {
+  //   // Seed removido para evitar dados hardcoded
+  // }
 
   async listar(empresaId: string, status?: FornecedorStatus, search?: string): Promise<Fornecedor[]> {
     const query = this.fornecedorRepo

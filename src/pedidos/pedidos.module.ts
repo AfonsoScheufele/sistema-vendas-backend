@@ -5,10 +5,11 @@ import { ItemPedido } from './item-pedido.entity';
 import { PedidoHistorico } from './pedido-historico.entity';
 import { PedidosService } from './pedidos.service';
 import { PedidosController } from './pedidos.controller';
+import { PdfService } from '../common/services/pdf.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Pedido, ItemPedido, PedidoHistorico])],
-  providers: [PedidosService],
+  providers: [PedidosService, PdfService],
   controllers: [PedidosController],
   exports: [PedidosService],
 })

@@ -6,6 +6,45 @@ import * as express from 'express';
 import * as dns from 'dns';
 dns.setDefaultResultOrder('ipv4first');
 
+// Rate limiter simples em memória por IP
+type RateBucket = { count: number; resetAt: number };
+const rateBuckets: Record<string, RateBucket> = {};
+const WINDOW_MS = 60 * 1000; // 1 min
+const MAX_REQ_PER_WINDOW = parseInt(process.env.RATE_LIMIT_PER_MIN || '120', 10);
+
+function rateLimitMiddleware(req: any, res: any, next: any) {
+  const ip = (req.ip || req.connection?.remoteAddress || 'unknown').toString();
+  const now = Date.now();
+  const bucket = rateBuckets[ip] || { count: 0, resetAt: now + WINDOW_MS };
+  if (now > bucket.resetAt) {
+    bucket.count = 0;
+    bucket.resetAt = now + WINDOW_MS;
+  }
+  bucket.count += 1;
+  rateBuckets[ip] = bucket;
+  res.setHeader('X-RateLimit-Limit', String(MAX_REQ_PER_WINDOW));
+  res.setHeader('X-RateLimit-Remaining', String(Math.max(0, MAX_REQ_PER_WINDOW - bucket.count)));
+  res.setHeader('X-RateLimit-Reset', String(Math.ceil(bucket.resetAt / 1000)));
+  if (bucket.count > MAX_REQ_PER_WINDOW) {
+    return res.status(429).json({ message: 'Too many requests' });
+  }
+  next();
+}
+
+// Headers de segurança básicos (substitui helmet sem dependência)
+function securityHeadersMiddleware(req: any, res: any, next: any) {
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Download-Options', 'noopen');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  // CSP opcional e relaxada para não quebrar UI; pode ser ajustada por env
+  const csp = process.env.CSP_DEFAULT_SRC || "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:";
+  res.setHeader('Content-Security-Policy', csp);
+  next();
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
@@ -32,6 +71,8 @@ async function bootstrap() {
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(securityHeadersMiddleware);
+  app.use(rateLimitMiddleware);
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,

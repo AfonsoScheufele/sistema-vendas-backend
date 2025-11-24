@@ -38,11 +38,14 @@ export class AuthController {
 
     const tokens = await this.authService.login(user);
     const userResponse = await this.authService.buildUserResponse(user);
+    const empresas = await this.authService.obterEmpresasDoUsuario(user.id);
+    
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       user: userResponse,
       permissions: userResponse.permissoes,
+      empresas,
     };
   }
 
@@ -170,10 +173,14 @@ export class AuthController {
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('refresh')
-  async refresh(@Req() req: AuthRequest) {
-    return this.authService.refresh(req.user);
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body() body: { refresh_token: string }) {
+    const tokens = await this.authService.refreshWithToken(body.refresh_token);
+    return {
+      token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+    };
   }
 
   @UseGuards(JwtAuthGuard)

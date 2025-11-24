@@ -67,11 +67,11 @@ export class RelatoriosController {
   async exportarRelatorio(
     @Req() req: any,
     @Param('tipo') tipo: string,
+    @Res() res: Response,
     @Query('formato') formato: 'csv' | 'json' = 'csv',
     @Query('periodo') periodo?: string,
     @Query('vendedorId') vendedorId?: string,
     @Query('depositoId') depositoId?: string,
-    @Res() res: Response,
   ) {
     const data = await this.relatoriosService.exportarRelatorio(
       req.empresaId,

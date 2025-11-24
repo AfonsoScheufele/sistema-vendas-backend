@@ -43,8 +43,11 @@ import { RoteiroEntity } from './logistica/roteiro.entity';
 import { PlanoContaEntity } from './contabil/plano-conta.entity';
 import { FornecedorAvaliacaoEntity } from './compras/fornecedor-avaliacao.entity';
 import { RelatoriosModule } from './relatorios/relatorios.module';
+import { PdfModule } from './pdf/pdf.module';
 import { ConfiguracoesModule } from './configuracoes/configuracoes.module';
 import { ConfiguracaoEmpresaEntity } from './configuracoes/configuracao-empresa.entity';
+import { EmpresaEntity } from './empresas/empresa.entity';
+import { UsuarioEmpresaEntity } from './empresas/usuario-empresa.entity';
 import { NotaFiscalEntity } from './fiscal/nota-fiscal.entity';
 import { SpedEntity } from './fiscal/sped.entity';
 import { ImpostoEntity } from './fiscal/imposto.entity';
@@ -70,6 +73,9 @@ import { OrcamentoAlertaEntity } from './financeiro/orcamento-alerta.entity';
 import { ContratosModule } from './compras/contratos/contratos.module';
 import { FornecedoresModule } from './compras/fornecedores/fornecedores.module';
 import { EmpresaContextInterceptor } from './common/interceptors/empresa-context.interceptor';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { AuditoriaModule } from './auditoria/auditoria.module';
+import { AuditoriaEntity } from './auditoria/auditoria.entity';
 import { EmpresasModule } from './empresas/empresas.module';
 import { ComissaoEntity } from './comissoes/comissao.entity';
 import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
@@ -150,6 +156,9 @@ dns.setDefaultResultOrder('ipv4first');
             RoteiroEntity,
             PlanoContaEntity,
             FornecedorAvaliacaoEntity,
+            EmpresaEntity,
+            UsuarioEmpresaEntity,
+            AuditoriaEntity,
           ],
           synchronize: true,
           logging: false,
@@ -194,9 +203,12 @@ dns.setDefaultResultOrder('ipv4first');
     RelatoriosModule,
     ConfiguracoesModule,
     ContabilModule,
+    PdfModule,
+    AuditoriaModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: EmpresaContextInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
   ],
 })
 export class AppModule {}

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EstoqueDepositoEntity } from './entities/estoque-deposito.entity';
@@ -9,7 +9,7 @@ import { CreateMovimentacaoDto } from './dto/create-movimentacao.dto';
 import { ProdutosService } from '../produtos/produtos.service';
 
 @Injectable()
-export class EstoqueService implements OnModuleInit {
+export class EstoqueService {
   constructor(
     @InjectRepository(EstoqueDepositoEntity)
     private readonly depositoRepo: Repository<EstoqueDepositoEntity>,
@@ -18,70 +18,10 @@ export class EstoqueService implements OnModuleInit {
     private readonly produtosService: ProdutosService,
   ) {}
 
-  async onModuleInit() {
-    const totalDepositos = await this.depositoRepo.count();
-    if (totalDepositos) {
-      return;
-    }
-
-    const seeds: Array<{ dto: CreateDepositoDto; empresaId: string }> = [
-      {
-        empresaId: 'default-empresa',
-        dto: {
-          nome: 'Centro de Distribuição SP',
-          descricao: 'Depósito principal localizado em São Paulo',
-          tipo: 'principal',
-          status: 'ativo',
-          endereco: {
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01000-000',
-            bairro: 'Centro',
-            logradouro: 'Av. Central',
-            numero: '1000',
-          },
-        },
-      },
-      {
-        empresaId: 'default-empresa',
-        dto: {
-          nome: 'Estoque de Varejo',
-          descricao: 'Filial voltada para abastecimento das lojas',
-          tipo: 'filial',
-          status: 'ativo',
-          endereco: {
-            cidade: 'Campinas',
-            estado: 'SP',
-            cep: '13015-000',
-            bairro: 'Centro',
-            logradouro: 'Rua das Flores',
-            numero: '200',
-          },
-        },
-      },
-      {
-        empresaId: 'empresa-sul',
-        dto: {
-          nome: 'CD Curitiba',
-          descricao: 'Depósito regional Curitiba',
-          tipo: 'principal',
-          status: 'ativo',
-          endereco: {
-            cidade: 'Curitiba',
-            estado: 'PR',
-            cep: '80000-000',
-            bairro: 'Centro',
-            logradouro: 'Rua Industrial',
-            numero: '500',
-          },
-        },
-      },
-    ];
-
-    for (const seed of seeds) {
-      await this.criarDeposito(seed.dto, seed.empresaId);
-    }
-  }
+  // Seed removido - não criar dados automaticamente
+  // async onModuleInit() {
+  //   // Seed removido para evitar dados hardcoded
+  // }
 
   async listarDepositos(empresaId: string) {
     const depositos = await this.depositoRepo.find({

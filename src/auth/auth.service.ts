@@ -1,10 +1,11 @@
-import { Injectable, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, UnauthorizedException, Inject, forwardRef, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
 import { EmailService } from '../config/email.service';
+import { UsuarioEmpresaService } from '../empresas/usuario-empresa.service';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -17,6 +18,8 @@ export class AuthService {
     @InjectRepository(Perfil)
     private perfilRepo: Repository<Perfil>,
     private emailService: EmailService,
+    @Inject(forwardRef(() => UsuarioEmpresaService))
+    private usuarioEmpresaService?: UsuarioEmpresaService,
   ) {}
 
   private async getPermissoesByRole(role?: string): Promise<string[]> {
@@ -38,7 +41,7 @@ export class AuthService {
     return perms;
   }
 
-  async buildUserResponse(user: any) {
+  async buildUserResponse(user: any, empresaId?: string) {
     const permissoes = await this.getPermissoesByRole(user.role);
     return {
       id: user.id,
@@ -50,6 +53,7 @@ export class AuthService {
       avatar: user.avatar,
       ativo: user.ativo,
       permissoes,
+      empresaId: empresaId || null,
     };
   }
 
@@ -115,25 +119,86 @@ export class AuthService {
     return await this.usuarioRepo.save(user);
   }
 
+  private async generateTokens(payload: any) {
+    const access_token = this.jwtService.sign(payload, { expiresIn: '12h' });
+    const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    return { access_token, refresh_token };
+  }
+
+  private async setRefreshToken(userId: number, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await this.usuarioRepo.update(userId, {
+      refreshTokenHash: hash,
+      refreshTokenExpires: expires,
+    });
+  }
+
+  private async revokeRefreshToken(userId: number) {
+    await this.usuarioRepo.update(userId, {
+      refreshTokenHash: null,
+      refreshTokenExpires: null,
+    });
+  }
+
   async login(user: any) {
     const permissoes = await this.getPermissoesByRole(user.role);
     const payload = { sub: user.id, cpf: user.cpf, role: user.role, permissoes };
-    return {
-      access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
-      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }),
-    };
+    const tokens = await this.generateTokens(payload);
+    await this.setRefreshToken(user.id, tokens.refresh_token);
+    return tokens;
   }
 
-  async refresh(user: any) {
+  async refreshWithToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token é obrigatório');
+    }
+    let decoded: any;
+    try {
+      decoded = this.jwtService.verify(refreshToken);
+    } catch (e) {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
+    const user = await this.usuarioRepo.findOne({ where: { id: decoded.sub } });
+    if (!user || !user.refreshTokenHash || !user.refreshTokenExpires) {
+      throw new UnauthorizedException('Refresh token não registrado');
+    }
+    if (user.refreshTokenExpires < new Date()) {
+      await this.revokeRefreshToken(user.id);
+      throw new UnauthorizedException('Refresh token expirado');
+    }
+    const isMatch = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    if (!isMatch) {
+      await this.revokeRefreshToken(user.id);
+      throw new UnauthorizedException('Refresh token inválido');
+    }
     const permissoes = await this.getPermissoesByRole(user.role);
-    const payload = { sub: user.sub, cpf: user.cpf, role: user.role, permissoes };
-    return {
-      access_token: this.jwtService.sign(payload, { expiresIn: '15m' }),
-    };
+    const payload = { sub: user.id, cpf: user.cpf, role: user.role, permissoes };
+    const tokens = await this.generateTokens(payload);
+    await this.setRefreshToken(user.id, tokens.refresh_token);
+    return tokens;
   }
 
   async findById(id: number): Promise<Usuario | null> {
     return await this.usuarioRepo.findOne({ where: { id } });
+  }
+
+  async obterEmpresasDoUsuario(usuarioId: number): Promise<any[]> {
+    if (!this.usuarioEmpresaService) {
+      return [];
+    }
+    try {
+      const empresas = await this.usuarioEmpresaService.listarEmpresasDoUsuario(usuarioId);
+      return empresas.map((emp) => ({
+        id: emp.id,
+        nome: emp.nome,
+        cnpj: emp.cnpj,
+        ativo: emp.ativo,
+      }));
+    } catch (error) {
+      console.error('Erro ao obter empresas do usuário:', error);
+      return [];
+    }
   }
 
   async solicitarRecuperacaoSenha(cpf: string): Promise<{ message: string; success: boolean }> {
@@ -205,7 +270,7 @@ export class AuthService {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    const isCurrentPasswordValid = await bcrypt.compare(senhaAtual, user.senha);
+    const isCurrentPasswordValid = await bcrypt.compare(senhaAtual, (user.senha || ''));
     
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('Senha atual incorreta');
