@@ -1,6 +1,8 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Req, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CrmService } from './crm.service';
+import { CreateLeadDto } from './dto/create-lead.dto';
+import { UpdateLeadDto } from './dto/update-lead.dto';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -19,7 +21,34 @@ export class CrmController {
     const qualificados = total.filter((l) => l.status === 'qualificado').length;
     const convertidos = total.filter((l) => l.status === 'convertido').length;
     const taxaConversao = total.length > 0 ? (convertidos / total.length) * 100 : 0;
-    return { total: total.length, naoConvertidos, qualificados, convertidos, taxaConversao };
+    return { total: total.length, novos: naoConvertidos, qualificados, convertidos, taxaConversao };
+  }
+
+  @Get('crm/leads/:id')
+  async buscarLeadPorId(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return await this.crmService.buscarLeadPorId(id, req.empresaId);
+  }
+
+  @Post('crm/leads')
+  @HttpCode(HttpStatus.CREATED)
+  async criarLead(@Body() createLeadDto: CreateLeadDto, @Req() req: any) {
+    return await this.crmService.criarLead(createLeadDto, req.empresaId);
+  }
+
+  @Patch('crm/leads/:id')
+  async atualizarLead(@Param('id', ParseIntPipe) id: number, @Body() updateLeadDto: UpdateLeadDto, @Req() req: any) {
+    return await this.crmService.atualizarLead(id, updateLeadDto, req.empresaId);
+  }
+
+  @Patch('crm/leads/:id/status')
+  async atualizarStatusLead(@Param('id', ParseIntPipe) id: number, @Body('status') status: string, @Req() req: any) {
+    return await this.crmService.atualizarStatusLead(id, status, req.empresaId);
+  }
+
+  @Delete('crm/leads/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async excluirLead(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    await this.crmService.excluirLead(id, req.empresaId);
   }
 
   @Get('oportunidades')

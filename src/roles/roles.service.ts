@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoleEntity } from './role.entity';
 
-// Lista base de permission keys agrupadas por módulo
 export const AVAILABLE_PERMISSIONS: Record<string, string[]> = {
   'vendas': ['vendas.pedidos.view', 'vendas.pedidos.edit', 'vendas.orcamentos.view', 'vendas.orcamentos.edit', 'vendas.comissoes.view', 'vendas.comissoes.edit'],
   'estoque': ['estoque.view', 'estoque.edit', 'estoque.transferencias.view', 'estoque.transferencias.edit'],

@@ -1,15 +1,18 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmpresaEntity } from './empresa.entity';
 import { CreateEmpresaDto } from './dto/create-empresa.dto';
 import { UpdateEmpresaDto } from './dto/update-empresa.dto';
+import { ModulosService } from '../configuracoes/modulos.service';
 
 @Injectable()
 export class EmpresasService {
   constructor(
     @InjectRepository(EmpresaEntity)
     private readonly empresaRepo: Repository<EmpresaEntity>,
+    @Inject(forwardRef(() => ModulosService))
+    private readonly modulosService: ModulosService,
   ) {}
 
   async listarEmpresas() {
@@ -28,7 +31,6 @@ export class EmpresasService {
   }
 
   async criar(dto: CreateEmpresaDto) {
-    // Verificar se CNPJ já existe
     if (dto.cnpj) {
       const cnpjLimpo = dto.cnpj.replace(/\D/g, '');
       const empresaExistente = await this.empresaRepo.findOne({
@@ -46,6 +48,13 @@ export class EmpresasService {
     });
 
     const salva = await this.empresaRepo.save(empresa);
+    
+    try {
+      await this.modulosService.habilitarModulosPadrao(salva.id);
+    } catch (error) {
+      console.error('Erro ao habilitar módulos padrão:', error);
+    }
+    
     return this.mapToResponse(salva);
   }
 
@@ -55,7 +64,6 @@ export class EmpresasService {
       throw new NotFoundException('Empresa não encontrada');
     }
 
-    // Verificar se CNPJ já existe em outra empresa
     if (dto.cnpj) {
       const cnpjLimpo = dto.cnpj.replace(/\D/g, '');
       const empresaExistente = await this.empresaRepo.findOne({

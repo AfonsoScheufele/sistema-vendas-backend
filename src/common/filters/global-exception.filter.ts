@@ -31,7 +31,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message = 'Erro interno do servidor';
     }
 
-    // Extrair mensagens de validação se existirem
     let errorMessage: string | string[] = 'Erro na requisição';
     if (typeof message === 'object' && message !== null) {
       const msgObj = message as any;
@@ -46,6 +45,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       errorMessage = message;
     }
 
+    if (status === HttpStatus.UNAUTHORIZED) {
+      if (typeof errorMessage === 'string' && errorMessage.includes('Token')) {
+        errorMessage = 'Sua sessão expirou ou o token é inválido. Por favor, faça login novamente.';
+      } else if (typeof errorMessage === 'string' && errorMessage.includes('Unauthorized')) {
+        errorMessage = 'Você não está autenticado. Por favor, faça login.';
+      }
+    }
+
     const errorResponse = {
       statusCode: status,
       timestamp: new Date().toISOString(),
@@ -54,10 +61,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       message: errorMessage,
       ...(typeof message === 'object' && message !== null && !Array.isArray((message as any).message) ? message : {}),
     };
-    this.logger.error(
-      `${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : exception,
-    );
+    
+    if (status === HttpStatus.UNAUTHORIZED) {
+      this.logger.warn(
+        `[AUTH] ${request.method} ${request.url} - Token inválido ou expirado`,
+        request.headers.authorization ? 'Token presente mas inválido' : 'Token não fornecido',
+      );
+    } else {
+      this.logger.error(
+        `${request.method} ${request.url}`,
+        exception instanceof Error ? exception.stack : exception,
+      );
+    }
 
     response.status(status).json(errorResponse);
   }

@@ -16,7 +16,6 @@ export class ComprasAvancadasService {
     private readonly pedidoCompraRepo: Repository<PedidoCompraEntity>,
   ) {}
 
-  // Cotações
   async listarCotacoes(empresaId: string, filtros?: { status?: string }) {
     const query = this.cotacaoRepo
       .createQueryBuilder('cot')
@@ -42,7 +41,6 @@ export class ComprasAvancadasService {
     return { total, abertas, fechadas, canceladas };
   }
 
-  // Requisições
   async listarRequisicoes(empresaId: string, filtros?: { status?: string }) {
     const query = this.requisicaoRepo
       .createQueryBuilder('req')
@@ -90,7 +88,6 @@ export class ComprasAvancadasService {
     };
   }
 
-  // Pedidos de Compra
   async listarPedidosCompra(empresaId: string, filtros?: { status?: string }) {
     const query = this.pedidoCompraRepo
       .createQueryBuilder('ped')

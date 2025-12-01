@@ -18,10 +18,10 @@ export class AuditoriaEntity {
   usuarioNome?: string;
 
   @Column()
-  tipoAcao!: string; // 'CREATE', 'UPDATE', 'DELETE', 'VIEW', 'LOGIN', 'LOGOUT', etc.
+  tipoAcao!: string;
 
   @Column()
-  entidade!: string; // 'Pedido', 'Cliente', 'Produto', etc.
+  entidade!: string;
 
   @Column({ nullable: true })
   entidadeId?: string;

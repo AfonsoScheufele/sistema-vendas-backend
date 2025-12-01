@@ -5,6 +5,11 @@ import { ContratosService } from '../compras/contratos/contratos.service';
 import { EstoqueService } from '../estoque/estoque.service';
 import { ClientesService } from '../clientes/clientes.service';
 import { FornecedoresService } from '../compras/fornecedores/fornecedores.service';
+import { OrcamentosService } from '../orcamentos/orcamentos.service';
+import { ProdutosService } from '../produtos/produtos.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Usuario } from '../auth/usuario.entity';
 
 @Injectable()
 export class RelatoriosService {
@@ -15,6 +20,10 @@ export class RelatoriosService {
     private readonly estoqueService: EstoqueService,
     private readonly clientesService: ClientesService,
     private readonly fornecedoresService: FornecedoresService,
+    private readonly orcamentosService: OrcamentosService,
+    private readonly produtosService: ProdutosService,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepo: Repository<Usuario>,
   ) {}
 
   async obterDashboard(empresaId: string) {
@@ -467,7 +476,6 @@ export class RelatoriosService {
     const movimentacoesPorTipo = new Map<string, number>();
     const movimentacoesPorMes = new Map<string, { entradas: number; saidas: number }>();
 
-    // Filtrar por depositoId se fornecido
     const movimentacoesFiltradas = filtros?.depositoId
       ? movimentacoes.filter(
           (mov) =>
@@ -550,8 +558,641 @@ export class RelatoriosService {
       return dados;
     }
 
-    // Gerar CSV
     return this.gerarCSV(dados, tipo);
+  }
+
+  async obterRelatorioPerformanceVendedores(empresaId: string, filtros?: { periodo?: string }) {
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+    const usuarios = await this.usuarioRepo.find({ where: { ativo: true } });
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    const pedidosFiltrados = pedidos.filter((p) => {
+      const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+      return dataPedido >= dataInicio && p.vendedorId;
+    });
+
+    const performancePorVendedor = new Map<number, {
+      vendedor: any;
+      totalVendas: number;
+      quantidadePedidos: number;
+      ticketMedio: number;
+      pedidosConcluidos: number;
+      taxaConversao: number;
+      totalComissao: number;
+    }>();
+
+    pedidosFiltrados.forEach((pedido) => {
+      const vendedorId = pedido.vendedorId!;
+      const vendedor = usuarios.find((u) => u.id === vendedorId);
+      
+      if (!performancePorVendedor.has(vendedorId)) {
+        performancePorVendedor.set(vendedorId, {
+          vendedor: vendedor ? { id: vendedor.id, nome: vendedor.name } : null,
+          totalVendas: 0,
+          quantidadePedidos: 0,
+          ticketMedio: 0,
+          pedidosConcluidos: 0,
+          taxaConversao: 0,
+          totalComissao: 0,
+        });
+      }
+
+      const perf = performancePorVendedor.get(vendedorId)!;
+      perf.totalVendas += pedido.total || 0;
+      perf.quantidadePedidos += 1;
+      if (pedido.status === 'entregue' || pedido.status === 'concluido') {
+        perf.pedidosConcluidos += 1;
+      }
+    });
+
+    performancePorVendedor.forEach((perf) => {
+      perf.ticketMedio = perf.quantidadePedidos > 0 ? perf.totalVendas / perf.quantidadePedidos : 0;
+      perf.taxaConversao = perf.quantidadePedidos > 0 ? (perf.pedidosConcluidos / perf.quantidadePedidos) * 100 : 0;
+    });
+
+    const ranking = Array.from(performancePorVendedor.values())
+      .sort((a, b) => b.totalVendas - a.totalVendas)
+      .map((perf, index) => ({ ...perf, posicao: index + 1 }));
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalVendedores: ranking.length,
+        totalVendas: ranking.reduce((acc, r) => acc + r.totalVendas, 0),
+        totalPedidos: ranking.reduce((acc, r) => acc + r.quantidadePedidos, 0),
+      },
+      ranking,
+    };
+  }
+
+  async obterRelatorioConversaoOrcamentos(empresaId: string, filtros?: { periodo?: string }) {
+    const orcamentos = await this.orcamentosService.listarOrcamentos(empresaId);
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    const orcamentosFiltrados = orcamentos.filter((o) => {
+      const data = new Date(o.createdAt || '');
+      return data >= dataInicio;
+    });
+
+    const totalOrcamentos = orcamentosFiltrados.length;
+    const orcamentosConvertidos = orcamentosFiltrados.filter((o) => o.status === 'aprovado' || o.status === 'convertido').length;
+    const orcamentosPerdidos = orcamentosFiltrados.filter((o) => o.status === 'cancelado' || o.status === 'perdido').length;
+    const orcamentosPendentes = orcamentosFiltrados.filter((o) => o.status === 'pendente' || o.status === 'enviado').length;
+
+    const taxaConversao = totalOrcamentos > 0 ? (orcamentosConvertidos / totalOrcamentos) * 100 : 0;
+
+    const orcamentosComTempo = orcamentosFiltrados
+      .filter((o) => o.status === 'aprovado' || o.status === 'convertido')
+      .map((o) => {
+        const dataCriacao = new Date(o.createdAt || '');
+        const dataAprovacao = new Date(o.updatedAt || '');
+        const dias = Math.ceil((dataAprovacao.getTime() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24));
+        return dias;
+      });
+
+    const tempoMedioConversao = orcamentosComTempo.length > 0
+      ? orcamentosComTempo.reduce((acc, d) => acc + d, 0) / orcamentosComTempo.length
+      : 0;
+
+    const valorTotalOrcamentos = orcamentosFiltrados.reduce((acc, o) => acc + (o.valorTotal || 0), 0);
+    const valorOrcamentosConvertidos = orcamentosFiltrados
+      .filter((o) => o.status === 'aprovado' || o.status === 'convertido')
+      .reduce((acc, o) => acc + (o.valorTotal || 0), 0);
+
+    const conversaoPorStatus = new Map<string, number>();
+    orcamentosFiltrados.forEach((o) => {
+      const atual = conversaoPorStatus.get(o.status) || 0;
+      conversaoPorStatus.set(o.status, atual + 1);
+    });
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalOrcamentos,
+        orcamentosConvertidos,
+        orcamentosPerdidos,
+        orcamentosPendentes,
+        taxaConversao,
+        tempoMedioConversao: Math.round(tempoMedioConversao),
+        valorTotalOrcamentos,
+        valorOrcamentosConvertidos,
+      },
+      conversaoPorStatus: Array.from(conversaoPorStatus.entries()).map(([status, quantidade]) => ({
+        status,
+        quantidade,
+        percentual: totalOrcamentos > 0 ? (quantidade / totalOrcamentos) * 100 : 0,
+      })),
+    };
+  }
+
+  async obterRelatorioProdutosMaisVendidos(empresaId: string, filtros?: { periodo?: string; limite?: number }) {
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+    const produtos = await this.produtosService.findAll(empresaId);
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+    const limite = filtros?.limite || 20;
+
+    const pedidosFiltrados = pedidos.filter((p) => {
+      const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+      return dataPedido >= dataInicio;
+    });
+
+    const produtosVendidos = new Map<number, {
+      produto: any;
+      quantidadeVendida: number;
+      valorTotal: number;
+      quantidadePedidos: number;
+      margemLucro: number;
+    }>();
+
+    pedidosFiltrados.forEach((pedido) => {
+      if (!pedido.itens || pedido.itens.length === 0) return;
+
+      pedido.itens.forEach((item: any) => {
+        const produtoId = item.produtoId || item.produto?.id;
+        if (!produtoId) return;
+
+        const produto = produtos.find((p) => p.id === produtoId);
+        if (!produto) return;
+
+        if (!produtosVendidos.has(produtoId)) {
+          produtosVendidos.set(produtoId, {
+            produto: {
+              id: produto.id,
+              nome: produto.nome,
+              categoria: produto.categoria,
+              precoVenda: (produto as any).precoVenda || produto.preco || 0,
+              precoCusto: (produto as any).precoCusto || 0,
+            },
+            quantidadeVendida: 0,
+            valorTotal: 0,
+            quantidadePedidos: 0,
+            margemLucro: 0,
+          });
+        }
+
+        const prod = produtosVendidos.get(produtoId)!;
+        const quantidade = item.quantidade || 0;
+        const precoUnitario = item.precoUnitario || (produto as any).precoVenda || produto.preco || 0;
+        const subtotal = item.subtotal || (quantidade * precoUnitario);
+
+        prod.quantidadeVendida += quantidade;
+        prod.valorTotal += subtotal;
+        prod.quantidadePedidos += 1;
+      });
+    });
+
+    produtosVendidos.forEach((prod) => {
+      const custoTotal = prod.produto.precoCusto * prod.quantidadeVendida;
+      const lucro = prod.valorTotal - custoTotal;
+      prod.margemLucro = prod.valorTotal > 0 ? (lucro / prod.valorTotal) * 100 : 0;
+    });
+
+    const ranking = Array.from(produtosVendidos.values())
+      .sort((a, b) => b.quantidadeVendida - a.quantidadeVendida)
+      .slice(0, limite)
+      .map((prod, index) => ({ ...prod, posicao: index + 1 }));
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalProdutos: produtosVendidos.size,
+        totalVendido: ranking.reduce((acc, r) => acc + r.valorTotal, 0),
+        totalQuantidade: ranking.reduce((acc, r) => acc + r.quantidadeVendida, 0),
+      },
+      ranking,
+    };
+  }
+
+  async obterRelatorioClientesInativos(empresaId: string, filtros?: { diasInatividade?: number }) {
+    const clientes = await this.clientesService.findAll(empresaId);
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+
+    const diasInatividade = filtros?.diasInatividade || 90;
+    const dataLimite = new Date();
+    dataLimite.setDate(dataLimite.getDate() - diasInatividade);
+
+    const clientesComUltimaCompra = clientes.map((cliente) => {
+      const pedidosCliente = pedidos.filter((p) => p.clienteId === cliente.id);
+      const ultimaCompra = pedidosCliente.length > 0
+        ? pedidosCliente.reduce((maisRecente, p) => {
+            const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+            return dataPedido > maisRecente ? dataPedido : maisRecente;
+          }, new Date(0))
+        : null;
+
+      const diasSemCompra = ultimaCompra
+        ? Math.ceil((new Date().getTime() - ultimaCompra.getTime()) / (1000 * 60 * 60 * 24))
+        : null;
+
+      const totalVendas = pedidosCliente.reduce((acc, p) => acc + (p.total || 0), 0);
+
+      return {
+        cliente: {
+          id: cliente.id,
+          nome: cliente.nome,
+          email: cliente.email,
+          telefone: cliente.telefone,
+        },
+        ultimaCompra: ultimaCompra?.toISOString().split('T')[0] || null,
+        diasSemCompra,
+        totalVendas,
+        quantidadePedidos: pedidosCliente.length,
+        potencialReativacao: diasSemCompra && diasSemCompra > diasInatividade ? 'alto' : diasSemCompra && diasSemCompra > diasInatividade / 2 ? 'medio' : 'baixo',
+      };
+    });
+
+    const clientesInativos = clientesComUltimaCompra
+      .filter((c) => !c.ultimaCompra || c.diasSemCompra! > diasInatividade)
+      .sort((a, b) => (b.diasSemCompra || 0) - (a.diasSemCompra || 0));
+
+    return {
+      diasInatividade,
+      resumo: {
+        totalClientes: clientes.length,
+        clientesInativos: clientesInativos.length,
+        clientesAtivos: clientes.length - clientesInativos.length,
+        percentualInativos: clientes.length > 0 ? (clientesInativos.length / clientes.length) * 100 : 0,
+      },
+      clientesInativos,
+    };
+  }
+
+  async obterRelatorioMargemLucro(empresaId: string, filtros?: { periodo?: string; agrupamento?: 'produto' | 'categoria' | 'vendedor' }) {
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+    const produtos = await this.produtosService.findAll(empresaId);
+    const usuarios = await this.usuarioRepo.find({ where: { ativo: true } });
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+    const agrupamento = filtros?.agrupamento || 'produto';
+
+    const pedidosFiltrados = pedidos.filter((p) => {
+      const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+      return dataPedido >= dataInicio;
+    });
+
+    const margens = new Map<string, {
+      chave: string;
+      nome: string;
+      receita: number;
+      custo: number;
+      lucro: number;
+      margem: number;
+      quantidade: number;
+    }>();
+
+    pedidosFiltrados.forEach((pedido) => {
+      if (!pedido.itens || pedido.itens.length === 0) return;
+
+      pedido.itens.forEach((item: any) => {
+        const produtoId = item.produtoId || item.produto?.id;
+        if (!produtoId) return;
+
+        const produto = produtos.find((p) => p.id === produtoId);
+        if (!produto) return;
+
+        const quantidade = item.quantidade || 0;
+        const precoVenda = item.precoUnitario || produto.preco || 0;
+        const precoCusto = produto.precoCusto || 0;
+        const receita = quantidade * precoVenda;
+        const custo = quantidade * precoCusto;
+        const lucro = receita - custo;
+        const margem = receita > 0 ? (lucro / receita) * 100 : 0;
+
+        let chave: string;
+        let nome: string;
+
+        if (agrupamento === 'produto') {
+          chave = `produto-${produtoId}`;
+          nome = produto.nome;
+        } else if (agrupamento === 'categoria') {
+          chave = `categoria-${produto.categoria || 'sem-categoria'}`;
+          nome = produto.categoria || 'Sem categoria';
+        } else {
+          chave = `vendedor-${pedido.vendedorId || 'sem-vendedor'}`;
+          const vendedor = usuarios.find((u) => u.id === pedido.vendedorId);
+          nome = vendedor?.name || 'Sem vendedor';
+        }
+
+        if (!margens.has(chave)) {
+          margens.set(chave, {
+            chave,
+            nome,
+            receita: 0,
+            custo: 0,
+            lucro: 0,
+            margem: 0,
+            quantidade: 0,
+          });
+        }
+
+        const margemAtual = margens.get(chave)!;
+        margemAtual.receita += receita;
+        margemAtual.custo += custo;
+        margemAtual.lucro += lucro;
+        margemAtual.quantidade += quantidade;
+      });
+    });
+
+    margens.forEach((m) => {
+      m.margem = m.receita > 0 ? (m.lucro / m.receita) * 100 : 0;
+    });
+
+    const ranking = Array.from(margens.values())
+      .sort((a, b) => b.margem - a.margem);
+
+    const receitaTotal = ranking.reduce((acc, r) => acc + r.receita, 0);
+    const custoTotal = ranking.reduce((acc, r) => acc + r.custo, 0);
+    const lucroTotal = ranking.reduce((acc, r) => acc + r.lucro, 0);
+    const margemMedia = receitaTotal > 0 ? (lucroTotal / receitaTotal) * 100 : 0;
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      agrupamento,
+      resumo: {
+        receitaTotal,
+        custoTotal,
+        lucroTotal,
+        margemMedia,
+      },
+      ranking,
+    };
+  }
+
+  async obterRelatorioInadimplencia(empresaId: string, filtros?: { diasAtraso?: number }) {
+    const contasReceber = await this.financeiroService.listarContasReceber(empresaId);
+    const diasAtraso = filtros?.diasAtraso || 30;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const contasAtrasadas = contasReceber
+      .filter((conta) => {
+        if (!conta.vencimento) return false;
+        const vencimento = new Date(conta.vencimento);
+        vencimento.setHours(0, 0, 0, 0);
+        return vencimento < hoje && conta.status !== 'recebida' && conta.status !== 'negociada';
+      })
+      .map((conta) => {
+        const vencimento = new Date(conta.vencimento!);
+        const dias = Math.ceil((hoje.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          ...conta,
+          diasAtraso: dias,
+          risco: dias > 90 ? 'alto' : dias > 60 ? 'medio' : 'baixo',
+        };
+      })
+      .filter((c) => c.diasAtraso >= diasAtraso)
+      .sort((a, b) => b.diasAtraso - a.diasAtraso);
+
+    const valorTotalAtrasado = contasAtrasadas.reduce((acc, c) => acc + (c.valor || 0), 0);
+    const valorTotalReceber = contasReceber
+      .filter((c) => c.status !== 'recebida' && c.status !== 'negociada')
+      .reduce((acc, c) => acc + (c.valor || 0), 0);
+
+    const inadimplenciaPorFaixa = {
+      '0-30': contasAtrasadas.filter((c) => c.diasAtraso <= 30).reduce((acc, c) => acc + (c.valor || 0), 0),
+      '31-60': contasAtrasadas.filter((c) => c.diasAtraso > 30 && c.diasAtraso <= 60).reduce((acc, c) => acc + (c.valor || 0), 0),
+      '61-90': contasAtrasadas.filter((c) => c.diasAtraso > 60 && c.diasAtraso <= 90).reduce((acc, c) => acc + (c.valor || 0), 0),
+      '90+': contasAtrasadas.filter((c) => c.diasAtraso > 90).reduce((acc, c) => acc + (c.valor || 0), 0),
+    };
+
+    return {
+      diasAtraso,
+      resumo: {
+        totalContasAtrasadas: contasAtrasadas.length,
+        valorTotalAtrasado,
+        valorTotalReceber,
+        percentualInadimplencia: valorTotalReceber > 0 ? (valorTotalAtrasado / valorTotalReceber) * 100 : 0,
+      },
+      inadimplenciaPorFaixa,
+      contasAtrasadas: contasAtrasadas.slice(0, 50),
+    };
+  }
+
+  async obterRelatorioMetasVsRealizado(empresaId: string, filtros?: { periodo?: string }) {
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+    const usuarios = await this.usuarioRepo.find({ where: { ativo: true } });
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    const pedidosFiltrados = pedidos.filter((p) => {
+      const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+      return dataPedido >= dataInicio && p.vendedorId;
+    });
+
+    const realizadoPorVendedor = new Map<number, { vendedor: any; realizado: number; quantidade: number }>();
+
+    pedidosFiltrados.forEach((pedido) => {
+      const vendedorId = pedido.vendedorId!;
+      if (!realizadoPorVendedor.has(vendedorId)) {
+        const vendedor = usuarios.find((u) => u.id === vendedorId);
+        realizadoPorVendedor.set(vendedorId, {
+          vendedor: vendedor ? { id: vendedor.id, nome: vendedor.name } : null,
+          realizado: 0,
+          quantidade: 0,
+        });
+      }
+      const atual = realizadoPorVendedor.get(vendedorId)!;
+      atual.realizado += pedido.total || 0;
+      atual.quantidade += 1;
+    });
+
+    const comparativo = Array.from(realizadoPorVendedor.values()).map((item) => ({
+      ...item,
+      meta: 0,
+      percentualAtingido: 0,
+      diferenca: item.realizado,
+    }));
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalVendedores: comparativo.length,
+        totalRealizado: comparativo.reduce((acc, c) => acc + c.realizado, 0),
+        totalMeta: comparativo.reduce((acc, c) => acc + c.meta, 0),
+      },
+      comparativo,
+    };
+  }
+
+  async obterRelatorioVendasPorRegiao(empresaId: string, filtros?: { periodo?: string }) {
+    const pedidos = await this.pedidosService.listarPedidos(empresaId);
+    const clientes = await this.clientesService.findAll(empresaId);
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    const pedidosFiltrados = pedidos.filter((p) => {
+      const dataPedido = new Date(p.dataPedido || (p as any).createdAt || '');
+      return dataPedido >= dataInicio;
+    });
+
+    const vendasPorRegiao = new Map<string, { regiao: string; cidade?: string; valor: number; quantidade: number }>();
+
+    pedidosFiltrados.forEach((pedido) => {
+      const cliente = clientes.find((c) => c.id === pedido.clienteId);
+      if (!cliente) return;
+
+      const cidade = (cliente as any).cidade || (cliente as any).endereco?.split(',')[0] || 'Não informado';
+      const estado = (cliente as any).estado || (cliente as any).endereco?.split(',')[1]?.trim() || 'Não informado';
+      const regiao = estado;
+
+      const chave = `${regiao}-${cidade}`;
+      if (!vendasPorRegiao.has(chave)) {
+        vendasPorRegiao.set(chave, {
+          regiao,
+          cidade,
+          valor: 0,
+          quantidade: 0,
+        });
+      }
+
+      const atual = vendasPorRegiao.get(chave)!;
+      atual.valor += pedido.total || 0;
+      atual.quantidade += 1;
+    });
+
+    const ranking = Array.from(vendasPorRegiao.values())
+      .sort((a, b) => b.valor - a.valor);
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalRegioes: new Set(ranking.map((r) => r.regiao)).size,
+        totalCidades: ranking.length,
+        valorTotal: ranking.reduce((acc, r) => acc + r.valor, 0),
+      },
+      ranking,
+    };
+  }
+
+  async obterRelatorioEstoqueCritico(empresaId: string) {
+    const produtos = await this.produtosService.findAll(empresaId);
+    const movimentacoes = await this.estoqueService.listarMovimentacoes(empresaId);
+
+    const produtosCriticos = produtos
+      .filter((p) => p.estoque <= p.estoqueMinimo)
+      .map((p) => ({
+        produto: {
+          id: p.id,
+          nome: p.nome,
+          categoria: p.categoria,
+        },
+        estoqueAtual: p.estoque,
+        estoqueMinimo: p.estoqueMinimo,
+        diferenca: p.estoque - p.estoqueMinimo,
+        status: p.estoque === 0 ? 'zerado' : p.estoque < p.estoqueMinimo * 0.5 ? 'critico' : 'baixo',
+      }))
+      .sort((a, b) => a.diferenca - b.diferenca);
+
+    const noventaDiasAtras = new Date();
+    noventaDiasAtras.setDate(noventaDiasAtras.getDate() - 90);
+
+    const produtosParados = produtos
+      .filter((p) => {
+        const movimentacoesProduto = movimentacoes.filter((m) => (m as any).produtoId === p.id);
+        if (movimentacoesProduto.length === 0) return true;
+        const ultimaMovimentacao = movimentacoesProduto.reduce((maisRecente, m) => {
+          const data = new Date(m.criadoEm);
+          return data > maisRecente ? data : maisRecente;
+        }, new Date(0));
+        return ultimaMovimentacao < noventaDiasAtras;
+      })
+      .map((p) => ({
+        produto: {
+          id: p.id,
+          nome: p.nome,
+          categoria: p.categoria,
+        },
+        estoqueAtual: p.estoque,
+        ultimaMovimentacao: null,
+      }));
+
+    return {
+      resumo: {
+        produtosCriticos: produtosCriticos.length,
+        produtosZerados: produtosCriticos.filter((p) => p.status === 'zerado').length,
+        produtosParados: produtosParados.length,
+      },
+      produtosCriticos,
+      produtosParados: produtosParados.slice(0, 50),
+    };
+  }
+
+  async obterRelatorioFornecedores(empresaId: string, filtros?: { periodo?: string }) {
+    const fornecedores = await this.fornecedoresService.listar(empresaId);
+    const contratos = await this.contratosService.listar(empresaId);
+
+    const periodo = filtros?.periodo || '30d';
+    const dias = periodo === '7d' ? 7 : periodo === '30d' ? 30 : periodo === '90d' ? 90 : 365;
+    const dataInicio = new Date();
+    dataInicio.setDate(dataInicio.getDate() - dias);
+
+    const contratosFiltrados = contratos.filter((c) => {
+      const data = new Date(c.dataInicio || '');
+      return data >= dataInicio;
+    });
+
+    const performancePorFornecedor = new Map<string, {
+      fornecedor: any;
+      quantidadeContratos: number;
+      valorTotal: number;
+      tempoMedioEntrega: number;
+      avaliacaoMedia: number;
+    }>();
+
+    contratosFiltrados.forEach((contrato) => {
+      const nomeFornecedor = contrato.fornecedor || 'sem-fornecedor';
+      const fornecedor = fornecedores.find((f) => f.nome === nomeFornecedor);
+
+      if (!performancePorFornecedor.has(nomeFornecedor)) {
+        performancePorFornecedor.set(nomeFornecedor, {
+          fornecedor: fornecedor || { nome: nomeFornecedor },
+          quantidadeContratos: 0,
+          valorTotal: 0,
+          tempoMedioEntrega: 0,
+          avaliacaoMedia: 0,
+        });
+      }
+
+      const perf = performancePorFornecedor.get(nomeFornecedor)!;
+      perf.quantidadeContratos += 1;
+      perf.valorTotal += contrato.valor || 0;
+    });
+
+    const ranking = Array.from(performancePorFornecedor.values())
+      .sort((a, b) => b.valorTotal - a.valorTotal);
+
+    return {
+      periodo: { inicio: dataInicio.toISOString().split('T')[0], fim: new Date().toISOString().split('T')[0] },
+      resumo: {
+        totalFornecedores: fornecedores.length,
+        fornecedoresAtivos: ranking.length,
+        valorTotal: ranking.reduce((acc, r) => acc + r.valorTotal, 0),
+      },
+      ranking,
+    };
   }
 
   private gerarCSV(dados: any, tipo: string): string {
@@ -656,7 +1297,6 @@ export class RelatoriosService {
         break;
     }
 
-    // Adicionar BOM para UTF-8
     return '\ufeff' + linhas.join('\n');
   }
 }

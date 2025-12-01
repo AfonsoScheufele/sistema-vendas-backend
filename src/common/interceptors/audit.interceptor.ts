@@ -20,13 +20,10 @@ export class AuditInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const auditOptions = this.reflector.get<AuditOptions>(AUDIT_KEY, context.getHandler());
 
-    // Se não há opções de auditoria ou está marcado para ignorar, apenas continua
-    // Por padrão, não registramos todas as requisições, apenas as que têm o decorator @Audit()
     if (!auditOptions || auditOptions.ignorar) {
       return next.handle();
     }
 
-    // Obter dados do usuário e empresa
     const user = request.user;
     const empresaId = request.empresaId || 'default-empresa';
     const ipAddress = request.ip || request.connection?.remoteAddress;
@@ -34,49 +31,39 @@ export class AuditInterceptor implements NestInterceptor {
     const endpoint = request.url;
     const metodoHttp = request.method;
 
-    // Dados antes da execução (para UPDATE/DELETE)
     let dadosAntigos: any = null;
     if (['PUT', 'PATCH', 'DELETE'].includes(metodoHttp)) {
-      // Tentar obter dados antigos se disponível
       dadosAntigos = request.body?.dadosAntigos || null;
     }
 
     return next.handle().pipe(
       tap(async (response) => {
         try {
-          // Lazy load do serviço de auditoria
           let auditoriaService: any = null;
           try {
             auditoriaService = this.moduleRef.get('AuditoriaService', { strict: false });
           } catch (e) {
-            // Se não conseguir obter, tenta importar dinamicamente
             const { AuditoriaService } = await import('../../auditoria/auditoria.service');
             auditoriaService = this.moduleRef.get(AuditoriaService, { strict: false });
           }
 
           if (auditoriaService) {
-            // Determinar tipo de ação
             const tipoAcao =
               auditOptions.tipoAcao ||
               (metodoHttp === 'POST' ? 'CREATE' : metodoHttp === 'PUT' || metodoHttp === 'PATCH' ? 'UPDATE' : metodoHttp === 'DELETE' ? 'DELETE' : 'VIEW');
 
-            // Determinar entidade
             const entidade = auditOptions.entidade || this.extrairEntidade(endpoint);
 
-            // Determinar ID da entidade
             const entidadeId = request.params?.id || request.body?.id || null;
 
-            // Dados novos (para CREATE/UPDATE)
             let dadosNovos: any = null;
             if (['POST', 'PUT', 'PATCH'].includes(metodoHttp)) {
               dadosNovos = request.body || null;
-              // Remover senhas e dados sensíveis
               if (dadosNovos) {
                 dadosNovos = this.sanitizarDados(dadosNovos);
               }
             }
 
-            // Criar log de auditoria
             await auditoriaService.criarLog({
               empresaId,
               usuarioId: user?.id,
@@ -94,7 +81,6 @@ export class AuditInterceptor implements NestInterceptor {
             });
           }
         } catch (error) {
-          // Não falhar a requisição se houver erro na auditoria
           console.error('Erro ao registrar log de auditoria:', error);
         }
       }),

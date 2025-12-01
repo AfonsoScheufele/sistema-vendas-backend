@@ -1,7 +1,6 @@
 import { IsOptional, IsString, IsBoolean, IsInt, IsEmail, Min, Max } from 'class-validator';
 
 export class UpdateConfiguracaoDto {
-  // Configurações Gerais
   @IsOptional()
   @IsString()
   nomeFantasia?: string;
@@ -50,7 +49,6 @@ export class UpdateConfiguracaoDto {
   @IsString()
   cep?: string;
 
-  // Configurações de Negócio
   @IsOptional()
   @IsString()
   moeda?: string;
@@ -71,7 +69,6 @@ export class UpdateConfiguracaoDto {
   @IsString()
   formatoHora?: string;
 
-  // Configurações de Notificações
   @IsOptional()
   @IsBoolean()
   notificacoesEmail?: boolean;
@@ -99,7 +96,6 @@ export class UpdateConfiguracaoDto {
   @Min(1)
   estoqueMinimoAlerta?: number;
 
-  // Configurações de Integração
   @IsOptional()
   @IsString()
   apiKeyExterna?: string;
@@ -116,7 +112,6 @@ export class UpdateConfiguracaoDto {
   @IsString()
   webhookUrl?: string;
 
-  // Configurações de Segurança
   @IsOptional()
   @IsInt()
   @Min(30)
@@ -139,7 +134,6 @@ export class UpdateConfiguracaoDto {
   @Max(60)
   tempoBloqueioMinutos?: number;
 
-  // Configurações de Backup
   @IsOptional()
   @IsBoolean()
   backupAutomatico?: boolean;
@@ -154,7 +148,6 @@ export class UpdateConfiguracaoDto {
   @Max(365)
   diasRetencaoBackup?: number;
 
-  // Configurações de Relatórios
   @IsOptional()
   @IsBoolean()
   relatoriosAutomaticos?: boolean;

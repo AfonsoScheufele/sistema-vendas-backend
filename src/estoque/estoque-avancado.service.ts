@@ -13,7 +13,6 @@ export class EstoqueAvancadoService {
     private readonly inventarioRepo: Repository<InventarioEntity>,
   ) {}
 
-  // Lotes
   async listarLotes(empresaId: string, filtros?: { produtoId?: number; depositoId?: string }) {
     const query = this.loteRepo.createQueryBuilder('lote').where('lote.empresaId = :empresaId', { empresaId });
 
@@ -55,7 +54,6 @@ export class EstoqueAvancadoService {
       .getMany();
   }
 
-  // Inventários
   async listarInventarios(empresaId: string, filtros?: { status?: string; depositoId?: string }) {
     const query = this.inventarioRepo
       .createQueryBuilder('inv')

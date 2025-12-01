@@ -9,7 +9,6 @@ export class ConfiguracaoEmpresaEntity {
   @Index()
   empresaId: string;
 
-  // Configurações Gerais
   @Column({ type: 'varchar', length: 100, nullable: true })
   nomeFantasia?: string;
 
@@ -46,7 +45,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'varchar', length: 10, nullable: true })
   cep?: string;
 
-  // Configurações de Negócio
   @Column({ type: 'varchar', length: 10, default: 'BRL' })
   moeda: string;
 
@@ -62,7 +60,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'varchar', length: 20, default: 'HH:mm' })
   formatoHora: string;
 
-  // Configurações de Notificações
   @Column({ type: 'boolean', default: true })
   notificacoesEmail: boolean;
 
@@ -81,7 +78,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'int', default: 10 })
   estoqueMinimoAlerta: number;
 
-  // Configurações de Integração
   @Column({ type: 'text', nullable: true })
   apiKeyExterna?: string;
 
@@ -94,7 +90,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'varchar', length: 500, nullable: true })
   webhookUrl?: string;
 
-  // Configurações de Segurança
   @Column({ type: 'int', default: 90 })
   diasExpiracaoSenha: number;
 
@@ -107,7 +102,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'int', default: 30 })
   tempoBloqueioMinutos: number;
 
-  // Configurações de Backup
   @Column({ type: 'boolean', default: true })
   backupAutomatico: boolean;
 
@@ -117,7 +111,6 @@ export class ConfiguracaoEmpresaEntity {
   @Column({ type: 'int', default: 30 })
   diasRetencaoBackup: number;
 
-  // Configurações de Relatórios
   @Column({ type: 'boolean', default: true })
   relatoriosAutomaticos: boolean;
 
@@ -126,6 +119,39 @@ export class ConfiguracaoEmpresaEntity {
 
   @Column({ type: 'text', nullable: true })
   emailsRelatorios?: string;
+
+  @Column({ type: 'json', nullable: true })
+  modulosHabilitados?: string[]; // Lista de códigos de módulos habilitados (legado, usar modulo_empresa)
+
+  @Column({ type: 'json', nullable: true })
+  configuracoesModulos?: Record<string, any>; // Configurações específicas por módulo
+
+  @Column({ type: 'boolean', default: false })
+  permitirMultiFiliais: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  permitirMultiMoedas: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  usarWorkflowAprovacao: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  usarControleLotes: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  usarControleSerie: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  usarComissoes: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  usarMetas: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  usarCRM: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  usarLogistica: boolean;
 
   @CreateDateColumn()
   criadoEm: Date;

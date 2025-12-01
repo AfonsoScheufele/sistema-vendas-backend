@@ -1,9 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Lead } from './lead.entity';
 import { Oportunidade } from './oportunidade.entity';
 import { Campanha } from './campanha.entity';
+import { CreateLeadDto } from './dto/create-lead.dto';
+import { UpdateLeadDto } from './dto/update-lead.dto';
 
 @Injectable()
 export class CrmService {
@@ -25,6 +27,41 @@ export class CrmService {
 
   async contarLeadsNaoConvertidos(empresaId: string) {
     return await this.leadRepo.count({ where: { empresaId, status: 'novo' } });
+  }
+
+  async buscarLeadPorId(id: number, empresaId: string): Promise<Lead> {
+    const lead = await this.leadRepo.findOne({ where: { id, empresaId } });
+    if (!lead) {
+      throw new NotFoundException(`Lead com ID ${id} não encontrado`);
+    }
+    return lead;
+  }
+
+  async criarLead(createLeadDto: CreateLeadDto, empresaId: string): Promise<Lead> {
+    const lead = this.leadRepo.create({
+      ...createLeadDto,
+      empresaId,
+      status: createLeadDto.status || 'novo',
+      score: createLeadDto.score || 0,
+    });
+    return await this.leadRepo.save(lead);
+  }
+
+  async atualizarLead(id: number, updateLeadDto: UpdateLeadDto, empresaId: string): Promise<Lead> {
+    const lead = await this.buscarLeadPorId(id, empresaId);
+    Object.assign(lead, updateLeadDto);
+    return await this.leadRepo.save(lead);
+  }
+
+  async atualizarStatusLead(id: number, status: string, empresaId: string): Promise<Lead> {
+    const lead = await this.buscarLeadPorId(id, empresaId);
+    lead.status = status;
+    return await this.leadRepo.save(lead);
+  }
+
+  async excluirLead(id: number, empresaId: string): Promise<void> {
+    const lead = await this.buscarLeadPorId(id, empresaId);
+    await this.leadRepo.remove(lead);
   }
 
   async listarOportunidades(empresaId: string) {

@@ -18,10 +18,6 @@ export class EstoqueService {
     private readonly produtosService: ProdutosService,
   ) {}
 
-  // Seed removido - não criar dados automaticamente
-  // async onModuleInit() {
-  //   // Seed removido para evitar dados hardcoded
-  // }
 
   async listarDepositos(empresaId: string) {
     const depositos = await this.depositoRepo.find({

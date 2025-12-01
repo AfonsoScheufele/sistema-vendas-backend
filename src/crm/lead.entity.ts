@@ -18,6 +18,9 @@ export class Lead {
   @Column()
   telefone: string;
 
+  @Column({ nullable: true })
+  empresa: string;
+
   @Column({ type: 'varchar', length: 20, default: 'novo' })
   status: string;
 

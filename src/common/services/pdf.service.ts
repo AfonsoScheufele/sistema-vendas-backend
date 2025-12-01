@@ -12,20 +12,17 @@ export class PdfService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Cabeçalho
     doc
       .fontSize(20)
       .text('PEDIDO DE VENDA', { align: 'center' })
       .moveDown();
 
-    // Informações do pedido
     doc
       .fontSize(12)
       .text(`Número: ${pedido.numero}`, { continued: true })
       .text(`Data: ${new Date(pedido.dataPedido).toLocaleDateString('pt-BR')}`, { align: 'right' })
       .moveDown();
 
-    // Cliente
     if (pedido.cliente) {
       doc
         .fontSize(14)
@@ -37,7 +34,6 @@ export class PdfService {
         .moveDown();
     }
 
-    // Vendedor
     if (pedido.vendedor) {
       doc
         .fontSize(14)
@@ -47,14 +43,12 @@ export class PdfService {
         .moveDown();
     }
 
-    // Itens
     if (pedido.itens && pedido.itens.length > 0) {
       doc
         .fontSize(14)
         .text('ITENS DO PEDIDO', { underline: true })
         .moveDown(0.5);
 
-      // Cabeçalho da tabela
       doc
         .fontSize(10)
         .text('Produto', 50, doc.y, { width: 200 })
@@ -63,14 +57,12 @@ export class PdfService {
         .text('Subtotal', 390, doc.y, { width: 80, align: 'right' })
         .moveDown(0.3);
 
-      // Linha separadora
       doc
         .moveTo(50, doc.y)
         .lineTo(550, doc.y)
         .stroke()
         .moveDown(0.5);
 
-      // Itens
       pedido.itens.forEach((item) => {
         const produtoNome = item.produto?.nome || 'Produto não encontrado';
         const quantidade = item.quantidade || 0;
@@ -94,7 +86,6 @@ export class PdfService {
         .moveDown(0.5);
     }
 
-    // Totais
     const desconto = Number(pedido.desconto || 0);
     const total = Number(pedido.total || 0);
     const subtotal = total + desconto;
@@ -120,7 +111,6 @@ export class PdfService {
       .font('Helvetica')
       .moveDown();
 
-    // Observações
     if (pedido.observacoes) {
       doc
         .fontSize(11)
@@ -130,7 +120,6 @@ export class PdfService {
         .moveDown();
     }
 
-    // Rodapé
     const pageHeight = doc.page.height;
     doc
       .fontSize(8)
@@ -153,26 +142,22 @@ export class PdfService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Cabeçalho
     doc
       .fontSize(20)
       .text('ORÇAMENTO', { align: 'center' })
       .moveDown();
 
-    // Informações do orçamento
     doc
       .fontSize(12)
       .text(`Número: ${orcamento.numero}`, { continued: true })
       .text(`Data: ${new Date(orcamento.createdAt).toLocaleDateString('pt-BR')}`, { align: 'right' })
       .moveDown();
 
-    // Status
     doc
       .fontSize(11)
       .text(`Status: ${orcamento.status.toUpperCase()}`, { align: 'right' })
       .moveDown();
 
-    // Cliente
     if (orcamento.cliente) {
       doc
         .fontSize(14)
@@ -184,7 +169,6 @@ export class PdfService {
         .moveDown();
     }
 
-    // Vendedor
     if (orcamento.vendedor) {
       doc
         .fontSize(14)
@@ -194,7 +178,6 @@ export class PdfService {
         .moveDown();
     }
 
-    // Validade
     if (orcamento.dataValidade) {
       const dataValidade = orcamento.dataValidade;
       doc
@@ -203,14 +186,12 @@ export class PdfService {
         .moveDown();
     }
 
-    // Itens
     if (orcamento.itens && orcamento.itens.length > 0) {
       doc
         .fontSize(14)
         .text('ITENS DO ORÇAMENTO', { underline: true })
         .moveDown(0.5);
 
-      // Cabeçalho da tabela
       doc
         .fontSize(10)
         .text('Produto', 50, doc.y, { width: 200 })
@@ -219,14 +200,12 @@ export class PdfService {
         .text('Subtotal', 390, doc.y, { width: 80, align: 'right' })
         .moveDown(0.3);
 
-      // Linha separadora
       doc
         .moveTo(50, doc.y)
         .lineTo(550, doc.y)
         .stroke()
         .moveDown(0.5);
 
-      // Itens
       orcamento.itens.forEach((item: any) => {
         const produtoNome = item.produto?.nome || item.descricao || 'Produto não encontrado';
         const quantidade = item.quantidade || 0;
@@ -250,7 +229,6 @@ export class PdfService {
         .moveDown(0.5);
     }
 
-    // Total
     const total = Number(orcamento.valorTotal || 0);
 
     doc
@@ -261,7 +239,6 @@ export class PdfService {
       .font('Helvetica')
       .moveDown();
 
-    // Observações
     if (orcamento.observacoes) {
       doc
         .fontSize(11)
@@ -271,7 +248,6 @@ export class PdfService {
         .moveDown();
     }
 
-    // Rodapé
     const pageHeight = doc.page.height;
     doc
       .fontSize(8)
@@ -299,7 +275,6 @@ export class PdfService {
     doc.on('data', buffers.push.bind(buffers));
     doc.on('end', () => {});
 
-    // Cabeçalho
     doc
       .fontSize(20)
       .text(titulo, { align: 'center' })
@@ -317,12 +292,10 @@ export class PdfService {
       .text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, { align: 'center' })
       .moveDown();
 
-    // Calcular larguras das colunas
     const pageWidth = doc.page.width - 100; // Margens
     const numColunas = colunas.length;
     const larguraColuna = pageWidth / numColunas;
 
-    // Cabeçalho da tabela
     let yPos = doc.y;
     doc
       .fontSize(10)
@@ -336,7 +309,6 @@ export class PdfService {
       });
     });
 
-    // Linha separadora
     yPos += 20;
     doc
       .moveTo(50, yPos)
@@ -344,12 +316,10 @@ export class PdfService {
       .stroke()
       .moveDown(0.3);
 
-    // Dados
     doc.font('Helvetica').fontSize(9).fillColor('#000000');
     dados.forEach((linha, linhaIndex) => {
       const currentY = doc.y;
       
-      // Verificar se precisa de nova página
       if (currentY > doc.page.height - 100) {
         doc.addPage();
         yPos = 50;
@@ -368,7 +338,6 @@ export class PdfService {
       doc.moveDown(0.4);
     });
 
-    // Rodapé
     if (opcoes?.rodape) {
       const pageHeight = doc.page.height;
       doc

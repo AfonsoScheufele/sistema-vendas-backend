@@ -52,14 +52,12 @@ describe('Fluxos centrais E2E', () => {
 
     const empresaId = empresas[0]?.id || 'default-empresa';
 
-    // Pedidos - listar
     await request(app.getHttpServer())
       .get('/pedidos')
       .set('Authorization', `Bearer ${token}`)
       .set('x-empresa-id', empresaId)
       .expect(200);
 
-    // Orçamentos - listar
     await request(app.getHttpServer())
       .get('/orcamentos')
       .set('Authorization', `Bearer ${token}`)
@@ -87,7 +85,6 @@ describe('Fluxos centrais E2E', () => {
     const refreshToken = loginRes.body.refreshToken as string;
     expect(refreshToken).toBeDefined();
 
-    // Primeiro refresh
     const refreshRes1 = await request(app.getHttpServer())
       .post('/auth/refresh')
       .send({ refreshToken })
@@ -97,7 +94,6 @@ describe('Fluxos centrais E2E', () => {
     expect(newRefreshToken1).toBeDefined();
     expect(newRefreshToken1).not.toBe(refreshToken);
 
-    // Segundo refresh com o novo token
     const refreshRes2 = await request(app.getHttpServer())
       .post('/auth/refresh')
       .send({ refreshToken: newRefreshToken1 })
@@ -105,7 +101,6 @@ describe('Fluxos centrais E2E', () => {
 
     expect(refreshRes2.body.refreshToken).toBeDefined();
 
-    // Token antigo deve estar inválido
     await request(app.getHttpServer())
       .post('/auth/refresh')
       .send({ refreshToken })

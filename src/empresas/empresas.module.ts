@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmpresasController } from './empresas.controller';
 import { EmpresasService } from './empresas.service';
 import { EmpresaEntity } from './empresa.entity';
+import { ConfiguracoesModule } from '../configuracoes/configuracoes.module';
 import { UsuarioEmpresaEntity } from './usuario-empresa.entity';
 import { UsuarioEmpresaService } from './usuario-empresa.service';
 import { UsuarioEmpresaController } from './usuario-empresa.controller';
@@ -38,6 +39,7 @@ import { FornecedorAvaliacaoEntity } from '../compras/fornecedor-avaliacao.entit
 
 @Module({
   imports: [
+    forwardRef(() => ConfiguracoesModule),
     TypeOrmModule.forFeature([
       EmpresaEntity,
       UsuarioEmpresaEntity,

@@ -16,7 +16,6 @@ export class LogisticaService {
     private readonly roteiroRepo: Repository<RoteiroEntity>,
   ) {}
 
-  // Expedições
   async listarExpedicoes(empresaId: string, filtros?: { status?: string }) {
     const query = this.expedicaoRepo
       .createQueryBuilder('exp')
@@ -61,7 +60,6 @@ export class LogisticaService {
     return expedicao;
   }
 
-  // Transportadoras
   async listarTransportadoras(empresaId: string, filtros?: { status?: string }) {
     const query = this.transportadoraRepo
       .createQueryBuilder('trans')
@@ -88,7 +86,6 @@ export class LogisticaService {
     return this.transportadoraRepo.save(transportadora);
   }
 
-  // Roteiros
   async listarRoteiros(empresaId: string, filtros?: { status?: string }) {
     const query = this.roteiroRepo.createQueryBuilder('rot').where('rot.empresaId = :empresaId', { empresaId });
 

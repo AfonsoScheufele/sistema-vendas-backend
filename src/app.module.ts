@@ -46,6 +46,10 @@ import { RelatoriosModule } from './relatorios/relatorios.module';
 import { PdfModule } from './pdf/pdf.module';
 import { ConfiguracoesModule } from './configuracoes/configuracoes.module';
 import { ConfiguracaoEmpresaEntity } from './configuracoes/configuracao-empresa.entity';
+import { ModuloEntity } from './configuracoes/modulo.entity';
+import { ModuloEmpresaEntity } from './configuracoes/modulo-empresa.entity';
+import { PermissaoEntity } from './perfis/permissao.entity';
+import { PerfilPermissaoEntity } from './perfis/perfil-permissao.entity';
 import { EmpresaEntity } from './empresas/empresa.entity';
 import { UsuarioEmpresaEntity } from './empresas/usuario-empresa.entity';
 import { NotaFiscalEntity } from './fiscal/nota-fiscal.entity';
@@ -95,7 +99,6 @@ dns.setDefaultResultOrder('ipv4first');
         const database = configService.get<string>('DB_NAME');
         const useSsl = configService.get<string>('DB_SSL') === 'true';
 
-        // Resolve DNS to IPv4 only
         let resolvedHost = host;
         try {
           const addresses = await dns.promises.resolve4(host);
@@ -103,7 +106,6 @@ dns.setDefaultResultOrder('ipv4first');
             resolvedHost = addresses[0];
           }
         } catch (error) {
-          // fallback to original host
         }
 
         return {
@@ -148,6 +150,10 @@ dns.setDefaultResultOrder('ipv4first');
             LoteEntity,
             InventarioEntity,
             ConfiguracaoEmpresaEntity,
+            ModuloEntity,
+            ModuloEmpresaEntity,
+            PermissaoEntity,
+            PerfilPermissaoEntity,
             NotaFiscalEntity,
             SpedEntity,
             ImpostoEntity,

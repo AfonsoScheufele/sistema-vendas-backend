@@ -11,16 +11,11 @@ export class ConfiguracoesService {
     private readonly configRepository: Repository<ConfiguracaoEmpresaEntity>,
   ) {}
 
-  // Seed removido - não criar dados automaticamente
-  // async onModuleInit() {
-  //   // Seed removido para evitar dados hardcoded
-  // }
 
   async obterConfiguracao(empresaId: string): Promise<ConfiguracaoEmpresaEntity> {
     let config = await this.configRepository.findOne({ where: { empresaId } });
     
     if (!config) {
-      // Criar configuração padrão se não existir
       config = this.configRepository.create({ empresaId });
       config = await this.configRepository.save(config);
     }

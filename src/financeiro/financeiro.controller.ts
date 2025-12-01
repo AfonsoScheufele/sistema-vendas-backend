@@ -72,7 +72,6 @@ export class FinanceiroController {
     return { sucesso: true };
   }
 
-  // Endpoints placeholders ainda podem ser ajustados futuramente
   @Get('pagar')
   async listarContasPagar(
     @Req() req: any,
@@ -297,6 +296,11 @@ export class FinanceiroController {
     return this.financeiroService.obterTesouraria(req.empresaId);
   }
 }
+
+
+
+
+
 
 
 

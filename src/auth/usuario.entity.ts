@@ -35,7 +35,6 @@ export class Usuario {
   @Column({ nullable: true })
   resetPasswordExpires?: Date;
 
-  // Refresh token rotation
   @Column({ nullable: true })
   refreshTokenHash?: string;
 

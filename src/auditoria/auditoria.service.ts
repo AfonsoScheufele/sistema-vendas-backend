@@ -41,20 +41,16 @@ export class AuditoriaService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    // Agendar limpeza diária (03:30 UTC)
     const retentionDays = parseInt(process.env.AUDIT_RETENTION_DAYS || '180', 10);
-    const scheduleMs = 24 * 60 * 60 * 1000; // 1 dia
+    const scheduleMs = 24 * 60 * 60 * 1000;
     const runCleanup = async () => {
       try {
         await this.limparLogsAntigos(retentionDays);
-        // eslint-disable-next-line no-console
         console.log(`[Auditoria] Limpeza automática executada. Retenção: ${retentionDays} dias.`);
       } catch (err) {
-        // eslint-disable-next-line no-console
         console.error('[Auditoria] Falha na limpeza automática:', err);
       }
     };
-    // Executa na inicialização e depois a cada dia
     runCleanup();
     this.cleanupTimer = setInterval(runCleanup, scheduleMs);
   }

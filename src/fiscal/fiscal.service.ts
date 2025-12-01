@@ -16,7 +16,6 @@ export class FiscalService {
     private readonly impostoRepo: Repository<ImpostoEntity>,
   ) {}
 
-  // Notas Fiscais
   async listarNotasFiscais(empresaId: string, filtros?: { tipo?: string; status?: string }) {
     const query = this.notaFiscalRepo.createQueryBuilder('nf').where('nf.empresaId = :empresaId', { empresaId });
 
@@ -84,7 +83,6 @@ export class FiscalService {
     };
   }
 
-  // SPED
   async listarSped(empresaId: string, filtros?: { tipo?: string; competencia?: string }) {
     const query = this.spedRepo.createQueryBuilder('sped').where('sped.empresaId = :empresaId', { empresaId });
 
@@ -104,7 +102,6 @@ export class FiscalService {
     return this.spedRepo.save(sped);
   }
 
-  // Impostos
   async listarImpostos(empresaId: string, filtros?: { tipo?: string }) {
     const query = this.impostoRepo.createQueryBuilder('imposto').where('imposto.empresaId = :empresaId', { empresaId });
 

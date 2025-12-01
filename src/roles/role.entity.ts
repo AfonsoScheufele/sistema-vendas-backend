@@ -6,10 +6,10 @@ export class RoleEntity {
   id: number;
 
   @Column({ unique: true })
-  slug: string; // ex.: admin, gerente
+  slug: string;
 
   @Column()
-  name: string; // ex.: Administrador
+  name: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
@@ -17,7 +17,6 @@ export class RoleEntity {
   @Column({ default: true })
   active: boolean;
 
-  // JSON string array de permission keys
   @Column({ type: 'text', default: '[]' })
   permissions: string;
 }

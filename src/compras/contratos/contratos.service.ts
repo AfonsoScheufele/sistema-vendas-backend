@@ -12,10 +12,6 @@ export class ContratosService {
     private readonly contratoRepo: Repository<ContratoEntity>,
   ) {}
 
-  // Seed removido - não criar dados automaticamente
-  // async onModuleInit() {
-  //   // Seed removido para evitar dados hardcoded
-  // }
 
   async listar(empresaId: string): Promise<Contrato[]> {
     if (!empresaId) {
@@ -147,7 +143,6 @@ export class ContratosService {
 
   private mapToResponse(entity: ContratoEntity): Contrato {
     try {
-      // Converter valor decimal (pode vir como string do banco)
       let valor = 0;
       if (entity.valor !== null && entity.valor !== undefined) {
         if (typeof entity.valor === 'string') {
@@ -160,7 +155,6 @@ export class ContratosService {
         }
       }
 
-      // Converter datas
       const formatarData = (data: Date | string | null | undefined): string => {
         if (!data) return new Date().toISOString();
         if (data instanceof Date) return data.toISOString();

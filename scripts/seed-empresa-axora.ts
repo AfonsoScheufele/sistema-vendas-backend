@@ -1,10 +1,3 @@
-/**
- * Script temporário para criar a empresa Axora no banco de dados
- * 
- * Execute uma vez com: npm run seed:empresa
- * Depois pode deletar este arquivo e o script do package.json
- */
-
 import { DataSource } from 'typeorm';
 import { EmpresaEntity } from '../src/empresas/empresa.entity';
 import * as dns from 'dns';
@@ -13,7 +6,6 @@ import * as path from 'path';
 
 dns.setDefaultResultOrder('ipv4first');
 
-// Carregar .env manualmente
 function loadEnv() {
   const envPath = path.join(__dirname, '..', '.env');
   if (fs.existsSync(envPath)) {
@@ -25,7 +17,6 @@ function loadEnv() {
         if (equalIndex > 0) {
           const key = trimmed.substring(0, equalIndex).trim();
           let value = trimmed.substring(equalIndex + 1).trim();
-          // Remove aspas se existirem
           if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
             value = value.slice(1, -1);
           }
@@ -46,7 +37,6 @@ async function seedEmpresaAxora() {
   const database = process.env.DB_NAME || 'postgres';
   const useSsl = process.env.DB_SSL === 'true';
 
-  // Resolver DNS para IPv4
   let resolvedHost = host;
   try {
     const addresses = await dns.promises.resolve4(host || 'localhost');
@@ -54,7 +44,6 @@ async function seedEmpresaAxora() {
       resolvedHost = addresses[0];
     }
   } catch (error) {
-    // fallback to original host
   }
 
   const dataSource = new DataSource({
@@ -99,7 +88,6 @@ async function seedEmpresaAxora() {
       ativo: true,
     };
 
-    // Verificar se já existe
     const existingByCnpj = await empresaRepo.findOne({
       where: { cnpj: empresaAxora.cnpj },
     });

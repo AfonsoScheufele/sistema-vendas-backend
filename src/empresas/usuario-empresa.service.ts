@@ -25,32 +25,27 @@ export class UsuarioEmpresaService {
   ) {}
 
   async vincularUsuarioEmpresa(dto: VincularUsuarioEmpresaDto): Promise<UsuarioEmpresaEntity> {
-    // Verificar se usuário existe
     const usuario = await this.usuarioRepo.findOne({ where: { id: dto.usuarioId } });
     if (!usuario) {
       throw new NotFoundException('Usuário não encontrado');
     }
 
-    // Verificar se empresa existe
     const empresa = await this.empresaRepo.findOne({ where: { id: dto.empresaId } });
     if (!empresa) {
       throw new NotFoundException('Empresa não encontrada');
     }
 
-    // Verificar se já existe vínculo
     const vinculoExistente = await this.usuarioEmpresaRepo.findOne({
       where: { usuarioId: dto.usuarioId, empresaId: dto.empresaId },
     });
 
     if (vinculoExistente) {
-      // Atualizar vínculo existente
       vinculoExistente.papel = dto.papel || vinculoExistente.papel;
       vinculoExistente.permissoes = dto.permissoes || vinculoExistente.permissoes;
       vinculoExistente.ativo = dto.ativo ?? vinculoExistente.ativo;
       return await this.usuarioEmpresaRepo.save(vinculoExistente);
     }
 
-    // Criar novo vínculo
     const vinculo = this.usuarioEmpresaRepo.create({
       usuarioId: dto.usuarioId,
       empresaId: dto.empresaId,

@@ -21,10 +21,6 @@ export class FornecedoresService {
     private readonly produtoRepo: Repository<FornecedorProdutoEntity>,
   ) {}
 
-  // Seed removido - não criar dados automaticamente
-  // async onModuleInit() {
-  //   // Seed removido para evitar dados hardcoded
-  // }
 
   async listar(empresaId: string, status?: FornecedorStatus, search?: string): Promise<Fornecedor[]> {
     const query = this.fornecedorRepo

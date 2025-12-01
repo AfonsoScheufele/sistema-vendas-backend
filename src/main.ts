@@ -6,7 +6,6 @@ import * as express from 'express';
 import * as dns from 'dns';
 dns.setDefaultResultOrder('ipv4first');
 
-// Rate limiter simples em memória por IP
 type RateBucket = { count: number; resetAt: number };
 const rateBuckets: Record<string, RateBucket> = {};
 const WINDOW_MS = 60 * 1000; // 1 min
@@ -31,7 +30,6 @@ function rateLimitMiddleware(req: any, res: any, next: any) {
   next();
 }
 
-// Headers de segurança básicos (substitui helmet sem dependência)
 function securityHeadersMiddleware(req: any, res: any, next: any) {
   res.setHeader('X-DNS-Prefetch-Control', 'off');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -39,7 +37,6 @@ function securityHeadersMiddleware(req: any, res: any, next: any) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
   res.setHeader('Referrer-Policy', 'no-referrer');
-  // CSP opcional e relaxada para não quebrar UI; pode ser ajustada por env
   const csp = process.env.CSP_DEFAULT_SRC || "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:";
   res.setHeader('Content-Security-Policy', csp);
   next();
@@ -65,8 +62,13 @@ async function bootstrap() {
       'x-empresa-id',
       'X-Empresa-Id',
       'empresa-id',
+      'Empresa-Id',
+      'empresa',
+      'Empresa',
     ],
     exposedHeaders: ['Content-Disposition'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   app.use(express.json({ limit: '10mb' }));
@@ -127,7 +129,6 @@ async function bootstrap() {
     });
   });
 
-  // Compatibility for clients that call baseURL ending with /api and append /api/health
   app.getHttpAdapter().get('/api/api/health', (req, res) => {
     res.redirect(301, '/api/health');
   });

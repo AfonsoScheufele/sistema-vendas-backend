@@ -17,21 +17,22 @@ export class EmpresaContextInterceptor implements NestInterceptor {
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
-    const empresaHeader = (request.headers?.['x-empresa-id'] ?? request.headers?.['empresa-id']) as string | undefined;
+    const empresaHeader = (
+      request.headers?.['empresa'] ?? 
+      request.headers?.['x-empresa-id'] ?? 
+      request.headers?.['empresa-id']
+    ) as string | undefined;
 
-    // Obter serviço dinamicamente para evitar dependência circular
     if (!this.usuarioEmpresaService) {
       try {
         this.usuarioEmpresaService = this.moduleRef.get(UsuarioEmpresaService, { strict: false });
       } catch (error) {
-        // Serviço não disponível ainda, ignorar
       }
     }
 
     let empresaId: string | undefined = empresaHeader && typeof empresaHeader === 'string' ? empresaHeader : undefined;
     let empresaAutoSelecionada = false;
 
-    // Se não houver header de empresa e houver usuário autenticado, pegar primeira empresa do usuário
     if (!empresaId && request.user?.id && this.usuarioEmpresaService) {
       try {
         const empresas = await this.usuarioEmpresaService.listarEmpresasDoUsuario(request.user.id);
@@ -44,7 +45,6 @@ export class EmpresaContextInterceptor implements NestInterceptor {
       }
     }
 
-    // Se ainda não houver empresaId, permitir continuar sem validação (para compatibilidade)
     if (!empresaId) {
       request.empresaId = undefined;
       return next.handle();
@@ -52,7 +52,6 @@ export class EmpresaContextInterceptor implements NestInterceptor {
 
     request.empresaId = empresaId;
 
-    // Se houver usuário autenticado e a empresa foi fornecida explicitamente (não auto-selecionada), validar acesso
     if (request.user?.id && this.usuarioEmpresaService && !empresaAutoSelecionada) {
       try {
         const temAcesso = await this.usuarioEmpresaService.verificarAcesso(request.user.id, empresaId);
@@ -60,14 +59,12 @@ export class EmpresaContextInterceptor implements NestInterceptor {
           throw new UnauthorizedException('Usuário não tem acesso a esta empresa');
         }
       } catch (error) {
-        // Se não conseguir validar (serviço não disponível), permitir para compatibilidade
         if (error instanceof UnauthorizedException) {
           throw error;
         }
         console.warn('Erro ao validar acesso do usuário à empresa:', error);
       }
     }
-    // Se a empresa foi auto-selecionada, já sabemos que o usuário tem acesso (ela veio da lista de empresas do usuário)
 
     return next.handle();
   }
