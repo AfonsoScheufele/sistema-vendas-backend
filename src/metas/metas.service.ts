@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between, In } from 'typeorm';
 import { MetaEntity, MetaStatus, MetaTipo } from './meta.entity';
 import { MetaProgressoEntity } from './meta-progresso.entity';
 import { CreateMetaDto, AtualizarProgressoDto } from './dto/create-meta.dto';
 import { UpdateMetaDto } from './dto/update-meta.dto';
+import { GrupoVendedores } from './grupo-vendedores.entity';
+import { GrupoVendedorUsuario } from './grupo-vendedor-usuario.entity';
+import { Pedido } from '../pedidos/pedido.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface ListarMetasFiltro {
   status?: MetaStatus;
@@ -19,12 +23,20 @@ export class MetasService {
     private readonly metaRepository: Repository<MetaEntity>,
     @InjectRepository(MetaProgressoEntity)
     private readonly progressoRepository: Repository<MetaProgressoEntity>,
+    @InjectRepository(GrupoVendedores)
+    private readonly grupoVendedoresRepository: Repository<GrupoVendedores>,
+    @InjectRepository(GrupoVendedorUsuario)
+    private readonly grupoVendedorUsuarioRepository: Repository<GrupoVendedorUsuario>,
+    @InjectRepository(Pedido)
+    private readonly pedidoRepository: Repository<Pedido>,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async listar(empresaId: string, filtro?: ListarMetasFiltro) {
     const query = this.metaRepository
       .createQueryBuilder('meta')
       .leftJoinAndSelect('meta.progresso', 'progresso')
+      .leftJoinAndSelect('meta.grupoVendedores', 'grupoVendedores')
       .where('meta.empresaId = :empresaId', { empresaId });
 
     if (filtro?.status) {
@@ -44,13 +56,21 @@ export class MetasService {
     }
 
     const metas = await query.orderBy('meta.periodoFim', 'ASC').addOrderBy('meta.titulo', 'ASC').getMany();
+    
+    // Calcular progresso automático para metas com grupo
+    for (const meta of metas) {
+      if (meta.grupoVendedoresId) {
+        await this.atualizarProgressoAutomatico(meta);
+      }
+    }
+    
     return metas.map((meta) => this.mapToResponse(meta));
   }
 
   async obterPorId(empresaId: string, id: string) {
     const meta = await this.metaRepository.findOne({
       where: { id, empresaId },
-      relations: ['progresso'],
+      relations: ['progresso', 'grupoVendedores'],
       order: {
         progresso: {
           criadoEm: 'DESC',
@@ -60,24 +80,44 @@ export class MetasService {
     if (!meta) {
       throw new NotFoundException('Meta não encontrada');
     }
+    
+    // Calcular progresso automático se tiver grupo
+    if (meta.grupoVendedoresId) {
+      await this.atualizarProgressoAutomatico(meta);
+    }
+    
     return this.mapToResponse(meta);
   }
 
   async criar(empresaId: string, dto: CreateMetaDto) {
+    let valorInicial = dto.valorAtual ?? 0;
+    
+    // Se tiver grupo, calcular valor inicial baseado em vendas
+    if (dto.grupoVendedoresId) {
+      valorInicial = await this.calcularVendasDoGrupo(
+        empresaId,
+        dto.grupoVendedoresId,
+        new Date(dto.periodoInicio),
+        new Date(dto.periodoFim),
+        dto.tipo,
+      );
+    }
+    
     const meta = this.metaRepository.create({
       empresaId,
       titulo: dto.titulo,
       descricao: dto.descricao ?? null,
       tipo: dto.tipo,
       valorObjetivo: dto.valorObjetivo,
-      valorAtual: dto.valorAtual ?? 0,
-      progressoPercentual: this.calcularProgresso(dto.valorAtual ?? 0, dto.valorObjetivo),
+      valorAtual: valorInicial,
+      progressoPercentual: this.calcularProgresso(valorInicial, dto.valorObjetivo),
       status: dto.status ?? 'ativa',
       periodoInicio: new Date(dto.periodoInicio),
       periodoFim: new Date(dto.periodoFim),
       responsavelId: dto.responsavelId ?? null,
       responsavelNome: dto.responsavelNome ?? null,
       tags: dto.tags ?? null,
+      grupoVendedoresId: dto.grupoVendedoresId ?? null,
     });
 
     const salvo = await this.metaRepository.save(meta);
@@ -101,8 +141,16 @@ export class MetasService {
     if (dto.responsavelId !== undefined) meta.responsavelId = dto.responsavelId;
     if (dto.responsavelNome !== undefined) meta.responsavelNome = dto.responsavelNome;
     if (dto.tags !== undefined) meta.tags = dto.tags;
+    if (dto.grupoVendedoresId !== undefined) meta.grupoVendedoresId = dto.grupoVendedoresId;
 
-    meta.progressoPercentual = this.calcularProgresso(meta.valorAtual, meta.valorObjetivo);
+    // Se tiver grupo, recalcular progresso baseado em vendas
+    if (meta.grupoVendedoresId) {
+      await this.atualizarProgressoAutomatico(meta);
+      // Verificar e notificar gerente se necessário
+      await this.verificarENotificarGerente(meta);
+    } else {
+      meta.progressoPercentual = this.calcularProgresso(meta.valorAtual, meta.valorObjetivo);
+    }
 
     await this.metaRepository.save(meta);
     return this.obterPorId(empresaId, id);
@@ -208,6 +256,174 @@ export class MetasService {
     return meta;
   }
 
+  private async atualizarProgressoAutomatico(meta: MetaEntity) {
+    if (!meta.grupoVendedoresId) return;
+
+    const progressoAnterior = meta.progressoPercentual;
+    const statusAnterior = meta.status;
+
+    const valorAtual = await this.calcularVendasDoGrupo(
+      meta.empresaId,
+      meta.grupoVendedoresId,
+      meta.periodoInicio,
+      meta.periodoFim,
+      meta.tipo,
+    );
+
+    meta.valorAtual = valorAtual;
+    meta.progressoPercentual = this.calcularProgresso(valorAtual, meta.valorObjetivo);
+
+    // Atualizar status baseado no progresso
+    if (meta.progressoPercentual >= 100 && meta.status !== 'atingida') {
+      meta.status = 'atingida';
+    } else if (meta.progressoPercentual < 100 && meta.status === 'atingida') {
+      meta.status = 'ativa';
+    }
+
+    await this.metaRepository.save(meta);
+
+    // Notificar gerente se houve mudança significativa ou se meta foi atingida
+    if (
+      meta.status === 'atingida' ||
+      (meta.progressoPercentual >= 100 && statusAnterior !== 'atingida') ||
+      Math.abs(meta.progressoPercentual - progressoAnterior) >= 10
+    ) {
+      await this.verificarENotificarGerente(meta);
+    }
+  }
+
+  private async calcularVendasDoGrupo(
+    empresaId: string,
+    grupoId: number,
+    periodoInicio: Date,
+    periodoFim: Date,
+    tipoMeta: MetaTipo,
+  ): Promise<number> {
+    // Buscar vendedores do grupo
+    const grupo = await this.grupoVendedoresRepository.findOne({
+      where: { id: grupoId, empresaId },
+      relations: ['vendedores', 'vendedores.usuario'],
+    });
+
+    if (!grupo || !grupo.vendedores || grupo.vendedores.length === 0) {
+      return 0;
+    }
+
+    const vendedorIds = grupo.vendedores.map((gvu) => gvu.usuarioId);
+
+    if (vendedorIds.length === 0) {
+      return 0;
+    }
+
+    // Buscar pedidos dos vendedores no período
+    const whereConditions: any = {
+      empresaId,
+      vendedorId: vendedorIds.length === 1 ? vendedorIds[0] : In(vendedorIds),
+      dataPedido: Between(periodoInicio, periodoFim),
+    };
+
+    // Para faturamento, apenas pedidos entregues; para vendas, todos os status válidos
+    if (tipoMeta === 'faturamento') {
+      whereConditions.status = 'entregue';
+    }
+
+    const pedidos = await this.pedidoRepository.find({
+      where: whereConditions,
+    });
+
+    // Calcular valor baseado no tipo de meta
+    switch (tipoMeta) {
+      case 'faturamento':
+        // Soma do total dos pedidos entregues
+        return pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
+
+      case 'vendas':
+        // Quantidade de pedidos (fechados)
+        return pedidos.filter((p) => 
+          ['entregue', 'enviado', 'processando'].includes(p.status)
+        ).length;
+
+      case 'novos_clientes':
+        // Contar clientes únicos dos pedidos
+        const clientesUnicos = new Set(
+          pedidos.map((p) => p.clienteId).filter((id) => id != null)
+        );
+        return clientesUnicos.size;
+
+      case 'tickets_medio':
+        // Média dos valores dos pedidos
+        const pedidosComValor = pedidos.filter((p) => Number(p.total || 0) > 0);
+        if (pedidosComValor.length === 0) return 0;
+        const soma = pedidosComValor.reduce((acc, p) => acc + Number(p.total || 0), 0);
+        return soma / pedidosComValor.length;
+
+      default:
+        return 0;
+    }
+  }
+
+  private async verificarENotificarGerente(meta: MetaEntity) {
+    if (!meta.grupoVendedoresId) return;
+
+    try {
+      const grupo = await this.grupoVendedoresRepository.findOne({
+        where: { id: meta.grupoVendedoresId },
+        relations: ['gerente'],
+      });
+
+      if (!grupo || !grupo.gerenteId) return;
+
+      const progresso = meta.progressoPercentual;
+      const hoje = new Date();
+      const diasRestantes = Math.ceil(
+        (new Date(meta.periodoFim).getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const percentualTempo = Math.max(
+        0,
+        Math.min(
+          100,
+          ((hoje.getTime() - new Date(meta.periodoInicio).getTime()) /
+            (new Date(meta.periodoFim).getTime() - new Date(meta.periodoInicio).getTime())) *
+            100,
+        ),
+      );
+
+      // Notificar se meta atingida
+      if (progresso >= 100 && meta.status === 'atingida') {
+        await this.notificationsService.criarNotificacao(
+          grupo.gerenteId,
+          `🎉 Meta Atingida: ${meta.titulo}`,
+          `A meta "${meta.titulo}" do grupo ${grupo.nome} foi atingida! Progresso: ${progresso}%`,
+          'success',
+          'high',
+        );
+      }
+      // Notificar se meta abaixo do esperado (progresso < 50% e já passou 50% do tempo)
+      else if (progresso < 50 && percentualTempo > 50 && meta.status === 'ativa') {
+        await this.notificationsService.criarNotificacao(
+          grupo.gerenteId,
+          `⚠️ Meta em Risco: ${meta.titulo}`,
+          `A meta "${meta.titulo}" do grupo ${grupo.nome} está em ${progresso}% com apenas ${diasRestantes} dias restantes. Ação necessária!`,
+          'warning',
+          'high',
+        );
+      }
+      // Notificar se meta próxima de ser atingida (progresso >= 90%)
+      else if (progresso >= 90 && progresso < 100 && meta.status === 'ativa') {
+        await this.notificationsService.criarNotificacao(
+          grupo.gerenteId,
+          `📈 Meta Quase Atingida: ${meta.titulo}`,
+          `A meta "${meta.titulo}" do grupo ${grupo.nome} está em ${progresso}%! Faltam apenas ${(Number(meta.valorObjetivo) - Number(meta.valorAtual)).toFixed(2)} para atingir o objetivo.`,
+          'info',
+          'normal',
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao verificar e notificar gerente:', error);
+      // Não lançar erro para não quebrar o fluxo principal
+    }
+  }
+
   private mapToResponse(meta: MetaEntity) {
     return {
       id: meta.id,
@@ -223,6 +439,13 @@ export class MetasService {
       responsavelId: meta.responsavelId,
       responsavelNome: meta.responsavelNome,
       tags: meta.tags ?? [],
+      grupoVendedoresId: meta.grupoVendedoresId,
+      grupoVendedores: meta.grupoVendedores
+        ? {
+            id: meta.grupoVendedores.id,
+            nome: meta.grupoVendedores.nome,
+          }
+        : null,
       createdAt: meta.createdAt,
       updatedAt: meta.updatedAt,
       progresso: (meta.progresso ?? [])

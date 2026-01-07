@@ -59,6 +59,10 @@ export class CreateMetaDto {
   @ValidateNested({ each: false })
   @Type(() => String)
   tags?: string[];
+
+  @IsOptional()
+  @IsNumber()
+  grupoVendedoresId?: number;
 }
 
 export class AtualizarProgressoDto {

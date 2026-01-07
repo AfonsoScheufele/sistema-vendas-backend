@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { Cliente } from './cliente.entity';
@@ -13,6 +13,10 @@ export class ClientesService {
   ) {}
 
   async create(createClienteDto: CreateClienteDto, empresaId: string): Promise<Cliente> {
+    if (!empresaId) {
+      throw new NotFoundException('Empresa não identificada. Por favor, selecione uma empresa.');
+    }
+
     const emailExiste = await this.clienteRepo.findOne({
       where: { email: createClienteDto.email.toLowerCase(), empresaId }
     });
@@ -23,8 +27,8 @@ export class ClientesService {
 
     const cliente = this.clienteRepo.create({
       ...createClienteDto,
-      email: createClienteDto.email.toLowerCase(),
-      telefone: createClienteDto.telefone.replace(/\D/g, ''),
+      email: createClienteDto.email?.toLowerCase() || createClienteDto.email,
+      telefone: createClienteDto.telefone?.replace(/\D/g, '') || createClienteDto.telefone,
       cpf_cnpj: createClienteDto.cpf_cnpj ? createClienteDto.cpf_cnpj.replace(/\D/g, '') : undefined,
       empresaId,
     });

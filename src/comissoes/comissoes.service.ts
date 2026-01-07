@@ -65,7 +65,7 @@ export class ComissoesService {
       );
     }
 
-    const comissoes = await query.orderBy('comissao.updatedAt', 'DESC').getMany();
+    const comissoes = await query.orderBy('comissao.createdAt', 'DESC').getMany();
     return comissoes.map((comissao) => this.mapToResponse(comissao));
   }
 

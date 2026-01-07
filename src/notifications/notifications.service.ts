@@ -45,4 +45,27 @@ export class NotificationsService {
       throw error;
     }
   }
+
+  async criarNotificacao(
+    usuarioId: number,
+    titulo: string,
+    mensagem: string,
+    tipo: string = 'info',
+    prioridade: string = 'normal',
+  ): Promise<Notification> {
+    try {
+      const notification = this.notificationRepo.create({
+        usuarioId,
+        titulo,
+        mensagem,
+        tipo,
+        prioridade,
+        lida: false,
+      });
+      return await this.notificationRepo.save(notification);
+    } catch (error) {
+      console.error('Erro ao criar notificação:', error);
+      throw error;
+    }
+  }
 }

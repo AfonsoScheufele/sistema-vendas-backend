@@ -1,72 +1,43 @@
 import { Injectable } from '@nestjs/common';
-
-interface Vendedor {
-  id: number;
-  nome: string;
-  email: string;
-  telefone?: string;
-  empresaId: string;
-  ativo: boolean;
-}
-
-const VENDEDORES_POR_EMPRESA: Record<string, Vendedor[]> = {
-  'empresa-sul': [
-    {
-      id: 21,
-      nome: 'Mariana Souza',
-      email: 'mariana.souza@axora.com',
-      telefone: '(51) 99888-1122',
-      empresaId: 'empresa-sul',
-      ativo: true,
-    },
-    {
-      id: 22,
-      nome: 'Rafael Oliveira',
-      email: 'rafael.oliveira@axora.com',
-      telefone: '(51) 99777-3344',
-      empresaId: 'empresa-sul',
-      ativo: true,
-    },
-  ],
-  default: [
-    {
-      id: 11,
-      nome: 'Ana Pereira',
-      email: 'ana.pereira@axora.com',
-      telefone: '(11) 99999-1111',
-      empresaId: 'default-empresa',
-      ativo: true,
-    },
-    {
-      id: 12,
-      nome: 'Bruno Costa',
-      email: 'bruno.costa@axora.com',
-      telefone: '(11) 98888-2222',
-      empresaId: 'default-empresa',
-      ativo: true,
-    },
-    {
-      id: 13,
-      nome: 'Carla Mendes',
-      email: 'carla.mendes@axora.com',
-      telefone: '(11) 97777-3333',
-      empresaId: 'default-empresa',
-      ativo: true,
-    },
-  ],
-};
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Usuario } from '../auth/usuario.entity';
+import { UsuarioEmpresaEntity } from '../empresas/usuario-empresa.entity';
 
 @Injectable()
 export class VendedoresService {
+  constructor(
+    @InjectRepository(Usuario)
+    private usuarioRepository: Repository<Usuario>,
+    @InjectRepository(UsuarioEmpresaEntity)
+    private usuarioEmpresaRepository: Repository<UsuarioEmpresaEntity>,
+  ) {}
+
   async listar(empresaId: string) {
-    const chave = VENDEDORES_POR_EMPRESA[empresaId] ? empresaId : 'default';
-    return VENDEDORES_POR_EMPRESA[chave].map((vendedor) => ({
-      id: vendedor.id,
-      nome: vendedor.nome,
-      email: vendedor.email,
-      telefone: vendedor.telefone,
-      empresaId: vendedor.empresaId,
-      ativo: vendedor.ativo,
-    }));
+    // Buscar usuários vinculados à empresa, onde tanto o vínculo quanto o usuário estão ativos
+    const usuariosEmpresa = await this.usuarioEmpresaRepository.find({
+      where: { 
+        empresaId,
+        ativo: true, // Vínculo ativo
+      },
+      relations: ['usuario'],
+    });
+
+    // Filtrar apenas usuários ativos e mapear para o formato de vendedor
+    const vendedores = usuariosEmpresa
+      .filter((ue) => ue.usuario && ue.usuario.ativo)
+      .map((ue) => {
+        const usuario = ue.usuario;
+        return {
+          id: usuario.id,
+          nome: usuario.name,
+          email: usuario.email || '',
+          telefone: undefined, // Telefone não existe na entidade Usuario
+          empresaId: empresaId,
+          ativo: usuario.ativo,
+        };
+      });
+
+    return vendedores;
   }
 }

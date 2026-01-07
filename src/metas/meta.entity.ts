@@ -2,11 +2,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
 import { MetaProgressoEntity } from './meta-progresso.entity';
+import { GrupoVendedores } from './grupo-vendedores.entity';
 
 export type MetaTipo =
   | 'faturamento'
@@ -61,6 +64,13 @@ export class MetaEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   tags?: string[] | null;
+
+  @Column({ type: 'int', nullable: true })
+  grupoVendedoresId?: number | null;
+
+  @ManyToOne(() => GrupoVendedores, (grupo) => grupo.metas, { nullable: true })
+  @JoinColumn({ name: 'grupoVendedoresId' })
+  grupoVendedores?: GrupoVendedores | null;
 
   @OneToMany(() => MetaProgressoEntity, (registro) => registro.meta, {
     cascade: true,

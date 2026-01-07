@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpCode, HttpStatus, UseGuards, Req, BadRequestException } from '@nestjs/common';
 import { ClientesService } from './clientes.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
@@ -12,6 +12,9 @@ export class ClientesController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createClienteDto: CreateClienteDto, @Req() req: any) {
+    if (!req.empresaId) {
+      throw new BadRequestException('Empresa não identificada. Por favor, selecione uma empresa.');
+    }
     return this.clientesService.create(createClienteDto, req.empresaId);
   }
 

@@ -26,6 +26,8 @@ import { PerfisModule } from './perfis/perfis.module';
 import { MetasModule } from './metas/metas.module';
 import { MetaEntity } from './metas/meta.entity';
 import { MetaProgressoEntity } from './metas/meta-progresso.entity';
+import { GrupoVendedores } from './metas/grupo-vendedores.entity';
+import { GrupoVendedorUsuario } from './metas/grupo-vendedor-usuario.entity';
 import { FornecedorEntity } from './compras/fornecedores/fornecedor.entity';
 import { FornecedorProdutoEntity } from './compras/fornecedores/fornecedor-produto.entity';
 import { ContratoEntity } from './compras/contratos/contrato.entity';
@@ -139,6 +141,8 @@ dns.setDefaultResultOrder('ipv4first');
             ComissaoVendedorEntity,
             MetaEntity,
             MetaProgressoEntity,
+            GrupoVendedores,
+            GrupoVendedorUsuario,
             FornecedorEntity,
             FornecedorProdutoEntity,
             ContratoEntity,

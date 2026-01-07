@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import PDFDocument from 'pdfkit';
 import { Pedido } from '../../pedidos/pedido.entity';
 import { Orcamento } from '../../orcamentos/orcamento.entity';
+
+const PDFDocument = require('pdfkit');
 
 @Injectable()
 export class PdfService {

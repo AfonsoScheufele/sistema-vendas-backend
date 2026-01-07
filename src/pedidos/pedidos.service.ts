@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pedido } from './pedido.entity';
 import { ItemPedido } from './item-pedido.entity';
+import { Cliente } from '../clientes/cliente.entity';
+import { Produto } from '../produtos/produto.entity';
 
 type PedidoComTotais = Pedido & {
   totalComissao: number;
@@ -31,6 +33,10 @@ export class PedidosService {
     private pedidoRepo: Repository<Pedido>,
     @InjectRepository(ItemPedido)
     private itemPedidoRepo: Repository<ItemPedido>,
+    @InjectRepository(Cliente)
+    private clienteRepo: Repository<Cliente>,
+    @InjectRepository(Produto)
+    private produtoRepo: Repository<Produto>,
   ) {}
 
   private calcularTotalComissao(pedido: Pedido): number {
@@ -39,12 +45,10 @@ export class PedidosService {
     }
 
     return pedido.itens.reduce((acc, item) => {
-      const precoUnitario = Number(item.precoUnitario ?? 0);
-      const quantidade = Number(item.quantidade ?? 0);
       const subtotal = Number(item.subtotal ?? 0);
-      const base = precoUnitario * quantidade;
-      const diff = subtotal - base;
-      return acc + (Number.isFinite(diff) ? Math.max(diff, 0) : 0);
+      const comissaoPercentual = Number(item.comissao ?? 0);
+      const valorComissao = (subtotal * comissaoPercentual) / 100;
+      return acc + (Number.isFinite(valorComissao) ? valorComissao : 0);
     }, 0);
   }
 
@@ -88,14 +92,137 @@ export class PedidosService {
     return this.mapPedidoComTotais(pedido);
   }
 
-  async criar(data: Partial<Pedido>, empresaId: string): Promise<PedidoComTotais> {
-    const pedido = this.pedidoRepo.create({
-      ...data,
-      empresaId,
-      dataPedido: data.dataPedido ?? new Date(),
+  async criar(data: any, empresaId: string): Promise<PedidoComTotais> {
+    if (!empresaId) {
+      throw new BadRequestException('Empresa não identificada. Por favor, selecione uma empresa.');
+    }
+
+    if (!data.clienteId) {
+      throw new BadRequestException('Cliente é obrigatório.');
+    }
+
+    // Verificar se o cliente existe
+    const cliente = await this.clienteRepo.findOne({
+      where: { id: data.clienteId, empresaId },
     });
-    const salvo = await this.pedidoRepo.save(pedido);
-    return this.obterPedido(salvo.id, empresaId);
+    if (!cliente) {
+      throw new NotFoundException('Cliente não encontrado.');
+    }
+
+    if (!data.itens || data.itens.length === 0) {
+      throw new BadRequestException('Adicione pelo menos um item ao pedido.');
+    }
+
+    // Gerar número do pedido
+    const ultimoPedido = await this.pedidoRepo.findOne({
+      where: { empresaId },
+      order: { id: 'DESC' },
+    });
+    
+    let numeroSequencial = 1;
+    if (ultimoPedido && ultimoPedido.numero) {
+      const numeroExtraido = ultimoPedido.numero.replace(/\D/g, '');
+      if (numeroExtraido) {
+        numeroSequencial = parseInt(numeroExtraido, 10) + 1;
+      }
+    }
+    
+    const numero = `PED-${numeroSequencial.toString().padStart(6, '0')}`;
+    
+    if (!numero || numero.trim() === '') {
+      throw new BadRequestException('Erro ao gerar número do pedido.');
+    }
+
+    // Calcular total dos itens e validar produtos
+    let subtotal = 0;
+    const itensParaCriar = await Promise.all(
+      (data.itens || []).map(async (item: any) => {
+        if (!item.produtoId) {
+          throw new BadRequestException('Produto é obrigatório em todos os itens.');
+        }
+
+        // Verificar se o produto existe
+        const produto = await this.produtoRepo.findOne({
+          where: { id: item.produtoId },
+        });
+        if (!produto) {
+          throw new NotFoundException(`Produto com ID ${item.produtoId} não encontrado.`);
+        }
+        if (produto.empresaId !== empresaId) {
+          throw new BadRequestException(`Produto com ID ${item.produtoId} não pertence à empresa selecionada.`);
+        }
+
+        const precoUnitario = Number(item.precoUnitario || produto.preco || 0);
+        const quantidade = Number(item.quantidade || 0);
+        if (quantidade <= 0) {
+          throw new BadRequestException('Quantidade deve ser maior que zero.');
+        }
+        const subtotalItem = precoUnitario * quantidade;
+        subtotal += subtotalItem;
+        
+        const comissaoPercentual = Number(item.comissao || 0);
+        
+        return {
+          produtoId: item.produtoId,
+          quantidade,
+          precoUnitario,
+          subtotal: subtotalItem,
+          comissao: comissaoPercentual,
+        };
+      })
+    );
+
+    // Aplicar desconto e frete
+    const desconto = Number(data.desconto || 0);
+    const frete = Number(data.frete || 0);
+    const descontoValor = (subtotal * desconto) / 100;
+    const total = Math.max(subtotal - descontoValor + frete, 0);
+
+    try {
+      // Criar o pedido
+      const pedido = new Pedido();
+      pedido.numero = String(numero);
+      pedido.clienteId = Number(data.clienteId);
+      pedido.vendedorId = data.vendedorId ? Number(data.vendedorId) : null;
+      pedido.empresaId = String(empresaId);
+      pedido.total = Number(total.toFixed(2));
+      pedido.status = String(data.status || 'pendente');
+      pedido.statusPagamento = String(data.statusPagamento || 'pendente');
+      pedido.dataPedido = data.dataPedido ? new Date(data.dataPedido) : new Date();
+      pedido.dataSaida = data.dataSaida ? new Date(data.dataSaida) : null;
+      pedido.dataEntregaPrevista = data.dataEntregaPrevista ? new Date(data.dataEntregaPrevista) : null;
+      pedido.desconto = Number(desconto.toFixed(2));
+      pedido.frete = Number(frete.toFixed(2));
+      pedido.condicaoPagamento = data.condicaoPagamento ? String(data.condicaoPagamento) : null;
+      pedido.formaPagamento = data.formaPagamento ? String(data.formaPagamento) : null;
+      pedido.observacoes = data.observacoes ? String(data.observacoes) : null;
+      pedido.enderecoEntrega = data.enderecoEntrega ? String(data.enderecoEntrega) : null;
+      pedido.transportadora = data.transportadora ? String(data.transportadora) : null;
+      pedido.origem = data.origem ? String(data.origem) : null;
+
+      const pedidoSalvo = await this.pedidoRepo.save(pedido);
+
+      // Criar os itens do pedido
+      const itens = itensParaCriar.map((item: any) =>
+        this.itemPedidoRepo.create({
+          produtoId: item.produtoId,
+          pedidoId: pedidoSalvo.id,
+          quantidade: item.quantidade,
+          precoUnitario: Number(item.precoUnitario.toFixed(2)),
+          subtotal: Number(item.subtotal.toFixed(2)),
+          comissao: Number(item.comissao.toFixed(2)),
+        })
+      );
+
+      await this.itemPedidoRepo.save(itens);
+
+      return this.obterPedido(pedidoSalvo.id, empresaId);
+    } catch (error: any) {
+      console.error('Erro ao criar pedido:', error);
+      throw new BadRequestException(
+        error.message || 'Erro ao criar pedido. Verifique os dados e tente novamente.'
+      );
+    }
   }
 
   async atualizar(id: number, empresaId: string, data: Partial<Pedido>): Promise<PedidoComTotais> {
@@ -106,7 +233,19 @@ export class PedidosService {
   }
 
   async excluir(id: number, empresaId: string): Promise<void> {
-    const pedido = await this.obterPedido(id, empresaId);
+    const pedido = await this.pedidoRepo.findOne({
+      where: { id, empresaId },
+      relations: ['itens'],
+    });
+
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado');
+    }
+    
+    if (pedido.itens && pedido.itens.length > 0) {
+      await this.itemPedidoRepo.remove(pedido.itens);
+    }
+    
     await this.pedidoRepo.remove(pedido);
   }
 
@@ -125,7 +264,7 @@ export class PedidosService {
         .createQueryBuilder('item')
         .innerJoin('item.pedido', 'pedido')
         .where('pedido.empresaId = :empresaId', { empresaId })
-        .select('COALESCE(SUM(item.subtotal - (item.precoUnitario * item.quantidade)), 0)', 'soma')
+        .select('COALESCE(SUM((item.subtotal * item.comissao) / 100), 0)', 'soma')
         .getRawOne(),
     ]);
 

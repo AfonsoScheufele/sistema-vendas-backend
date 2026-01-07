@@ -35,6 +35,9 @@ export class Pedido {
   @Column({ type: 'timestamp', nullable: true })
   dataEntregaPrevista: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  dataSaida: Date;
+
   @Column({ nullable: true })
   observacoes: string;
 

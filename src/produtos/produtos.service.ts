@@ -4,12 +4,18 @@ import { Repository } from 'typeorm';
 import { Produto } from './produto.entity';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
+import { ComissaoEntity } from '../comissoes/comissao.entity';
+import { ItemPedido } from '../pedidos/item-pedido.entity';
 
 @Injectable()
 export class ProdutosService {
   constructor(
     @InjectRepository(Produto)
     private produtoRepo: Repository<Produto>,
+    @InjectRepository(ComissaoEntity)
+    private comissaoRepo: Repository<ComissaoEntity>,
+    @InjectRepository(ItemPedido)
+    private itemPedidoRepo: Repository<ItemPedido>,
   ) {}
 
   async create(dto: CreateProdutoDto, empresaId: string) {
@@ -19,7 +25,26 @@ export class ProdutosService {
       estoque: dto.estoque ?? 0,
       estoqueMinimo: dto.estoqueMinimo ?? 0,
     });
-    return this.produtoRepo.save(produto);
+    const produtoSalvo = await this.produtoRepo.save(produto);
+
+    const comissoesParaCriar = [];
+    for (let percentual = 15; percentual >= 4; percentual--) {
+      const comissao = this.comissaoRepo.create({
+        empresaId,
+        produtoId: produtoSalvo.id,
+        tipoComissaoBase: 'percentual',
+        comissaoBase: percentual,
+        comissaoMinima: 0,
+        comissaoMaxima: null,
+        ativo: true,
+      });
+      comissoesParaCriar.push(comissao);
+    }
+    if (comissoesParaCriar.length > 0) {
+      await this.comissaoRepo.save(comissoesParaCriar);
+    }
+
+    return produtoSalvo;
   }
 
   findAll(empresaId: string, filtros?: { categoria?: string; ativo?: string; search?: string }) {
@@ -125,6 +150,25 @@ export class ProdutosService {
 
   async delete(id: number, empresaId: string) {
     const produto = await this.findOne(id, empresaId);
+    
+    const itensPedido = await this.itemPedidoRepo.find({
+      where: { produtoId: id },
+    });
+    
+    if (itensPedido.length > 0) {
+      throw new BadRequestException(
+        `Não é possível excluir o produto "${produto.nome}" pois ele está sendo utilizado em ${itensPedido.length} pedido(s).`
+      );
+    }
+    
+    const comissoes = await this.comissaoRepo.find({
+      where: { produtoId: id, empresaId },
+    });
+    
+    if (comissoes.length > 0) {
+      await this.comissaoRepo.remove(comissoes);
+    }
+    
     await this.produtoRepo.remove(produto);
   }
 }

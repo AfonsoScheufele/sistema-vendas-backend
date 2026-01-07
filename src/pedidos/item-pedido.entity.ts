@@ -27,6 +27,9 @@ export class ItemPedido {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   subtotal: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  comissao: number;
 }
 
 
