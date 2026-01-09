@@ -46,7 +46,6 @@ export class AuditoriaService implements OnModuleInit, OnModuleDestroy {
     const runCleanup = async () => {
       try {
         await this.limparLogsAntigos(retentionDays);
-        console.log(`[Auditoria] Limpeza automática executada. Retenção: ${retentionDays} dias.`);
       } catch (err) {
         console.error('[Auditoria] Falha na limpeza automática:', err);
       }
@@ -63,8 +62,15 @@ export class AuditoriaService implements OnModuleInit, OnModuleDestroy {
   }
 
   async criarLog(dto: CriarLogAuditoriaDto): Promise<AuditoriaEntity> {
-    const log = this.auditoriaRepo.create(dto);
-    return await this.auditoriaRepo.save(log);
+    try {
+      const log = this.auditoriaRepo.create(dto);
+      const saved = await this.auditoriaRepo.save(log);
+      return saved;
+    } catch (error) {
+      console.error('[AuditoriaService] Erro ao criar log:', error);
+      console.error('[AuditoriaService] Stack:', error.stack);
+      throw error;
+    }
   }
 
   async listarLogs(filtros: FiltrosAuditoria = {}) {

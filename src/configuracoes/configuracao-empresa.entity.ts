@@ -121,10 +121,10 @@ export class ConfiguracaoEmpresaEntity {
   emailsRelatorios?: string;
 
   @Column({ type: 'json', nullable: true })
-  modulosHabilitados?: string[]; // Lista de códigos de módulos habilitados (legado, usar modulo_empresa)
+  modulosHabilitados?: string[]; 
 
   @Column({ type: 'json', nullable: true })
-  configuracoesModulos?: Record<string, any>; // Configurações específicas por módulo
+  configuracoesModulos?: Record<string, any>; 
 
   @Column({ type: 'boolean', default: false })
   permitirMultiFiliais: boolean;

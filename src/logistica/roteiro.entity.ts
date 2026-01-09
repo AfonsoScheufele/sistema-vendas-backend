@@ -13,7 +13,7 @@ export class RoteiroEntity {
   nome: string;
 
   @Column({ type: 'varchar', length: 20, default: 'planejado' })
-  status: string; // 'planejado' | 'em_execucao' | 'concluido' | 'cancelado'
+  status: string; 
 
   @Column({ type: 'int', nullable: true })
   transportadoraId: number;

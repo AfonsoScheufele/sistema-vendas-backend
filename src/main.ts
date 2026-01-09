@@ -8,7 +8,7 @@ dns.setDefaultResultOrder('ipv4first');
 
 type RateBucket = { count: number; resetAt: number };
 const rateBuckets: Record<string, RateBucket> = {};
-const WINDOW_MS = 60 * 1000; // 1 min
+const WINDOW_MS = 60 * 1000; 
 const MAX_REQ_PER_WINDOW = parseInt(process.env.RATE_LIMIT_PER_MIN || '120', 10);
 
 function rateLimitMiddleware(req: any, res: any, next: any) {
@@ -49,7 +49,7 @@ async function bootstrap() {
 
   const corsOrigin = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
-    : ['http://localhost:5173', 'http://localhost:3000'];
+    : ['http:
   app.enableCors({
     origin: corsOrigin,
     credentials: true,

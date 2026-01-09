@@ -71,7 +71,7 @@ export class EstoqueService {
     }
   }
 
-  async registrarMovimentacao(dto: CreateMovimentacaoDto, empresaId: string) {
+  async registrarMovimentacao(dto: CreateMovimentacaoDto, empresaId: string, notaFiscalId?: number) {
     const produto = await this.produtosService.findOne(dto.produtoId, empresaId);
 
     let depositoOrigem: EstoqueDepositoEntity | null = null;
@@ -115,6 +115,7 @@ export class EstoqueService {
       referencia: dto.referencia ?? null,
       depositoOrigemId: depositoOrigem?.id ?? null,
       depositoDestinoId: depositoDestino?.id ?? null,
+      notaFiscalId: notaFiscalId ?? dto.notaFiscalId ?? null,
     });
 
     const salvo = await this.movimentacaoRepo.save(movimentacao);
@@ -139,6 +140,22 @@ export class EstoqueService {
 
     const movimentacoes = await query.orderBy('mov.criadoEm', 'DESC').getMany();
     return movimentacoes.map((mov) => this.mapMovimentacao(mov));
+  }
+
+  async listarMovimentacoesPorNotaFiscal(notaFiscalId: number, empresaId: string) {
+    const movimentacoes = await this.movimentacaoRepo.find({
+      where: { notaFiscalId, empresaId },
+      relations: ['produto'],
+    });
+    return movimentacoes.map((mov) => ({
+      id: mov.id,
+      produtoId: mov.produtoId,
+      tipo: mov.tipo,
+      quantidade: mov.quantidade,
+      custoUnitario: mov.custoUnitario ? Number(mov.custoUnitario) : null,
+      depositoOrigemId: mov.depositoOrigemId,
+      depositoDestinoId: mov.depositoDestinoId,
+    }));
   }
 
   async obterEstatisticas(empresaId: string) {
@@ -208,6 +225,7 @@ export class EstoqueService {
       depositoDestino: entity.depositoDestino
         ? { id: entity.depositoDestino.id, nome: entity.depositoDestino.nome }
         : null,
+      notaFiscalId: entity.notaFiscalId ?? null,
     };
   }
 }

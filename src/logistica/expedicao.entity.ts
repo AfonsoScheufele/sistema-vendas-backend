@@ -16,7 +16,7 @@ export class ExpedicaoEntity {
   pedidoId: number;
 
   @Column({ type: 'varchar', length: 20, default: 'pendente' })
-  status: string; // 'pendente' | 'preparando' | 'enviado' | 'em_transito' | 'entregue' | 'cancelado'
+  status: string; 
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   transportadora: string;

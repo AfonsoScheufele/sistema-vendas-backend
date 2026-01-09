@@ -18,10 +18,10 @@ export class UsuarioEmpresaEntity {
   ativo: boolean;
 
   @Column({ type: 'text', array: true, default: () => 'ARRAY[]::text[]' })
-  permissoes: string[]; // Permissões específicas para este usuário nesta empresa
+  permissoes: string[]; 
 
   @Column({ nullable: true })
-  papel: string; // admin, gestor, vendedor, viewer, etc.
+  papel: string; 
 
   @ManyToOne(() => Usuario, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'usuarioId' })

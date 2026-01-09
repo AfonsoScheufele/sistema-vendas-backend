@@ -7,10 +7,10 @@ export class PermissaoEntity {
   id: number;
 
   @Column({ type: 'varchar', length: 100, unique: true })
-  codigo: string; // Ex: 'pedidos.view', 'pedidos.create', 'pedidos.edit', 'pedidos.delete'
+  codigo: string; 
 
   @Column({ type: 'varchar', length: 200 })
-  nome: string; // Ex: 'Visualizar Pedidos', 'Criar Pedidos'
+  nome: string; 
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   descricao?: string;
@@ -23,7 +23,7 @@ export class PermissaoEntity {
   modulo: ModuloEntity;
 
   @Column({ type: 'varchar', length: 50 })
-  tipo: string; // 'view', 'create', 'edit', 'delete', 'custom'
+  tipo: string; 
 
   @Column({ type: 'boolean', default: true })
   ativo: boolean;

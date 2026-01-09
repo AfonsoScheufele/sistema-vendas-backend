@@ -293,7 +293,7 @@ export class PdfService {
       .text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, { align: 'center' })
       .moveDown();
 
-    const pageWidth = doc.page.width - 100; // Margens
+    const pageWidth = doc.page.width - 100; 
     const numColunas = colunas.length;
     const larguraColuna = pageWidth / numColunas;
 

@@ -16,7 +16,7 @@ export class ImpostoEntity {
   descricao: string;
 
   @Column({ type: 'varchar', length: 20 })
-  tipo: string; // 'icms' | 'ipi' | 'pis' | 'cofins' | 'iss' | 'ir'
+  tipo: string; 
 
   @Column({ type: 'decimal', precision: 5, scale: 2 })
   aliquota: number;

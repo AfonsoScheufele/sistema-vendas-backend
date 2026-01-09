@@ -10,7 +10,7 @@ export class GrupoVendedores {
   id: number;
 
   @Column()
-  nome: string; // Ex: "Região Sul", "Região Norte"
+  nome: string; 
 
   @Column({ type: 'text', nullable: true })
   descricao?: string;

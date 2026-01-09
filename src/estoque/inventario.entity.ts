@@ -16,7 +16,7 @@ export class InventarioEntity {
   depositoId: string;
 
   @Column({ type: 'varchar', length: 20, default: 'planejado' })
-  status: string; // 'planejado' | 'em_andamento' | 'concluido' | 'cancelado'
+  status: string; 
 
   @Column({ type: 'varchar', length: 100 })
   responsavel: string;

@@ -57,6 +57,9 @@ export class EstoqueMovimentacaoEntity {
   @Column({ length: 80, nullable: true })
   referencia?: string | null;
 
+  @Column({ type: 'int', nullable: true })
+  notaFiscalId?: number | null;
+
   @CreateDateColumn()
   criadoEm: Date;
 }

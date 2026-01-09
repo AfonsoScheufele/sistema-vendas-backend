@@ -16,7 +16,7 @@ export class PedidoCompraEntity {
   fornecedorId: number;
 
   @Column({ type: 'varchar', length: 20, default: 'rascunho' })
-  status: string; // 'rascunho' | 'enviado' | 'confirmado' | 'recebido' | 'cancelado'
+  status: string; 
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   valorTotal: number;

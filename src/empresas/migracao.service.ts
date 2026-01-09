@@ -107,7 +107,6 @@ export class MigracaoService implements OnModuleInit {
 
   async migrarDadosExistentes() {
     try {
-      console.log('[Migração] Iniciando migração de dados para multi-empresa...');
 
       const empresas = await this.empresaRepo.find({
         order: { criadoEm: 'ASC' },
@@ -117,20 +116,16 @@ export class MigracaoService implements OnModuleInit {
       let empresaPadrao = empresas && empresas.length > 0 ? empresas[0] : null;
 
       if (!empresaPadrao) {
-        console.log('[Migração] Criando empresa padrão...');
         empresaPadrao = this.empresaRepo.create({
           nome: 'Empresa Padrão',
           cnpj: null,
           ativo: true,
         });
         empresaPadrao = await this.empresaRepo.save(empresaPadrao);
-        console.log('[Migração] Empresa padrão criada:', empresaPadrao.id);
       } else {
-        console.log('[Migração] Usando empresa existente:', empresaPadrao.id);
       }
 
       const usuarios = await this.usuarioRepo.find();
-      console.log(`[Migração] Encontrados ${usuarios.length} usuários para vincular`);
 
       for (const usuario of usuarios) {
         const vinculoExistente = await this.usuarioEmpresaRepo.findOne({
@@ -146,11 +141,9 @@ export class MigracaoService implements OnModuleInit {
             ativo: usuario.ativo,
           });
           await this.usuarioEmpresaRepo.save(vinculo);
-          console.log(`[Migração] Usuário ${usuario.id} vinculado à empresa padrão`);
         }
       }
 
-      console.log('[Migração] Atualizando registros sem empresaId...');
 
       const clientesSemEmpresa = await this.clienteRepo
         .createQueryBuilder('cliente')
@@ -164,7 +157,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${clientesSemEmpresa.length} clientes atualizados`);
       }
 
       const produtosSemEmpresa = await this.produtoRepo
@@ -179,7 +171,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${produtosSemEmpresa.length} produtos atualizados`);
       }
 
       const pedidosSemEmpresa = await this.pedidoRepo
@@ -194,7 +185,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${pedidosSemEmpresa.length} pedidos atualizados`);
       }
 
       const orcamentosSemEmpresa = await this.orcamentoRepo
@@ -209,7 +199,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${orcamentosSemEmpresa.length} orçamentos atualizados`);
       }
 
       const fornecedoresSemEmpresa = await this.fornecedorRepo
@@ -224,7 +213,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${fornecedoresSemEmpresa.length} fornecedores atualizados`);
       }
 
       const contratosSemEmpresa = await this.contratoRepo
@@ -239,7 +227,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${contratosSemEmpresa.length} contratos atualizados`);
       }
 
       const comissoesSemEmpresa = await this.comissaoRepo
@@ -254,7 +241,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${comissoesSemEmpresa.length} comissões atualizadas`);
       }
 
       const metasSemEmpresa = await this.metaRepo
@@ -269,7 +255,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${metasSemEmpresa.length} metas atualizadas`);
       }
 
       const depositosSemEmpresa = await this.depositoRepo
@@ -284,7 +269,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${depositosSemEmpresa.length} depósitos atualizados`);
       }
 
       const movimentacoesSemEmpresa = await this.movimentacaoRepo
@@ -299,7 +283,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${movimentacoesSemEmpresa.length} movimentações atualizadas`);
       }
 
       const lotesSemEmpresa = await this.loteRepo
@@ -314,7 +297,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${lotesSemEmpresa.length} lotes atualizados`);
       }
 
       const inventariosSemEmpresa = await this.inventarioRepo
@@ -329,7 +311,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${inventariosSemEmpresa.length} inventários atualizados`);
       }
 
       const cotacoesSemEmpresa = await this.cotacaoRepo
@@ -344,7 +325,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${cotacoesSemEmpresa.length} cotações atualizadas`);
       }
 
       const requisicoesSemEmpresa = await this.requisicaoRepo
@@ -359,7 +339,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${requisicoesSemEmpresa.length} requisições atualizadas`);
       }
 
       const pedidosCompraSemEmpresa = await this.pedidoCompraRepo
@@ -374,7 +353,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${pedidosCompraSemEmpresa.length} pedidos de compra atualizados`);
       }
 
       const notasFiscaisSemEmpresa = await this.notaFiscalRepo
@@ -389,7 +367,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${notasFiscaisSemEmpresa.length} notas fiscais atualizadas`);
       }
 
       const spedsSemEmpresa = await this.spedRepo
@@ -404,7 +381,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${spedsSemEmpresa.length} SPEDs atualizados`);
       }
 
       const impostosSemEmpresa = await this.impostoRepo
@@ -419,7 +395,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${impostosSemEmpresa.length} impostos atualizados`);
       }
 
       const expedicoesSemEmpresa = await this.expedicaoRepo
@@ -434,7 +409,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${expedicoesSemEmpresa.length} expedições atualizadas`);
       }
 
       const transportadorasSemEmpresa = await this.transportadoraRepo
@@ -449,7 +423,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${transportadorasSemEmpresa.length} transportadoras atualizadas`);
       }
 
       const roteirosSemEmpresa = await this.roteiroRepo
@@ -464,7 +437,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${roteirosSemEmpresa.length} roteiros atualizados`);
       }
 
       const leadsSemEmpresa = await this.leadRepo
@@ -479,7 +451,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${leadsSemEmpresa.length} leads atualizados`);
       }
 
       const oportunidadesSemEmpresa = await this.oportunidadeRepo
@@ -494,7 +465,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${oportunidadesSemEmpresa.length} oportunidades atualizadas`);
       }
 
       const campanhasSemEmpresa = await this.campanhaRepo
@@ -509,7 +479,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${campanhasSemEmpresa.length} campanhas atualizadas`);
       }
 
       const workflowsSemEmpresa = await this.workflowRepo
@@ -524,7 +493,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${workflowsSemEmpresa.length} workflows atualizados`);
       }
 
       const planosContaSemEmpresa = await this.planoContaRepo
@@ -539,7 +507,6 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${planosContaSemEmpresa.length} planos de conta atualizados`);
       }
 
       const avaliacoesSemEmpresa = await this.fornecedorAvaliacaoRepo
@@ -554,10 +521,8 @@ export class MigracaoService implements OnModuleInit {
           .set({ empresaId: empresaPadrao.id })
           .where('empresaId IS NULL OR empresaId = :empty', { empty: '' })
           .execute();
-        console.log(`[Migração] ${avaliacoesSemEmpresa.length} avaliações de fornecedores atualizadas`);
       }
 
-      console.log('[Migração] Migração concluída com sucesso!');
     } catch (error) {
       console.error('[Migração] Erro durante migração:', error);
       throw error;

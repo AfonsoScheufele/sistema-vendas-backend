@@ -16,7 +16,7 @@ export class CotacaoEntity {
   fornecedorId: number;
 
   @Column({ type: 'varchar', length: 20, default: 'aberta' })
-  status: string; // 'aberta' | 'fechada' | 'cancelada'
+  status: string; 
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   valorTotal: number;

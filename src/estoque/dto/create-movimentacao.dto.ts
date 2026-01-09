@@ -43,6 +43,10 @@ export class CreateMovimentacaoDto {
   @IsOptional()
   @IsString()
   depositoDestinoId?: string;
+
+  @IsOptional()
+  @IsInt()
+  notaFiscalId?: number;
 }
 
 

@@ -18,7 +18,7 @@ export class EmailService {
   }
 
   async sendResetPasswordEmail(to: string, resetToken: string): Promise<void> {
-    const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendBase = process.env.FRONTEND_URL || 'http:
     const resetUrl = `${frontendBase}/reset-password?token=${resetToken}`;
 
     const mailOptions = {

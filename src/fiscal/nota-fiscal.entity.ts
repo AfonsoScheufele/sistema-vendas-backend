@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
+import { ItemNotaFiscalEntity } from './item-nota-fiscal.entity';
 
 @Entity('notas_fiscais')
 export class NotaFiscalEntity {
@@ -16,7 +17,7 @@ export class NotaFiscalEntity {
   serie: string;
 
   @Column({ type: 'varchar', length: 20 })
-  tipo: string; // 'entrada' | 'saida'
+  tipo: string; 
 
   @Column({ type: 'varchar', length: 50 })
   chaveAcesso: string;
@@ -24,11 +25,14 @@ export class NotaFiscalEntity {
   @Column({ type: 'int' })
   clienteId: number;
 
+  @Column({ type: 'int', nullable: true })
+  pedidoId: number; 
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   valorTotal: number;
 
   @Column({ type: 'varchar', length: 20, default: 'pendente' })
-  status: string; // 'pendente' | 'autorizada' | 'cancelada' | 'rejeitada'
+  status: string; 
 
   @Column({ type: 'timestamp', nullable: true })
   dataEmissao: Date;
@@ -41,6 +45,9 @@ export class NotaFiscalEntity {
 
   @Column({ type: 'text', nullable: true })
   observacoes: string;
+
+  @OneToMany(() => ItemNotaFiscalEntity, (item) => item.notaFiscal, { cascade: true, eager: true })
+  itens?: ItemNotaFiscalEntity[];
 
   @CreateDateColumn()
   criadoEm: Date;

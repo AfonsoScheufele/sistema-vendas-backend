@@ -46,6 +46,18 @@ export class NotificationsService {
     }
   }
 
+  async marcarTodasComoLidas(usuarioId: number): Promise<void> {
+    try {
+      await this.notificationRepo.update(
+        { usuarioId, lida: false },
+        { lida: true }
+      );
+    } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error);
+      throw error;
+    }
+  }
+
   async criarNotificacao(
     usuarioId: number,
     titulo: string,
@@ -66,6 +78,38 @@ export class NotificationsService {
     } catch (error) {
       console.error('Erro ao criar notificação:', error);
       throw error;
+    }
+  }
+
+  async removerNotificacoesPorMensagem(parteMensagem: string): Promise<number> {
+    try {
+      const resultado = await this.notificationRepo
+        .createQueryBuilder()
+        .delete()
+        .where('mensagem LIKE :parte', { parte: `%${parteMensagem}%` })
+        .orWhere('titulo LIKE :parte', { parte: `%${parteMensagem}%` })
+        .execute();
+      const removidas = resultado.affected || 0;
+      return removidas;
+    } catch (error) {
+      console.error('Erro ao remover notificações:', error);
+      return 0;
+    }
+  }
+
+  async removerNotificacoesPorBackupId(backupId: string): Promise<number> {
+    try {
+      const resultado = await this.notificationRepo
+        .createQueryBuilder()
+        .delete()
+        .where('mensagem LIKE :id', { id: `%ID: ${backupId}%` })
+        .orWhere('mensagem LIKE :id2', { id2: `%ID:${backupId}%` })
+        .execute();
+      const removidas = resultado.affected || 0;
+      return removidas;
+    } catch (error) {
+      console.error('Erro ao remover notificações por backup ID:', error);
+      return 0;
     }
   }
 }

@@ -5,9 +5,15 @@ import { ComprasAvancadasService } from './compras-avancadas.service';
 import { CotacaoEntity } from './cotacao.entity';
 import { RequisicaoEntity } from './requisicao.entity';
 import { PedidoCompraEntity } from './pedido-compra.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { Usuario } from '../auth/usuario.entity';
+import { Perfil } from '../perfis/perfil.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CotacaoEntity, RequisicaoEntity, PedidoCompraEntity])],
+  imports: [
+    TypeOrmModule.forFeature([CotacaoEntity, RequisicaoEntity, PedidoCompraEntity, Usuario, Perfil]),
+    NotificationsModule,
+  ],
   controllers: [ComprasExpandedController],
   providers: [ComprasAvancadasService],
   exports: [ComprasAvancadasService],

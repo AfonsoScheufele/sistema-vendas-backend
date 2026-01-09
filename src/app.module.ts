@@ -50,11 +50,13 @@ import { ConfiguracoesModule } from './configuracoes/configuracoes.module';
 import { ConfiguracaoEmpresaEntity } from './configuracoes/configuracao-empresa.entity';
 import { ModuloEntity } from './configuracoes/modulo.entity';
 import { ModuloEmpresaEntity } from './configuracoes/modulo-empresa.entity';
+import { ConfiguracaoPaginaEntity } from './configuracoes/configuracao-pagina.entity';
 import { PermissaoEntity } from './perfis/permissao.entity';
 import { PerfilPermissaoEntity } from './perfis/perfil-permissao.entity';
 import { EmpresaEntity } from './empresas/empresa.entity';
 import { UsuarioEmpresaEntity } from './empresas/usuario-empresa.entity';
 import { NotaFiscalEntity } from './fiscal/nota-fiscal.entity';
+import { ItemNotaFiscalEntity } from './fiscal/item-nota-fiscal.entity';
 import { SpedEntity } from './fiscal/sped.entity';
 import { ImpostoEntity } from './fiscal/imposto.entity';
 import { Produto } from './produtos/produto.entity';
@@ -82,6 +84,9 @@ import { EmpresaContextInterceptor } from './common/interceptors/empresa-context
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { AuditoriaEntity } from './auditoria/auditoria.entity';
+import { BackupModule } from './backup/backup.module';
+import { BackupEntity } from './backup/backup.entity';
+import { BackupConfigEntity } from './backup/backup-config.entity';
 import { EmpresasModule } from './empresas/empresas.module';
 import { ComissaoEntity } from './comissoes/comissao.entity';
 import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
@@ -156,9 +161,11 @@ dns.setDefaultResultOrder('ipv4first');
             ConfiguracaoEmpresaEntity,
             ModuloEntity,
             ModuloEmpresaEntity,
+            ConfiguracaoPaginaEntity,
             PermissaoEntity,
             PerfilPermissaoEntity,
             NotaFiscalEntity,
+            ItemNotaFiscalEntity,
             SpedEntity,
             ImpostoEntity,
             ExpedicaoEntity,
@@ -169,6 +176,8 @@ dns.setDefaultResultOrder('ipv4first');
             EmpresaEntity,
             UsuarioEmpresaEntity,
             AuditoriaEntity,
+            BackupEntity,
+            BackupConfigEntity,
           ],
           synchronize: true,
           logging: false,
@@ -215,6 +224,7 @@ dns.setDefaultResultOrder('ipv4first');
     ContabilModule,
     PdfModule,
     AuditoriaModule,
+    BackupModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: EmpresaContextInterceptor },

@@ -10,16 +10,16 @@ export class SpedEntity {
   empresaId: string;
 
   @Column({ type: 'varchar', length: 20 })
-  tipo: string; // 'fiscal' | 'contabil' | 'ecd' | 'efd'
+  tipo: string; 
 
   @Column({ type: 'varchar', length: 10 })
-  competencia: string; // 'YYYYMM'
+  competencia: string; 
 
   @Column({ type: 'varchar', length: 50 })
   nomeArquivo: string;
 
   @Column({ type: 'varchar', length: 20, default: 'gerando' })
-  status: string; // 'gerando' | 'gerado' | 'enviado' | 'validado'
+  status: string; 
 
   @Column({ type: 'text', nullable: true })
   conteudo: string;

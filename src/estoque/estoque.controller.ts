@@ -60,7 +60,7 @@ export class EstoqueController {
 
   @Post('movimentacoes')
   registrarMovimentacao(@Body() dto: CreateMovimentacaoDto, @Req() req: any) {
-    return this.estoqueService.registrarMovimentacao(dto, req.empresaId);
+    return this.estoqueService.registrarMovimentacao(dto, req.empresaId, dto.notaFiscalId);
   }
 
   @Get('stats')

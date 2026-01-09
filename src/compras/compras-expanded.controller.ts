@@ -34,12 +34,25 @@ export class ComprasExpandedController {
 
   @Post('requisicoes')
   async criarRequisicao(@Body() body: any, @Req() req: any) {
-    return this.comprasAvancadasService.criarRequisicao(req.empresaId, body);
+    const solicitanteId = req.user?.id || req.user?.sub;
+    return this.comprasAvancadasService.criarRequisicao(req.empresaId, { ...body, solicitanteId });
   }
 
   @Patch('requisicoes/:id')
   async atualizarRequisicao(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     return this.comprasAvancadasService.atualizarRequisicao(+id, req.empresaId, body);
+  }
+
+  @Patch('requisicoes/:id/aprovar')
+  async aprovarRequisicao(@Param('id') id: string, @Req() req: any) {
+    const aprovadorNome = req.user?.name || req.user?.nome || 'Sistema';
+    return this.comprasAvancadasService.aprovarRequisicao(+id, req.empresaId, aprovadorNome);
+  }
+
+  @Patch('requisicoes/:id/rejeitar')
+  async rejeitarRequisicao(@Param('id') id: string, @Body() body: { motivo: string }, @Req() req: any) {
+    const rejeitadorNome = req.user?.name || req.user?.nome || 'Sistema';
+    return this.comprasAvancadasService.rejeitarRequisicao(+id, req.empresaId, body.motivo, rejeitadorNome);
   }
 
   @Get('pedidos')

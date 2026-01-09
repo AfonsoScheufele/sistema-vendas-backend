@@ -19,10 +19,10 @@ export class ModuloEmpresaEntity {
   modulo: ModuloEntity;
 
   @Column({ type: 'boolean', default: true })
-  habilitado: boolean; // Se o módulo está habilitado para esta empresa
+  habilitado: boolean; 
 
   @Column({ type: 'json', nullable: true })
-  configuracoes?: Record<string, any>; // Configurações específicas do módulo para esta empresa
+  configuracoes?: Record<string, any>; 
 
   @CreateDateColumn()
   criadoEm: Date;

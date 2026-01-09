@@ -71,11 +71,9 @@ export class ModulosSeedService implements OnModuleInit {
     const modulosExistentes = await this.moduloRepository.count();
     
     if (modulosExistentes > 0) {
-      console.log(`[ModulosSeed] Já existem ${modulosExistentes} módulos no banco. Pulando seed.`);
       return;
     }
 
-    console.log('[ModulosSeed] Populando módulos do sistema...');
     
     for (const moduloData of modulos) {
       const existe = await this.moduloRepository.findOne({
@@ -85,11 +83,9 @@ export class ModulosSeedService implements OnModuleInit {
       if (!existe) {
         const modulo = this.moduloRepository.create(moduloData);
         await this.moduloRepository.save(modulo);
-        console.log(`[ModulosSeed] Módulo criado: ${moduloData.codigo}`);
       }
     }
     
-    console.log(`[ModulosSeed] ${modulos.length} módulos populados com sucesso.`);
   }
 }
 

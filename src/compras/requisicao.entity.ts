@@ -15,8 +15,11 @@ export class RequisicaoEntity {
   @Column({ type: 'varchar', length: 100 })
   solicitante: string;
 
+  @Column({ type: 'int', nullable: true })
+  solicitanteId: number; 
+
   @Column({ type: 'varchar', length: 20, default: 'pendente' })
-  status: string; // 'pendente' | 'aprovada' | 'rejeitada' | 'cancelada'
+  status: string; 
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   valorTotal: number;

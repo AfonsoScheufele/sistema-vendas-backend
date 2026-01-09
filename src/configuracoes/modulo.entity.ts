@@ -19,10 +19,10 @@ export class ModuloEntity {
   id: number;
 
   @Column({ type: 'varchar', length: 100, unique: true })
-  codigo: string; // Ex: 'vendas.pedidos', 'compras.fornecedores'
+  codigo: string; 
 
   @Column({ type: 'varchar', length: 200 })
-  nome: string; // Ex: 'Pedidos de Venda', 'Fornecedores'
+  nome: string; 
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   descricao?: string;
@@ -31,22 +31,22 @@ export class ModuloEntity {
   categoria: ModuloCategoria;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  icone?: string; // Nome do ícone (lucide-react)
+  icone?: string; 
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  rota?: string; // Rota principal do módulo
+  rota?: string; 
 
   @Column({ type: 'boolean', default: true })
-  ativo: boolean; // Se o módulo está disponível no sistema
+  ativo: boolean; 
 
   @Column({ type: 'boolean', default: true })
-  habilitadoPorPadrao: boolean; // Se deve ser habilitado automaticamente para novas empresas
+  habilitadoPorPadrao: boolean; 
 
   @Column({ type: 'int', default: 0 })
-  ordem: number; // Ordem de exibição
+  ordem: number; 
 
   @Column({ type: 'json', nullable: true })
-  configuracoes?: Record<string, any>; // Configurações específicas do módulo
+  configuracoes?: Record<string, any>; 
 
   @CreateDateColumn()
   criadoEm: Date;

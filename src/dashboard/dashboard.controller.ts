@@ -1,11 +1,15 @@
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { ProdutosService } from '../produtos/produtos.service';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
 export class DashboardController {
-  constructor(private readonly dashboardService: DashboardService) {}
+  constructor(
+    private readonly dashboardService: DashboardService,
+    private readonly produtosService: ProdutosService,
+  ) {}
 
   @Get('stats')
   async getStats(@Req() req: any, @Query('periodo') periodo?: string) {
@@ -65,5 +69,10 @@ export class DashboardController {
   @Get('relatorios/compras')
   getRelatorioCompras(@Req() req: any) {
     return this.dashboardService.getRelatorioCompras(req.empresaId);
+  }
+
+  @Get('estoque-baixo')
+  async getEstoqueBaixo(@Req() req: any) {
+    return this.produtosService.getEstoqueBaixo(req.empresaId);
   }
 }

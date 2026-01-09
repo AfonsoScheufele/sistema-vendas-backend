@@ -16,7 +16,7 @@ export class PlanoContaEntity {
   descricao: string;
 
   @Column({ type: 'varchar', length: 20 })
-  tipo: string; // 'receita' | 'despesa' | 'patrimonio'
+  tipo: string; 
 
   @Column({ type: 'int', nullable: true })
   contaPaiId: number;

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards, Req, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, Req, Patch, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { FiscalService } from './fiscal.service';
 
@@ -84,5 +85,29 @@ export class FiscalExpandedController {
         }, {} as Record<string, number>),
       },
     };
+  }
+
+  @Get('notas-fiscais/:id/pdf')
+  async baixarPDF(@Param('id') id: string, @Req() req: any, @Res() res: Response) {
+    try {
+      const pdfBuffer = await this.fiscalService.gerarPDF(+id, req.empresaId);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="NF-e_${id}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao gerar PDF da nota fiscal' });
+    }
+  }
+
+  @Get('notas-fiscais/:id/xml')
+  async baixarXML(@Param('id') id: string, @Req() req: any, @Res() res: Response) {
+    try {
+      const xml = await this.fiscalService.gerarXML(+id, req.empresaId);
+      res.setHeader('Content-Type', 'application/xml');
+      res.setHeader('Content-Disposition', `attachment; filename="NF-e_${id}.xml"`);
+      res.send(xml);
+    } catch (error) {
+      res.status(500).json({ message: 'Erro ao gerar XML da nota fiscal' });
+    }
   }
 }

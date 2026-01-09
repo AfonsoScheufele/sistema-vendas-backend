@@ -8,6 +8,9 @@ import { ModuloEmpresaEntity } from './modulo-empresa.entity';
 import { ModulosService } from './modulos.service';
 import { ModulosController } from './modulos.controller';
 import { ModulosSeedService } from './modulos.seed.service';
+import { ConfiguracaoPaginaEntity } from './configuracao-pagina.entity';
+import { ConfiguracoesPaginasService } from './configuracoes-paginas.service';
+import { ConfiguracoesPaginasController } from './configuracoes-paginas.controller';
 
 @Module({
   imports: [
@@ -15,11 +18,12 @@ import { ModulosSeedService } from './modulos.seed.service';
       ConfiguracaoEmpresaEntity,
       ModuloEntity,
       ModuloEmpresaEntity,
+      ConfiguracaoPaginaEntity,
     ]),
   ],
-  controllers: [ConfiguracoesController, ModulosController],
-  providers: [ConfiguracoesService, ModulosService, ModulosSeedService],
-  exports: [ConfiguracoesService, ModulosService],
+  controllers: [ConfiguracoesController, ModulosController, ConfiguracoesPaginasController],
+  providers: [ConfiguracoesService, ModulosService, ModulosSeedService, ConfiguracoesPaginasService],
+  exports: [ConfiguracoesService, ModulosService, ConfiguracoesPaginasService],
 })
 export class ConfiguracoesModule {}
 

@@ -26,7 +26,7 @@ export class OrcamentoMetaMensal {
   centro!: OrcamentoCentroCustoEntity;
 
   @Column({ type: 'varchar', length: 7 })
-  mes!: string; // formato YYYY-MM
+  mes!: string; 
 
   @Column({ type: 'numeric', precision: 14, scale: 2, transformer: decimalTransformer })
   meta!: number;

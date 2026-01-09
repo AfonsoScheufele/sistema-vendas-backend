@@ -16,11 +16,9 @@ export class PermissoesSeedService implements OnModuleInit {
   async onModuleInit() {
     const permissoesExistentes = await this.permissaoRepository.count();
     if (permissoesExistentes > 0) {
-      console.log(`[PermissoesSeed] Já existem ${permissoesExistentes} permissões no banco. Pulando seed.`);
       return;
     }
 
-    console.log('[PermissoesSeed] Populando permissões do sistema...');
 
     const modulos = await this.moduloRepository.find();
 
@@ -52,12 +50,63 @@ export class PermissoesSeedService implements OnModuleInit {
             ativo: true,
           });
           await this.permissaoRepository.save(permissao);
-          console.log(`[PermissoesSeed] Permissão criada: ${codigo}`);
         }
       }
     }
 
-    console.log('[PermissoesSeed] Permissões populadas com sucesso.');
+    const moduloVendas = await this.moduloRepository.findOne({ where: { codigo: 'vendas' } });
+    const moduloEstoque = await this.moduloRepository.findOne({ where: { codigo: 'estoque' } });
+
+    const moduloConfiguracoes = await this.moduloRepository.findOne({ where: { codigo: 'configuracoes' } });
+
+    const permissoesEspeciais = [
+      {
+        codigo: 'pedidos.notificacao',
+        nome: 'Receber Notificações de Pedidos',
+        descricao: 'Permite receber notificações quando novos pedidos são criados',
+        tipo: 'notificacao',
+        ordem: 1,
+        moduloId: moduloVendas?.id || null,
+      },
+      {
+        codigo: 'estoque.baixo',
+        nome: 'Receber Notificações de Estoque Baixo',
+        descricao: 'Permite receber notificações quando produtos ficam com estoque baixo ou sem estoque',
+        tipo: 'notificacao',
+        ordem: 2,
+        moduloId: moduloEstoque?.id || null,
+      },
+      {
+        codigo: 'configuracoes.estoque',
+        nome: 'Configurar Estoque',
+        descricao: 'Permite configurar alertas e notificações de estoque',
+        tipo: 'edit',
+        ordem: 3,
+        moduloId: moduloConfiguracoes?.id || null,
+      },
+    ];
+
+    for (const permissaoEspecial of permissoesEspeciais) {
+      const existe = await this.permissaoRepository.findOne({
+        where: { codigo: permissaoEspecial.codigo },
+      });
+
+      if (!existe && permissaoEspecial.moduloId) {
+        const permissao = this.permissaoRepository.create({
+          codigo: permissaoEspecial.codigo,
+          nome: permissaoEspecial.nome,
+          descricao: permissaoEspecial.descricao,
+          tipo: permissaoEspecial.tipo,
+          ordem: permissaoEspecial.ordem,
+          moduloId: permissaoEspecial.moduloId,
+          ativo: true,
+        });
+        await this.permissaoRepository.save(permissao);
+      } else if (!existe) {
+        console.warn(`[PermissoesSeed] Não foi possível criar ${permissaoEspecial.codigo}: módulo não encontrado`);
+      }
+    }
+
   }
 }
 

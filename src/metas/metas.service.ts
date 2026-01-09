@@ -57,7 +57,6 @@ export class MetasService {
 
     const metas = await query.orderBy('meta.periodoFim', 'ASC').addOrderBy('meta.titulo', 'ASC').getMany();
     
-    // Calcular progresso automático para metas com grupo
     for (const meta of metas) {
       if (meta.grupoVendedoresId) {
         await this.atualizarProgressoAutomatico(meta);
@@ -81,7 +80,6 @@ export class MetasService {
       throw new NotFoundException('Meta não encontrada');
     }
     
-    // Calcular progresso automático se tiver grupo
     if (meta.grupoVendedoresId) {
       await this.atualizarProgressoAutomatico(meta);
     }
@@ -92,7 +90,6 @@ export class MetasService {
   async criar(empresaId: string, dto: CreateMetaDto) {
     let valorInicial = dto.valorAtual ?? 0;
     
-    // Se tiver grupo, calcular valor inicial baseado em vendas
     if (dto.grupoVendedoresId) {
       valorInicial = await this.calcularVendasDoGrupo(
         empresaId,
@@ -143,10 +140,8 @@ export class MetasService {
     if (dto.tags !== undefined) meta.tags = dto.tags;
     if (dto.grupoVendedoresId !== undefined) meta.grupoVendedoresId = dto.grupoVendedoresId;
 
-    // Se tiver grupo, recalcular progresso baseado em vendas
     if (meta.grupoVendedoresId) {
       await this.atualizarProgressoAutomatico(meta);
-      // Verificar e notificar gerente se necessário
       await this.verificarENotificarGerente(meta);
     } else {
       meta.progressoPercentual = this.calcularProgresso(meta.valorAtual, meta.valorObjetivo);
@@ -273,7 +268,6 @@ export class MetasService {
     meta.valorAtual = valorAtual;
     meta.progressoPercentual = this.calcularProgresso(valorAtual, meta.valorObjetivo);
 
-    // Atualizar status baseado no progresso
     if (meta.progressoPercentual >= 100 && meta.status !== 'atingida') {
       meta.status = 'atingida';
     } else if (meta.progressoPercentual < 100 && meta.status === 'atingida') {
@@ -282,7 +276,6 @@ export class MetasService {
 
     await this.metaRepository.save(meta);
 
-    // Notificar gerente se houve mudança significativa ou se meta foi atingida
     if (
       meta.status === 'atingida' ||
       (meta.progressoPercentual >= 100 && statusAnterior !== 'atingida') ||
@@ -299,7 +292,6 @@ export class MetasService {
     periodoFim: Date,
     tipoMeta: MetaTipo,
   ): Promise<number> {
-    // Buscar vendedores do grupo
     const grupo = await this.grupoVendedoresRepository.findOne({
       where: { id: grupoId, empresaId },
       relations: ['vendedores', 'vendedores.usuario'],
@@ -315,14 +307,12 @@ export class MetasService {
       return 0;
     }
 
-    // Buscar pedidos dos vendedores no período
     const whereConditions: any = {
       empresaId,
       vendedorId: vendedorIds.length === 1 ? vendedorIds[0] : In(vendedorIds),
       dataPedido: Between(periodoInicio, periodoFim),
     };
 
-    // Para faturamento, apenas pedidos entregues; para vendas, todos os status válidos
     if (tipoMeta === 'faturamento') {
       whereConditions.status = 'entregue';
     }
@@ -331,27 +321,22 @@ export class MetasService {
       where: whereConditions,
     });
 
-    // Calcular valor baseado no tipo de meta
     switch (tipoMeta) {
       case 'faturamento':
-        // Soma do total dos pedidos entregues
         return pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
 
       case 'vendas':
-        // Quantidade de pedidos (fechados)
         return pedidos.filter((p) => 
           ['entregue', 'enviado', 'processando'].includes(p.status)
         ).length;
 
       case 'novos_clientes':
-        // Contar clientes únicos dos pedidos
         const clientesUnicos = new Set(
           pedidos.map((p) => p.clienteId).filter((id) => id != null)
         );
         return clientesUnicos.size;
 
       case 'tickets_medio':
-        // Média dos valores dos pedidos
         const pedidosComValor = pedidos.filter((p) => Number(p.total || 0) > 0);
         if (pedidosComValor.length === 0) return 0;
         const soma = pedidosComValor.reduce((acc, p) => acc + Number(p.total || 0), 0);
@@ -388,7 +373,6 @@ export class MetasService {
         ),
       );
 
-      // Notificar se meta atingida
       if (progresso >= 100 && meta.status === 'atingida') {
         await this.notificationsService.criarNotificacao(
           grupo.gerenteId,
@@ -398,7 +382,6 @@ export class MetasService {
           'high',
         );
       }
-      // Notificar se meta abaixo do esperado (progresso < 50% e já passou 50% do tempo)
       else if (progresso < 50 && percentualTempo > 50 && meta.status === 'ativa') {
         await this.notificationsService.criarNotificacao(
           grupo.gerenteId,
@@ -408,7 +391,6 @@ export class MetasService {
           'high',
         );
       }
-      // Notificar se meta próxima de ser atingida (progresso >= 90%)
       else if (progresso >= 90 && progresso < 100 && meta.status === 'ativa') {
         await this.notificationsService.criarNotificacao(
           grupo.gerenteId,
@@ -420,7 +402,6 @@ export class MetasService {
       }
     } catch (error) {
       console.error('Erro ao verificar e notificar gerente:', error);
-      // Não lançar erro para não quebrar o fluxo principal
     }
   }
 

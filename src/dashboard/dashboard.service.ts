@@ -191,10 +191,38 @@ export class DashboardService {
 
   async getRelatorioEstoque(periodo: string | undefined, empresaId: string) {
     const produtos = await this.produtoRepo.find({ where: { empresaId } });
+    const estoqueBaixo = await this.produtoRepo.find({
+      where: { empresaId },
+    }).then(prods => prods.filter(p => p.estoque <= p.estoqueMinimo));
+    
+    const valorTotalEstoque = produtos.reduce((acc, p) => {
+      const valor = Number(p.precoCusto || p.preco || 0) * p.estoque;
+      return acc + valor;
+    }, 0);
+
+    const movimentacoesPorTipo = [
+      { tipo: 'Entrada', quantidade: 0 },
+      { tipo: 'Saída', quantidade: 0 },
+      { tipo: 'Ajuste', quantidade: 0 },
+    ];
+
+    const movimentacoesPorMes: Array<{ mes: string; entradas: number; saidas: number }> = [];
+
     return {
       produtos,
       movimentacoes: [],
+      movimentacoesPorTipo,
+      movimentacoesPorMes,
       categorias: await this.getDistribuicaoCategorias(empresaId),
+      resumo: {
+        totalProdutos: produtos.length,
+        produtosEstoqueBaixo: estoqueBaixo.length,
+        valorTotalEstoque: Number(valorTotalEstoque.toFixed(2)),
+        totalMovimentacoes: 0,
+        entradas: 0,
+        saidas: 0,
+      },
+      depositos: [],
     };
   }
 

@@ -355,7 +355,7 @@ export class RelatoriosService {
     const receitaLiquida = receberStats.totalRecebido - pagarStats.totalPago;
     const margemBruta = vendasStats.totalVendas > 0 ? ((vendasStats.totalVendas - vendasStats.totalComissoes) / vendasStats.totalVendas) * 100 : 0;
     const taxaConversao = pipeline.resumo.totalOportunidades > 0 ? (vendasStats.pedidosConcluidos / pipeline.resumo.totalOportunidades) * 100 : 0;
-    const rotatividadeEstoque = 0; // valorTotal não está disponível em estoqueStats
+    const rotatividadeEstoque = 0; 
 
     return {
       periodo: { dias },
@@ -375,7 +375,7 @@ export class RelatoriosService {
       },
       estoque: {
         rotatividade: rotatividadeEstoque,
-        valorTotal: 0, // não disponível em estoqueStats
+        valorTotal: 0, 
         produtosCriticos: estoqueStats.produtosEstoqueBaixo?.length || 0,
         produtosSemEstoque: estoqueStats.produtosEstoqueBaixo?.filter((p: any) => p.estoque === 0).length || 0,
       },
@@ -470,7 +470,7 @@ export class RelatoriosService {
     const estoqueStats = await this.estoqueService.obterEstatisticas(empresaId);
     const depositos = await this.estoqueService.listarDepositos(empresaId);
     const movimentacoes = await this.estoqueService.listarMovimentacoes(empresaId, {
-      tipo: undefined, // depositoId não é suportado diretamente, precisa filtrar depois
+      tipo: undefined, 
     });
 
     const movimentacoesPorTipo = new Map<string, number>();
@@ -516,7 +516,7 @@ export class RelatoriosService {
       })),
       produtosCriticos: estoqueStats.produtosEstoqueBaixo?.length || 0,
       produtosSemEstoque: estoqueStats.produtosEstoqueBaixo?.filter((p: any) => p.estoque === 0).length || 0,
-      valorTotal: 0, // não disponível em estoqueStats
+      valorTotal: 0, 
     };
   }
 

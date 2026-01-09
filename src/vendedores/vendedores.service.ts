@@ -14,16 +14,14 @@ export class VendedoresService {
   ) {}
 
   async listar(empresaId: string) {
-    // Buscar usuários vinculados à empresa, onde tanto o vínculo quanto o usuário estão ativos
     const usuariosEmpresa = await this.usuarioEmpresaRepository.find({
       where: { 
         empresaId,
-        ativo: true, // Vínculo ativo
+        ativo: true, 
       },
       relations: ['usuario'],
     });
 
-    // Filtrar apenas usuários ativos e mapear para o formato de vendedor
     const vendedores = usuariosEmpresa
       .filter((ue) => ue.usuario && ue.usuario.ativo)
       .map((ue) => {
@@ -32,7 +30,7 @@ export class VendedoresService {
           id: usuario.id,
           nome: usuario.name,
           email: usuario.email || '',
-          telefone: undefined, // Telefone não existe na entidade Usuario
+          telefone: undefined, 
           empresaId: empresaId,
           ativo: usuario.ativo,
         };
