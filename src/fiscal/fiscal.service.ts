@@ -326,7 +326,7 @@ export class FiscalService {
     const nota = await this.obterNotaFiscalPorId(notaFiscalId, empresaId);
 
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += '<nfeProc xmlns="http:
+    xml += '<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">\n';
     xml += '  <NFe>\n';
     xml += `    <infNFe Id="NFe${nota.chaveAcesso || `${nota.numero}${nota.serie}`}">\n`;
     xml += `      <ide>\n`;
