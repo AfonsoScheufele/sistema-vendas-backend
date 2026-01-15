@@ -1,323 +1,305 @@
-# 🚀 Sistema de Vendas AXORA - Backend
+# AXORA Sales Management System - Backend
 
-Backend completo para sistema de gerenciamento de vendas desenvolvido com NestJS, TypeORM e PostgreSQL.
+Complete backend for sales management system built with NestJS, TypeORM, and PostgreSQL.
 
-## ✨ Funcionalidades
+## Features
 
-### 🏪 **Gestão de Produtos**
-- CRUD completo com controle de estoque
-- Categorização e marcação de produtos
-- Controle de estoque mínimo
-- Gestão de preços (venda e custo)
-- Códigos de barras e SKU
-- Dimensões e peso dos produtos
+### Product Management
+- Complete CRUD with inventory control
+- Product categorization and tagging
+- Minimum stock level control
+- Price management (sale and cost)
+- Barcode and SKU support
+- Product dimensions and weight
 
-### 👥 **Gestão de Clientes**
-- Cadastro completo de clientes (PF e PJ)
-- Endereços e dados de contato
-- Histórico de vendas por cliente
-- Segmentação por tipo de cliente
+### Customer Management
+- Complete customer registration (individual and corporate)
+- Addresses and contact information
+- Sales history per customer
+- Customer segmentation by type
 
-### 💰 **Sistema de Vendas**
-- Processamento de vendas com itens
-- Cálculo automático de totais e descontos
-- Controle de comissões
-- Múltiplas formas de pagamento
-- Relatórios de vendas por vendedor
+### Sales System
+- Sales processing with items
+- Automatic calculation of totals and discounts
+- Commission control
+- Multiple payment methods
+- Sales reports by salesperson
 
-### 📦 **Gestão de Pedidos**
-- Sistema completo de pedidos
-- Controle de status
-- Gestão de entregas
-- Histórico de pedidos
+### Order Management
+- Complete order system
+- Status control
+- Delivery management
+- Order history
 
-### 📊 **Dashboard Executivo**
-- Métricas em tempo real
-- Vendas mensais e diárias
-- Produtos mais vendidos
-- Distribuição por categorias
-- Insights e alertas
+### Executive Dashboard
+- Real-time metrics
+- Monthly and daily sales
+- Best-selling products
+- Distribution by categories
+- Insights and alerts
 
-### 🔐 **Autenticação & Autorização**
+### Authentication & Authorization
 - JWT Authentication
-- Controle de roles (Admin, Vendedor, User)
-- Recuperação de senha
-- Perfis de usuário
+- Role-based access control (Admin, Salesperson, User)
+- Password recovery
+- User profiles
 
-### 📢 **Sistema de Notificações**
-- Notificações em tempo real
-- Alertas de estoque baixo
-- Notificações de vendas
+### Notification System
+- Real-time notifications
+- Low stock alerts
+- Sales notifications
 
-### 🏢 **Módulos Adicionais**
-- **CRM**: Leads e oportunidades
-- **Orçamentos**: Sistema de orçamentos
-- **Fornecedores**: Gestão de fornecedores
-- **Cotações**: Sistema de cotações
-- **Estoque**: Controle de movimentações
-- **Financeiro**: Controle financeiro
-- **Fiscal**: Notas fiscais
-- **Logística**: Transportadoras e expedição
+### Additional Modules
+- **CRM**: Leads and opportunities
+- **Quotes**: Quote system
+- **Suppliers**: Supplier management
+- **Quotations**: Quotation system
+- **Inventory**: Stock movement control
+- **Financial**: Financial control
+- **Tax**: Tax invoices
+- **Logistics**: Carriers and shipping
 
-## 🛠️ Tecnologias
+## Technologies
 
-### **Backend Core**
-- **NestJS** - Framework Node.js robusto
-- **TypeScript** - Tipagem estática
-- **TypeORM** - ORM para banco de dados
-- **PostgreSQL** - Banco de dados principal
+### Backend Core
+- **NestJS** - Robust Node.js framework
+- **TypeScript** - Static typing
+- **TypeORM** - Database ORM
+- **PostgreSQL** - Main database
 
-### **Autenticação & Segurança**
+### Authentication & Security
 - **JWT** - JSON Web Tokens
-- **Passport** - Estratégias de autenticação
-- **bcryptjs** - Hash de senhas
+- **Passport** - Authentication strategies
+- **bcryptjs** - Password hashing
 - **CORS** - Cross-Origin Resource Sharing
 
-### **Validação & DTOs**
-- **class-validator** - Validação de dados
-- **class-transformer** - Transformação de objetos
+### Validation & DTOs
+- **class-validator** - Data validation
+- **class-transformer** - Object transformation
 
-### **Desenvolvimento**
-- **ESLint** - Linting de código
-- **Prettier** - Formatação de código
-- **Jest** - Testes unitários
+### Development
+- **ESLint** - Code linting
+- **Prettier** - Code formatting
 
-## 📋 Pré-requisitos
+## Prerequisites
 
-- **Node.js** (v18 ou superior)
-- **npm** ou **yarn**
-- **PostgreSQL** (v12 ou superior)
+- **Node.js** (v18 or higher)
+- **npm** or **yarn**
+- **PostgreSQL** (v12 or higher)
 
-## 🔧 Instalação
+## Installation
 
-### 1. Clone o repositório
+### 1. Clone the repository
 ```bash
 git clone https://github.com/AfonsoScheufele/sistema-vendas-backend.git
 cd sistema-vendas-backend
 ```
 
-### 2. Instale as dependências
+### 2. Install dependencies
 ```bash
 npm install
 ```
 
-### 3. Configure as variáveis de ambiente
+### 3. Configure environment variables
 ```bash
-# Copie o arquivo de exemplo
+# Copy the example file
 cp env.example .env
 
-# Edite o arquivo .env com suas configurações
+# Edit the .env file with your settings
 ```
 
-### 5. Execute o seed para dados iniciais
+### 4. Run company seed (optional)
 ```bash
-npm run seed
+npm run seed:empresa
 ```
 
-## 🚀 Executando o projeto
+## Running the Project
 
-### Desenvolvimento
+### Development
 ```bash
 npm run dev
 ```
 
-### Produção
+### Production
 ```bash
 npm run build
 npm run start:prod
 ```
 
-O servidor será iniciado em `http://localhost:5000`
+The server will start at `http://localhost:5000`
 
-## 📚 Endpoints da API
+## API Endpoints
 
-### 🔐 Autenticação
-- `POST /auth/login` - Login do usuário
-- `POST /auth/register` - Registro de novo usuário
-- `GET /auth/me` - Perfil do usuário logado
-- `POST /auth/refresh` - Renovar token
+### Authentication
+- `POST /auth/login` - User login
+- `POST /auth/register` - Register new user
+- `GET /auth/me` - Logged-in user profile
+- `POST /auth/refresh` - Renew token
 - `POST /auth/logout` - Logout
-- `POST /auth/recuperar-senha` - Solicitar recuperação de senha
-- `POST /auth/redefinir-senha` - Redefinir senha
-- `POST /auth/change-password` - Alterar senha
+- `POST /auth/recuperar-senha` - Request password recovery
+- `POST /auth/redefinir-senha` - Reset password
+- `POST /auth/change-password` - Change password
 
-### 🏪 Produtos
-- `GET /produtos` - Listar produtos (com filtros)
-- `GET /produtos/categorias` - Listar categorias
-- `GET /produtos/estoque-baixo` - Produtos com estoque baixo
-- `GET /produtos/stats` - Estatísticas de produtos
-- `GET /produtos/:id` - Buscar produto por ID
-- `POST /produtos` - Criar produto
-- `PUT /produtos/:id` - Atualizar produto
-- `PATCH /produtos/:id/estoque` - Atualizar estoque
-- `DELETE /produtos/:id` - Deletar produto
-- `GET /api/produtos` - Listar produtos (compatibilidade)
+### Products
+- `GET /produtos` - List products (with filters)
+- `GET /produtos/categorias` - List categories
+- `GET /produtos/estoque-baixo` - Low stock products
+- `GET /produtos/stats` - Product statistics
+- `GET /produtos/:id` - Get product by ID
+- `POST /produtos` - Create product
+- `PUT /produtos/:id` - Update product
+- `PATCH /produtos/:id/estoque` - Update stock
+- `DELETE /produtos/:id` - Delete product
+- `GET /api/produtos` - List products (compatibility)
 
-### 👥 Clientes
-- `GET /clientes` - Listar clientes (com filtros)
-- `GET /clientes/stats` - Estatísticas de clientes
-- `GET /clientes/tipos` - Tipos de clientes
-- `GET /clientes/novos` - Novos clientes por período
-- `GET /clientes/:id` - Buscar cliente por ID
-- `GET /clientes/:id/vendas` - Vendas do cliente
-- `POST /clientes` - Criar cliente
-- `PATCH /clientes/:id` - Atualizar cliente
-- `DELETE /clientes/:id` - Deletar cliente
-- `GET /api/clientes` - Listar clientes (compatibilidade)
+### Customers
+- `GET /clientes` - List customers (with filters)
+- `GET /clientes/stats` - Customer statistics
+- `GET /clientes/tipos` - Customer types
+- `GET /clientes/novos` - New customers by period
+- `GET /clientes/:id` - Get customer by ID
+- `GET /clientes/:id/vendas` - Customer sales
+- `POST /clientes` - Create customer
+- `PATCH /clientes/:id` - Update customer
+- `DELETE /clientes/:id` - Delete customer
+- `GET /api/clientes` - List customers (compatibility)
 
-### 💰 Vendas
-- `GET /vendas` - Listar vendas (com filtros)
-- `GET /vendas/stats` - Estatísticas de vendas
-- `GET /vendas/vendedores` - Lista de vendedores
-- `GET /vendas/comissoes` - Relatório de comissões
-- `GET /vendas/relatorio` - Relatório de vendas
-- `GET /vendas/:id` - Buscar venda por ID
-- `POST /vendas` - Criar venda
-- `DELETE /vendas/:id` - Deletar venda
-- `GET /api/vendas` - Listar vendas (compatibilidade)
+### Sales
+- `GET /vendas` - List sales (with filters)
+- `GET /vendas/stats` - Sales statistics
+- `GET /vendas/vendedores` - Salesperson list
+- `GET /vendas/comissoes` - Commission report
+- `GET /vendas/relatorio` - Sales report
+- `GET /vendas/:id` - Get sale by ID
+- `POST /vendas` - Create sale
+- `DELETE /vendas/:id` - Delete sale
+- `GET /api/vendas` - List sales (compatibility)
 
-### 📦 Pedidos
-- `GET /pedidos` - Listar pedidos (com filtros)
-- `GET /pedidos/stats` - Estatísticas de pedidos
-- `GET /pedidos/:id` - Buscar pedido por ID
-- `POST /pedidos` - Criar pedido
-- `PATCH /pedidos/:id` - Atualizar pedido
-- `DELETE /pedidos/:id` - Deletar pedido
-- `GET /api/pedidos` - Listar pedidos (compatibilidade)
+### Orders
+- `GET /pedidos` - List orders (with filters)
+- `GET /pedidos/stats` - Order statistics
+- `GET /pedidos/:id` - Get order by ID
+- `POST /pedidos` - Create order
+- `PATCH /pedidos/:id` - Update order
+- `DELETE /pedidos/:id` - Delete order
+- `GET /api/pedidos` - List orders (compatibility)
 
-### 📊 Dashboard
-- `GET /dashboard/stats` - Estatísticas gerais
-- `GET /dashboard/vendas-mensais` - Vendas por mês
-- `GET /dashboard/produtos-mais-vendidos` - Produtos mais vendidos
-- `GET /dashboard/faturamento-diario` - Faturamento diário
-- `GET /dashboard/distribuicao-categorias` - Distribuição por categoria
-- `GET /dashboard/insights` - Insights e alertas
-- `GET /dashboard/resumo` - Resumo executivo
-- `GET /dashboard/metas` - Metas e objetivos
-- `GET /dashboard/alertas` - Alertas do sistema
-- `GET /api/dashboard/*` - Endpoints de compatibilidade
+### Dashboard
+- `GET /dashboard/stats` - General statistics
+- `GET /dashboard/vendas-mensais` - Monthly sales
+- `GET /dashboard/produtos-mais-vendidos` - Best-selling products
+- `GET /dashboard/faturamento-diario` - Daily revenue
+- `GET /dashboard/distribuicao-categorias` - Category distribution
+- `GET /dashboard/insights` - Insights and alerts
+- `GET /dashboard/resumo` - Executive summary
+- `GET /dashboard/metas` - Goals and objectives
+- `GET /dashboard/alertas` - System alerts
+- `GET /api/dashboard/*` - Compatibility endpoints
 
-### 📢 Notificações
-- `GET /notifications` - Listar notificações do usuário
-- `GET /notifications/unread-count` - Contador de não lidas
-- `PATCH /notifications/:id/read` - Marcar como lida
-- `POST /notifications/mark-all-read` - Marcar todas como lidas
-- `DELETE /notifications/:id` - Deletar notificação
+### Notifications
+- `GET /notifications` - List user notifications
+- `GET /notifications/unread-count` - Unread count
+- `PATCH /notifications/:id/read` - Mark as read
+- `POST /notifications/mark-all-read` - Mark all as read
+- `DELETE /notifications/:id` - Delete notification
+- `POST /notifications` - Create notification
 
-### 🏢 Módulos Adicionais
-- **CRM**: `/crm/leads`, `/crm/oportunidades`
-- **Orçamentos**: `/orcamentos`
-- **Fornecedores**: `/fornecedores`
-- **Cotações**: `/cotacoes`
-- **Estoque**: `/estoque`
-- **Financeiro**: `/financeiro`
-- **Fiscal**: `/fiscal`
-- **Logística**: `/logistica`
+### Additional Modules
+- **CRM**: `/crm/leads`, `/crm/oportunidades`, `/crm/campanhas-email`
+- **Quotes**: `/orcamentos`
+- **Suppliers**: `/fornecedores`
+- **Quotations**: `/cotacoes`
+- **Inventory**: `/estoque`
+- **Financial**: `/financeiro`
+- **Tax**: `/fiscal`
+- **Logistics**: `/logistica`
 
-## 🔧 Configuração do Ambiente
+## Environment Configuration
 
-### Variáveis de Ambiente (.env)
+### Environment Variables (.env)
 ```env
-# Servidor
+# Server
 PORT=5000
 NODE_ENV=development
 
-# Banco de Dados (Supabase)
+# Database (Supabase)
 DB_HOST=db.ejiyizaxmdfqqwpmchxe.supabase.co
 DB_PORT=5432
 DB_USERNAME=postgres
-DB_PASSWORD=sua_senha_aqui
+DB_PASSWORD=your_password_here
 DB_NAME=postgres
 
 # JWT
-JWT_SECRET=meu_jwt_secret_super_seguro_2024_sistema_vendas
+JWT_SECRET=your_jwt_secret_here
 
 # CORS
 CORS_ORIGIN=http://localhost:5173
 ```
 
-## 🚀 Scripts Disponíveis
+## Available Scripts
 
 ```bash
-# Desenvolvimento
-npm run dev              # Inicia servidor de desenvolvimento
-npm run start:dev        # Inicia com watch mode
-npm run start:debug      # Inicia em modo debug
+# Development
+npm run dev              # Start development server
+npm run start:dev        # Start with watch mode
+npm run start:debug      # Start in debug mode
 
-# Produção
-npm run build           # Compila o projeto
-npm run start:prod      # Inicia em produção
+# Production
+npm run build           # Build the project
+npm run start:prod      # Start in production
 
-# Banco de Dados
-npm run seed            # Popula banco com dados de exemplo
+# Database
+npm run seed:empresa    # Company seed (optional)
 
-# Qualidade de Código
-npm run lint            # Executa ESLint
-npm run format          # Formata código com Prettier
-
-# Testes
-npm run test            # Executa testes
-npm run test:watch      # Executa testes em watch mode
-npm run test:cov        # Executa testes com coverage
+# Code Quality
+npm run lint            # Run ESLint
+npm run format          # Format code with Prettier
 ```
 
-## 📊 Dados de Exemplo
+## Frontend Integration
 
-Após executar `npm run seed`, você terá:
-
-- **👤 Usuários**:
-  - Admin: `admin@axora.com` (senha: `123456`)
-  - Vendedor: `vendedor@axora.com` (senha: `123456`)
-
-- **📦 Produtos**: 5 produtos de exemplo
-- **👥 Clientes**: 4 clientes de exemplo (PF e PJ)
-
-## 🔗 Integração com Frontend
-
-Este backend é totalmente compatível com o frontend em:
+This backend is fully compatible with the frontend at:
 - [sistema-vendas-frontend](https://github.com/AfonsoScheufele/sistema-vendas-frontend)
 
-### Configuração CORS
-O backend está configurado para aceitar requisições de:
+### CORS Configuration
+The backend is configured to accept requests from:
 - `http://localhost:5173` (Vite)
 - `http://localhost:3000` (Create React App)
 - `http://localhost:8080` (Vue.js)
 
-## 🤝 Contribuição
+## Scheduled Tasks
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+The system includes automated scheduled tasks that run daily:
 
-## 📄 Licença
+- **Low Stock Check** (8:00 AM): Verifies products with low stock and sends notifications
+- **Payment Due Date Check** (9:00 AM): Checks for overdue and upcoming payments
+- **Quote Expiration** (Midnight): Automatically expires quotes past their validity date
+- **Order Status Update** (10:00 AM): Updates order status based on shipping and delivery dates
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+## Login Credentials
 
-## 🆘 Suporte
+Use the following credentials to log in:
+- **Email**: `admin@sistema.com`
+- **Password**: `password`
 
-Para suporte e dúvidas:
-- 📧 Email: suporte@axora.com
-- 🐛 Issues: [GitHub Issues](https://github.com/AfonsoScheufele/sistema-vendas-backend/issues)
+## Contributing
+
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
+
+## Support
+
+For support and questions:
+- Email: suporte@axora.com
+- Issues: [GitHub Issues](https://github.com/AfonsoScheufele/sistema-vendas-backend/issues)
 
 ---
 
-**Desenvolvido com ❤️ pela equipe AXORA**
-- `POST /notifications` - Criar notificação
-
-### Estoque
-- `GET /estoque/produtos` - Produtos em estoque
-
-### Teste
-- `GET /test` - Teste básico do servidor
-
-## 🔐 Login
-
-Use as seguintes credenciais para fazer login:
-- **Email**: `admin@sistema.com`
-- **Senha**: `password`
-
-## 📄 Licença
-
-Este projeto está sob a licença ISC.
+**Developed by the AXORA team**

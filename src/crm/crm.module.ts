@@ -3,11 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Lead } from './lead.entity';
 import { Oportunidade } from './oportunidade.entity';
 import { Campanha } from './campanha.entity';
+import { CampanhaEmail } from './campanha-email.entity';
 import { CrmService } from './crm.service';
 import { CrmController } from './crm.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Lead, Oportunidade, Campanha])],
+  imports: [TypeOrmModule.forFeature([Lead, Oportunidade, Campanha, CampanhaEmail])],
   providers: [CrmService],
   controllers: [CrmController],
   exports: [CrmService],

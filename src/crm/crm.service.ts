@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Lead } from './lead.entity';
 import { Oportunidade } from './oportunidade.entity';
 import { Campanha } from './campanha.entity';
+import { CampanhaEmail } from './campanha-email.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 
@@ -16,6 +17,8 @@ export class CrmService {
     private oportunidadeRepo: Repository<Oportunidade>,
     @InjectRepository(Campanha)
     private campanhaRepo: Repository<Campanha>,
+    @InjectRepository(CampanhaEmail)
+    private campanhaEmailRepo: Repository<CampanhaEmail>,
   ) {}
 
   async listarLeads(empresaId: string) {
@@ -84,6 +87,46 @@ export class CrmService {
 
   async contarCampanhasAtivas(empresaId: string) {
     return await this.campanhaRepo.count({ where: { empresaId, status: 'ativa' } });
+  }
+
+  // Campanhas de Email
+  async listarCampanhasEmail(empresaId: string) {
+    return await this.campanhaEmailRepo.find({
+      where: { empresaId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async buscarCampanhaEmailPorId(id: number, empresaId: string): Promise<CampanhaEmail> {
+    const campanha = await this.campanhaEmailRepo.findOne({ where: { id, empresaId } });
+    if (!campanha) {
+      throw new NotFoundException(`Campanha de email com ID ${id} não encontrada`);
+    }
+    return campanha;
+  }
+
+  async criarCampanhaEmail(data: Partial<CampanhaEmail>, empresaId: string): Promise<CampanhaEmail> {
+    const campanha = this.campanhaEmailRepo.create({
+      ...data,
+      empresaId,
+      status: data.status || 'rascunho',
+      destinatarios: data.destinatarios || 0,
+      enviados: data.enviados || 0,
+      abertos: data.abertos || 0,
+      cliques: data.cliques || 0,
+    });
+    return await this.campanhaEmailRepo.save(campanha);
+  }
+
+  async atualizarCampanhaEmail(id: number, data: Partial<CampanhaEmail>, empresaId: string): Promise<CampanhaEmail> {
+    const campanha = await this.buscarCampanhaEmailPorId(id, empresaId);
+    Object.assign(campanha, data);
+    return await this.campanhaEmailRepo.save(campanha);
+  }
+
+  async excluirCampanhaEmail(id: number, empresaId: string): Promise<void> {
+    const campanha = await this.buscarCampanhaEmailPorId(id, empresaId);
+    await this.campanhaEmailRepo.remove(campanha);
   }
 }
 

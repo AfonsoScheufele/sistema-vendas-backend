@@ -83,4 +83,32 @@ export class CrmController {
   async listarPipeline(@Req() req: any) {
     return await this.crmService.listarOportunidades(req.empresaId);
   }
+
+  // Campanhas de Email
+  @Get('crm/campanhas-email')
+  async listarCampanhasEmail(@Req() req: any) {
+    return await this.crmService.listarCampanhasEmail(req.empresaId);
+  }
+
+  @Get('crm/campanhas-email/:id')
+  async buscarCampanhaEmailPorId(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    return await this.crmService.buscarCampanhaEmailPorId(id, req.empresaId);
+  }
+
+  @Post('crm/campanhas-email')
+  @HttpCode(HttpStatus.CREATED)
+  async criarCampanhaEmail(@Body() body: any, @Req() req: any) {
+    return await this.crmService.criarCampanhaEmail(body, req.empresaId);
+  }
+
+  @Patch('crm/campanhas-email/:id')
+  async atualizarCampanhaEmail(@Param('id', ParseIntPipe) id: number, @Body() body: any, @Req() req: any) {
+    return await this.crmService.atualizarCampanhaEmail(id, body, req.empresaId);
+  }
+
+  @Delete('crm/campanhas-email/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async excluirCampanhaEmail(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    await this.crmService.excluirCampanhaEmail(id, req.empresaId);
+  }
 }

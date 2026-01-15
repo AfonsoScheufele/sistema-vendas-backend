@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import * as dns from 'dns';
 import { ProdutosModule } from './produtos/produtos.module';
 import { ClientesModule } from './clientes/clientes.module';
@@ -69,6 +70,7 @@ import { Orcamento } from './orcamentos/orcamento.entity';
 import { Lead } from './crm/lead.entity';
 import { Oportunidade } from './crm/oportunidade.entity';
 import { Campanha } from './crm/campanha.entity';
+import { CampanhaEmail } from './crm/campanha-email.entity';
 import { Workflow } from './automacao/workflow.entity';
 import { Perfil } from './perfis/perfil.entity';
 import { InvestimentoCarteira } from './financeiro/investimento-carteira.entity';
@@ -88,6 +90,7 @@ import { BackupModule } from './backup/backup.module';
 import { BackupEntity } from './backup/backup.entity';
 import { BackupConfigEntity } from './backup/backup-config.entity';
 import { EmpresasModule } from './empresas/empresas.module';
+import { TasksModule } from './tasks/tasks.module';
 import { ComissaoEntity } from './comissoes/comissao.entity';
 import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
 dns.setDefaultResultOrder('ipv4first');
@@ -95,6 +98,7 @@ dns.setDefaultResultOrder('ipv4first');
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -133,6 +137,7 @@ dns.setDefaultResultOrder('ipv4first');
             Lead,
             Oportunidade,
             Campanha,
+            CampanhaEmail,
             Workflow,
             Perfil,
             InvestimentoCarteira,
@@ -225,6 +230,7 @@ dns.setDefaultResultOrder('ipv4first');
     PdfModule,
     AuditoriaModule,
     BackupModule,
+    TasksModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: EmpresaContextInterceptor },
