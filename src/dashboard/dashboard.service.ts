@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { Produto } from '../produtos/produto.entity';
 import { Cliente } from '../clientes/cliente.entity';
+import { Pedido } from '../pedidos/pedido.entity';
 import {
   DashboardStats,
   VendasMensais,
@@ -12,6 +13,7 @@ import {
   DistribuicaoCategoria,
 } from './dashboard.types';
 import { FinanceiroService } from '../financeiro/financeiro.service';
+import { PedidosService } from '../pedidos/pedidos.service';
 import { endOfMonth, startOfMonth, subMonths } from './date-helpers';
 
 @Injectable()
@@ -21,7 +23,10 @@ export class DashboardService {
     private produtoRepo: Repository<Produto>,
     @InjectRepository(Cliente)
     private clienteRepo: Repository<Cliente>,
+    @InjectRepository(Pedido)
+    private pedidoRepo: Repository<Pedido>,
     private readonly financeiroService: FinanceiroService,
+    private readonly pedidosService: PedidosService,
   ) {}
 
   async getStats(periodo: string | undefined, empresaId: string): Promise<DashboardStats> {
@@ -74,18 +79,35 @@ export class DashboardService {
   }
 
   async getVendasMensais(ano: number | undefined, empresaId: string): Promise<VendasMensais[]> {
-    const contas = await this.financeiroService.listarContasReceber(empresaId);
+    const [contas, pedidos] = await Promise.all([
+      this.financeiroService.listarContasReceber(empresaId),
+      this.pedidoRepo.find({ where: { empresaId } }),
+    ]);
+    
     const anoReferencia = ano ?? new Date().getFullYear();
     const mesesBase = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
     const mapa = new Array(12).fill(0).map(() => ({ vendas: 0, pedidos: 0 }));
 
     contas.forEach((conta) => {
+      if (!conta.pagamento && !conta.vencimento) return;
       const data = new Date(conta.pagamento ?? conta.vencimento);
-      if (data.getFullYear() !== anoReferencia) return;
+      if (isNaN(data.getTime()) || data.getFullYear() !== anoReferencia) return;
       const mes = data.getMonth();
-      const valor = conta.status === 'recebida' ? conta.valorPago : 0;
+      const valor = conta.status === 'recebida' ? (conta.valorPago ?? conta.valor ?? 0) : 0;
       mapa[mes].vendas += valor;
       mapa[mes].pedidos += 1;
+    });
+
+    pedidos.forEach((pedido) => {
+      if (!pedido.dataPedido) return;
+      const data = new Date(pedido.dataPedido);
+      if (isNaN(data.getTime()) || data.getFullYear() !== anoReferencia) return;
+      const mes = data.getMonth();
+      const valor = Number(pedido.total ?? 0);
+      if (pedido.status !== 'cancelado') {
+        mapa[mes].vendas += valor;
+        mapa[mes].pedidos += 1;
+      }
     });
 
     return mesesBase.map((nome, index) => ({ mes: nome, vendas: mapa[index].vendas, pedidos: mapa[index].pedidos }));
@@ -124,9 +146,51 @@ export class DashboardService {
 
   async getFaturamentoDiario(periodo: string | undefined, empresaId: string): Promise<FaturamentoDiario[]> {
     const dias = Number(periodo?.replace('d', '') ?? 7);
-    const fluxo = this.financeiroService.obterFluxoCaixa(empresaId, dias);
-    const historico = (await fluxo).historico.slice(-dias);
-    return historico.map((item) => ({ data: item.data, faturamento: item.entradas - item.saidas }));
+    const hoje = new Date();
+    const inicio = new Date(hoje);
+    inicio.setDate(inicio.getDate() - dias);
+    inicio.setHours(0, 0, 0, 0);
+
+    const [fluxo, pedidos] = await Promise.all([
+      this.financeiroService.obterFluxoCaixa(empresaId, dias),
+      this.pedidoRepo.find({
+        where: { empresaId },
+        order: { dataPedido: 'ASC' },
+      }),
+    ]);
+
+    const historico = fluxo?.historico?.slice(-dias) || [];
+    const pedidosFiltrados = pedidos.filter(p => {
+      if (!p.dataPedido) return false;
+      const data = new Date(p.dataPedido);
+      return data >= inicio && p.status !== 'cancelado';
+    });
+
+    const mapaFaturamento: Record<string, number> = {};
+    
+    historico.forEach((item) => {
+      const data = item.data || new Date().toISOString().split('T')[0];
+      mapaFaturamento[data] = (mapaFaturamento[data] || 0) + ((item.entradas || 0) - (item.saidas || 0));
+    });
+
+    pedidosFiltrados.forEach((pedido) => {
+      if (!pedido.dataPedido) return;
+      const data = new Date(pedido.dataPedido).toISOString().split('T')[0];
+      mapaFaturamento[data] = (mapaFaturamento[data] || 0) + Number(pedido.total || 0);
+    });
+
+    const resultado: FaturamentoDiario[] = [];
+    for (let i = 0; i < dias; i++) {
+      const data = new Date(hoje);
+      data.setDate(data.getDate() - (dias - 1 - i));
+      const dataStr = data.toISOString().split('T')[0];
+      resultado.push({
+        data: dataStr,
+        faturamento: mapaFaturamento[dataStr] || 0
+      });
+    }
+
+    return resultado;
   }
 
   async getDistribuicaoCategorias(empresaId: string): Promise<DistribuicaoCategoria[]> {

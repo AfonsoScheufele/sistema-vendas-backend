@@ -63,10 +63,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
     
     if (status === HttpStatus.UNAUTHORIZED) {
-      this.logger.warn(
-        `[AUTH] ${request.method} ${request.url} - Token inválido ou expirado`,
-        request.headers.authorization ? 'Token presente mas inválido' : 'Token não fornecido',
-      );
+      const hasToken = request.headers.authorization;
+      if (hasToken) {
+        this.logger.warn(
+          `[AUTH] ${request.method} ${request.url} - Token inválido ou expirado`,
+        );
+      }
     } else {
       this.logger.error(
         `${request.method} ${request.url}`,
