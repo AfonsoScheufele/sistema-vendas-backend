@@ -84,7 +84,6 @@ export class CrmController {
     return await this.crmService.listarOportunidades(req.empresaId);
   }
 
-  // Campanhas de Email
   @Get('crm/campanhas-email')
   async listarCampanhasEmail(@Req() req: any) {
     return await this.crmService.listarCampanhasEmail(req.empresaId);

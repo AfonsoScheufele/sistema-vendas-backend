@@ -48,7 +48,6 @@ export class CategoriaDetectorService {
 
     const nomeNormalizado = nomeProduto.toLowerCase().trim();
 
-    // Ordena regras por tamanho da keyword (mais longas primeiro) para priorizar correspondências específicas
     const rulesOrdenadas = [...categoriaRules].sort((a, b) => {
       const maxA = Math.max(...a.keywords.map(k => k.length));
       const maxB = Math.max(...b.keywords.map(k => k.length));

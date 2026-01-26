@@ -89,7 +89,6 @@ export class CrmService {
     return await this.campanhaRepo.count({ where: { empresaId, status: 'ativa' } });
   }
 
-  // Campanhas de Email
   async listarCampanhasEmail(empresaId: string) {
     return await this.campanhaEmailRepo.find({
       where: { empresaId },
