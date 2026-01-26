@@ -6,6 +6,7 @@ import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 import { ComissaoEntity } from '../comissoes/comissao.entity';
 import { ItemPedido } from '../pedidos/item-pedido.entity';
+import { CategoriaDetectorService } from './categoria-detector.service';
 
 @Injectable()
 export class ProdutosService {
@@ -16,11 +17,21 @@ export class ProdutosService {
     private comissaoRepo: Repository<ComissaoEntity>,
     @InjectRepository(ItemPedido)
     private itemPedidoRepo: Repository<ItemPedido>,
+    private categoriaDetector: CategoriaDetectorService,
   ) {}
 
   async create(dto: CreateProdutoDto, empresaId: string) {
+    let categoria = dto.categoria;
+    if (!categoria || !categoria.trim()) {
+      const categoriaDetectada = this.categoriaDetector.detectarCategoria(dto.nome);
+      if (categoriaDetectada) {
+        categoria = categoriaDetectada;
+      }
+    }
+
     const produto = this.produtoRepo.create({
       ...dto,
+      categoria,
       empresaId,
       estoque: dto.estoque ?? 0,
       estoqueMinimo: dto.estoqueMinimo ?? 0,
@@ -142,6 +153,12 @@ export class ProdutosService {
   }
 
   async update(id: number, empresaId: string, dto: UpdateProdutoDto) {
+    if (dto.nome && (!dto.categoria || !dto.categoria.trim())) {
+      const categoriaDetectada = this.categoriaDetector.detectarCategoria(dto.nome);
+      if (categoriaDetectada) {
+        dto.categoria = categoriaDetectada;
+      }
+    }
     const produto = await this.findOne(id, empresaId);
 
     Object.assign(produto, dto);

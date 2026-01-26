@@ -128,6 +128,11 @@ export class TasksService {
             const diasRestantes = Math.ceil((vencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 
             if (vencimento < hoje) {
+              if (conta.status !== 'vencida') {
+                await this.financeiroService.atualizarStatus(empresa.id, conta.id, 'vencida');
+                this.logger.log(`Conta a receber "${conta.titulo}" atualizada para vencida automaticamente`);
+              }
+
               const titulo = '🔴 Conta a Receber Vencida';
               const mensagem = `A conta "${conta.titulo}" está vencida desde ${vencimento.toLocaleDateString('pt-BR')}. Valor: R$ ${conta.valor.toFixed(2)}`;
 
@@ -175,6 +180,11 @@ export class TasksService {
             const diasRestantes = Math.ceil((vencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
 
             if (vencimento < hoje) {
+              if (conta.status !== 'atrasada') {
+                await this.financeiroService.atualizarStatusPagar(empresa.id, conta.id, 'atrasada');
+                this.logger.log(`Conta a pagar "${conta.titulo}" atualizada para atrasada automaticamente`);
+              }
+
               const titulo = '🔴 Conta a Pagar Vencida';
               const mensagem = `A conta "${conta.titulo}" está vencida desde ${vencimento.toLocaleDateString('pt-BR')}. Valor: R$ ${conta.valor.toFixed(2)}`;
 

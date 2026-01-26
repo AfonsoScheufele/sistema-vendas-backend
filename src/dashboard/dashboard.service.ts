@@ -4,6 +4,7 @@ import { Repository, Between, MoreThanOrEqual } from 'typeorm';
 import { Produto } from '../produtos/produto.entity';
 import { Cliente } from '../clientes/cliente.entity';
 import { Pedido } from '../pedidos/pedido.entity';
+import { ItemPedido } from '../pedidos/item-pedido.entity';
 import {
   DashboardStats,
   VendasMensais,
@@ -14,6 +15,7 @@ import {
 } from './dashboard.types';
 import { FinanceiroService } from '../financeiro/financeiro.service';
 import { PedidosService } from '../pedidos/pedidos.service';
+import { ProdutosService } from '../produtos/produtos.service';
 import { endOfMonth, startOfMonth, subMonths } from './date-helpers';
 
 @Injectable()
@@ -25,8 +27,11 @@ export class DashboardService {
     private clienteRepo: Repository<Cliente>,
     @InjectRepository(Pedido)
     private pedidoRepo: Repository<Pedido>,
+    @InjectRepository(ItemPedido)
+    private itemPedidoRepo: Repository<ItemPedido>,
     private readonly financeiroService: FinanceiroService,
     private readonly pedidosService: PedidosService,
+    private readonly produtosService: ProdutosService,
   ) {}
 
   async getStats(periodo: string | undefined, empresaId: string): Promise<DashboardStats> {
@@ -194,30 +199,96 @@ export class DashboardService {
   }
 
   async getDistribuicaoCategorias(empresaId: string): Promise<DistribuicaoCategoria[]> {
-    const produtos = await this.produtoRepo.find({ where: { empresaId } });
-    const total = produtos.length || 1;
-    const agrupado: Record<string, { quantidade: number; estoque: number }> = {};
-
-    produtos.forEach((produto) => {
-      const chave = produto.categoria ?? 'Sem categoria';
-      if (!agrupado[chave]) {
-        agrupado[chave] = { quantidade: 0, estoque: 0 };
-      }
-      agrupado[chave].quantidade += 1;
-      agrupado[chave].estoque += produto.estoque;
+    const pedidos = await this.pedidoRepo.find({
+      where: { empresaId },
+      relations: ['itens', 'itens.produto'],
     });
+
+    const agrupado: Record<string, { quantidade: number; faturamento: number }> = {};
+    let totalFaturamento = 0;
+
+    pedidos.forEach((pedido) => {
+      if (!pedido.itens || pedido.status === 'cancelado') return;
+
+      pedido.itens.forEach((item) => {
+        const produto = item.produto;
+        if (!produto) return;
+
+        const categoria = produto.categoria ?? 'Sem categoria';
+        if (!agrupado[categoria]) {
+          agrupado[categoria] = { quantidade: 0, faturamento: 0 };
+        }
+
+        const valorItem = Number(item.subtotal || 0);
+        agrupado[categoria].quantidade += Number(item.quantidade || 0);
+        agrupado[categoria].faturamento += valorItem;
+        totalFaturamento += valorItem;
+      });
+    });
+
+    if (totalFaturamento === 0) {
+      const produtos = await this.produtoRepo.find({ where: { empresaId } });
+      const totalProdutos = produtos.length || 1;
+      const agrupadoProdutos: Record<string, { quantidade: number }> = {};
+
+      produtos.forEach((produto) => {
+        const chave = produto.categoria ?? 'Sem categoria';
+        if (!agrupadoProdutos[chave]) {
+          agrupadoProdutos[chave] = { quantidade: 0 };
+        }
+        agrupadoProdutos[chave].quantidade += 1;
+      });
+
+      return Object.entries(agrupadoProdutos).map(([categoria, info]) => ({
+        categoria,
+        quantidade: info.quantidade,
+        percentual: (info.quantidade / totalProdutos) * 100,
+        faturamento: 0,
+      }));
+    }
 
     return Object.entries(agrupado).map(([categoria, info]) => ({
       categoria,
       quantidade: info.quantidade,
-      percentual: (info.quantidade / total) * 100,
-      faturamento: info.estoque,
+      percentual: totalFaturamento > 0 ? (info.faturamento / totalFaturamento) * 100 : 0,
+      faturamento: info.faturamento,
     }));
   }
 
   async getInsights(empresaId: string) {
-    const estoqueBaixo = await this.produtoRepo.count({ where: { empresaId, estoque: 0 } });
-    const contasAtrasadas = (await this.financeiroService.listarContasPagar(empresaId, { status: 'atrasada' })).length;
+    const produtosEstoqueBaixo = await this.produtosService.getEstoqueBaixo(empresaId);
+    const estoqueBaixo = produtosEstoqueBaixo.length;
+    
+    const [contasReceber, contasPagar] = await Promise.all([
+      this.financeiroService.listarContasReceber(empresaId),
+      this.financeiroService.listarContasPagar(empresaId),
+    ]);
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const contasReceberVencidas = contasReceber.filter(conta => {
+      if (conta.status === 'recebida' || !conta.vencimento) return false;
+      const vencimento = new Date(conta.vencimento);
+      vencimento.setHours(0, 0, 0, 0);
+      return vencimento < hoje;
+    });
+
+    const contasPagarVencidas = contasPagar.filter(conta => {
+      if (conta.status === 'paga' || !conta.vencimento) return false;
+      const vencimento = new Date(conta.vencimento);
+      vencimento.setHours(0, 0, 0, 0);
+      return vencimento < hoje;
+    });
+
+    const contasReceberAVencer = contasReceber.filter(conta => {
+      if (conta.status === 'recebida' || !conta.vencimento) return false;
+      const vencimento = new Date(conta.vencimento);
+      vencimento.setHours(0, 0, 0, 0);
+      const diasRestantes = Math.ceil((vencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      return diasRestantes >= 0 && diasRestantes <= 7;
+    });
+
     const clientesRecentes = await this.clienteRepo.count({
       where: {
         empresaId,
@@ -225,11 +296,37 @@ export class DashboardService {
       },
     });
 
+    const alertas: string[] = [];
+    
+    if (estoqueBaixo > 0) {
+      const produtosZerados = produtosEstoqueBaixo.filter(p => p.estoque === 0).length;
+      if (produtosZerados > 0) {
+        alertas.push(`${produtosZerados} produto(s) com estoque zerado`);
+      }
+      if (estoqueBaixo > produtosZerados) {
+        alertas.push(`${estoqueBaixo - produtosZerados} produto(s) com estoque abaixo do mínimo`);
+      }
+    }
+
+    if (contasReceberVencidas.length > 0) {
+      const valorTotal = contasReceberVencidas.reduce((acc, conta) => acc + (conta.valor || 0), 0);
+      alertas.push(`${contasReceberVencidas.length} conta(s) a receber vencida(s) - R$ ${valorTotal.toFixed(2)}`);
+    }
+
+    if (contasPagarVencidas.length > 0) {
+      const valorTotal = contasPagarVencidas.reduce((acc, conta) => acc + (conta.valor || 0), 0);
+      alertas.push(`${contasPagarVencidas.length} conta(s) a pagar vencida(s) - R$ ${valorTotal.toFixed(2)}`);
+    }
+
+    if (contasReceberAVencer.length > 0) {
+      alertas.push(`${contasReceberAVencer.length} conta(s) a receber vence(m) nos próximos 7 dias`);
+    }
+
     return {
       produtosBaixoEstoque: estoqueBaixo,
       crescimentoSemanal: clientesRecentes,
       clienteTop: clientesRecentes > 0 ? 'Cliente recém-adquirido' : null,
-      alertas: contasAtrasadas > 0 ? [`${contasAtrasadas} contas a pagar em atraso`] : [],
+      alertas,
     };
   }
 
