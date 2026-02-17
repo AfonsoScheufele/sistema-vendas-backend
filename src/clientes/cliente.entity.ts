@@ -61,6 +61,15 @@ export class Cliente {
   @Column({ default: true })
   ativo!: boolean;
 
+  @Column({ default: false })
+  consentimentoMarketing!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dataConsentimentoMarketing?: Date;
+
+  @Column({ name: 'limite_credito', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  limiteCredito?: number;
+
   @CreateDateColumn({ name: 'criado_em' })
   criadoEm!: Date;
 

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, IsOptional, MinLength, IsBoolean } from 'class-validator';
 
 export class CreateClienteDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -69,4 +69,8 @@ export class CreateClienteDto {
   @IsOptional()
   @IsString()
   tipo?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  consentimentoMarketing?: boolean;
 }

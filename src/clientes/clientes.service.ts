@@ -25,23 +25,31 @@ export class ClientesService {
       throw new ConflictException('Email já cadastrado');
     }
 
+    const consentimentoMarketing = createClienteDto.consentimentoMarketing === true;
     const cliente = this.clienteRepo.create({
       ...createClienteDto,
       email: createClienteDto.email?.toLowerCase() || createClienteDto.email,
       telefone: createClienteDto.telefone?.replace(/\D/g, '') || createClienteDto.telefone,
       cpf_cnpj: createClienteDto.cpf_cnpj ? createClienteDto.cpf_cnpj.replace(/\D/g, '') : undefined,
       empresaId,
+      consentimentoMarketing,
+      dataConsentimentoMarketing: consentimentoMarketing ? new Date() : undefined,
     });
 
     return await this.clienteRepo.save(cliente);
   }
 
-  async findAll(empresaId: string, filtros?: { tipo?: string; ativo?: string; search?: string }): Promise<Cliente[]> {
+  private buildQuery(
+    empresaId: string,
+    filtros?: { tipo?: string; ativo?: string; search?: string },
+    orderBy: string = 'criadoEm',
+    order: 'ASC' | 'DESC' = 'DESC',
+  ) {
     const query = this.clienteRepo.createQueryBuilder('cliente');
 
     query.where('cliente.empresaId = :empresaId', { empresaId });
 
-    if (filtros?.tipo) {
+    if (filtros?.tipo && filtros.tipo !== 'todos') {
       query.andWhere('cliente.tipo = :tipo', { tipo: filtros.tipo });
     }
 
@@ -51,12 +59,45 @@ export class ClientesService {
     }
 
     if (filtros?.search) {
-      query.andWhere('(cliente.nome ILIKE :search OR cliente.email ILIKE :search)', { 
-        search: `%${filtros.search}%` 
-      });
+      const searchTerm = `%${filtros.search}%`;
+      const digitsOnly = filtros.search.replace(/\D/g, '');
+      const conditions = ['cliente.nome ILIKE :search', 'cliente.email ILIKE :search', 'cliente.cpf_cnpj ILIKE :search'];
+      const params: Record<string, string> = { search: searchTerm };
+      if (digitsOnly.length > 0) {
+        conditions.push('(cliente.cpf_cnpj IS NOT NULL AND REPLACE(REPLACE(REPLACE(REPLACE(cliente.cpf_cnpj, \'.\', \'\'), \'-\', \'\'), \'/\', \'\'), \' \', \'\') LIKE :searchDigits)');
+        params.searchDigits = `%${digitsOnly}%`;
+      }
+      query.andWhere(`(${conditions.join(' OR ')})`, params);
     }
 
-    return query.orderBy('cliente.criadoEm', 'DESC').getMany();
+    const allowedOrderBy = ['nome', 'email', 'criadoEm', 'atualizadoEm'];
+    const sortBy = allowedOrderBy.includes(orderBy) ? orderBy : 'criadoEm';
+    const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+    query.orderBy(`cliente.${sortBy}`, sortOrder);
+
+    return query;
+  }
+
+  async findAll(
+    empresaId: string,
+    filtros?: { tipo?: string; ativo?: string; search?: string },
+    orderBy?: string,
+    order?: 'ASC' | 'DESC',
+  ): Promise<Cliente[]> {
+    return this.buildQuery(empresaId, filtros, orderBy ?? 'criadoEm', order ?? 'DESC').getMany();
+  }
+
+  async findAllPaginated(
+    empresaId: string,
+    filtros: { tipo?: string; ativo?: string; search?: string } | undefined,
+    page: number,
+    limit: number,
+    orderBy?: string,
+    order?: 'ASC' | 'DESC',
+  ): Promise<{ data: Cliente[]; total: number }> {
+    const qb = this.buildQuery(empresaId, filtros, orderBy ?? 'criadoEm', order ?? 'DESC');
+    const [data, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
+    return { data, total };
   }
 
   async getTipos(empresaId: string) {
@@ -120,12 +161,17 @@ export class ClientesService {
       }
     }
 
-    const dadosAtualizados = {
+    const dadosAtualizados: any = {
       ...updateClienteDto,
       email: updateClienteDto.email ? updateClienteDto.email.toLowerCase() : undefined,
       telefone: updateClienteDto.telefone ? updateClienteDto.telefone.replace(/\D/g, '') : undefined,
       cpf_cnpj: updateClienteDto.cpf_cnpj ? updateClienteDto.cpf_cnpj.replace(/\D/g, '') : undefined,
     };
+
+    if (updateClienteDto.consentimentoMarketing !== undefined) {
+      dadosAtualizados.consentimentoMarketing = updateClienteDto.consentimentoMarketing;
+      dadosAtualizados.dataConsentimentoMarketing = updateClienteDto.consentimentoMarketing ? new Date() : null;
+    }
 
     Object.assign(cliente, dadosAtualizados);
     return await this.clienteRepo.save(cliente);

@@ -14,12 +14,6 @@ export class PermissoesSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const permissoesExistentes = await this.permissaoRepository.count();
-    if (permissoesExistentes > 0) {
-      return;
-    }
-
-
     const modulos = await this.moduloRepository.find();
 
     const tiposPermissoes = [
@@ -54,35 +48,24 @@ export class PermissoesSeedService implements OnModuleInit {
       }
     }
 
-    const moduloVendas = await this.moduloRepository.findOne({ where: { codigo: 'vendas' } });
-    const moduloEstoque = await this.moduloRepository.findOne({ where: { codigo: 'estoque' } });
-
-    const moduloConfiguracoes = await this.moduloRepository.findOne({ where: { codigo: 'configuracoes' } });
-
+    const moduloVendasPedidos = await this.moduloRepository.findOne({ where: { codigo: 'vendas.pedidos' } });
+    const moduloEstoqueProdutos = await this.moduloRepository.findOne({ where: { codigo: 'estoque.produtos' } });
     const permissoesEspeciais = [
       {
-        codigo: 'pedidos.notificacao',
+        codigo: 'vendas.pedidos.notificacao',
         nome: 'Receber Notificações de Pedidos',
         descricao: 'Permite receber notificações quando novos pedidos são criados',
         tipo: 'notificacao',
         ordem: 1,
-        moduloId: moduloVendas?.id || null,
+        moduloId: moduloVendasPedidos?.id || null,
       },
       {
-        codigo: 'estoque.baixo',
+        codigo: 'estoque.produtos.baixo',
         nome: 'Receber Notificações de Estoque Baixo',
         descricao: 'Permite receber notificações quando produtos ficam com estoque baixo ou sem estoque',
         tipo: 'notificacao',
         ordem: 2,
-        moduloId: moduloEstoque?.id || null,
-      },
-      {
-        codigo: 'configuracoes.estoque',
-        nome: 'Configurar Estoque',
-        descricao: 'Permite configurar alertas e notificações de estoque',
-        tipo: 'edit',
-        ordem: 3,
-        moduloId: moduloConfiguracoes?.id || null,
+        moduloId: moduloEstoqueProdutos?.id || null,
       },
     ];
 

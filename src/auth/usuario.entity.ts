@@ -41,6 +41,15 @@ export class Usuario {
   @Column({ nullable: true })
   refreshTokenExpires?: Date;
 
+  @Column({ default: false })
+  twoFactorEnabled!: boolean;
+
+  @Column({ default: true })
+  notificacoesLogin!: boolean;
+
+  @Column({ default: true })
+  bloquearAposTentativas!: boolean;
+
   @CreateDateColumn()
   dataCriacao!: Date;
 

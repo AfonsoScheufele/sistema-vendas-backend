@@ -19,8 +19,30 @@ export class ClientesController {
   }
 
   @Get()
-  findAll(@Req() req: any, @Query('tipo') tipo?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
-    return this.clientesService.findAll(req.empresaId, { tipo, ativo, search });
+  async findAll(
+    @Req() req: any,
+    @Query('tipo') tipo?: string,
+    @Query('ativo') ativo?: string,
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('orderBy') orderBy?: string,
+    @Query('order') order?: 'ASC' | 'DESC',
+  ) {
+    const filtros = { tipo, ativo, search };
+    const pageNum = page != null ? parseInt(page, 10) : null;
+    const limitNum = limit != null ? parseInt(limit, 10) : null;
+    if (pageNum != null && limitNum != null && !isNaN(pageNum) && !isNaN(limitNum) && pageNum > 0 && limitNum > 0) {
+      return this.clientesService.findAllPaginated(
+        req.empresaId,
+        filtros,
+        pageNum,
+        limitNum,
+        orderBy,
+        order ?? 'DESC',
+      );
+    }
+    return this.clientesService.findAll(req.empresaId, filtros, orderBy, order);
   }
 
   @Get('stats')

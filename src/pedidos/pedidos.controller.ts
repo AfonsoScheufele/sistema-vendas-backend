@@ -27,6 +27,11 @@ export class PedidosController {
     return this.pedidosService.obterPipelineSnapshot(req.empresaId);
   }
 
+  @Get('aguardando-liberacao')
+  async aguardandoLiberacao(@Req() req: any) {
+    return this.pedidosService.listarAguardandoLiberacao(req.empresaId);
+  }
+
   @Get(':id')
   async obter(@Param('id') id: string, @Req() req: any) {
     return this.pedidosService.obterPedido(+id, req.empresaId);
@@ -55,6 +60,21 @@ export class PedidosController {
   @Patch(':id/status')
   async atualizarStatus(@Param('id') id: string, @Body() body: { status: string }, @Req() req: any) {
     return this.pedidosService.atualizar(+id, req.empresaId, { status: body.status });
+  }
+
+  @Patch(':id/liberar')
+  async liberarCredito(
+    @Param('id') id: string,
+    @Body() body: { aprovado: boolean; motivo?: string },
+    @Req() req: any,
+  ) {
+    return this.pedidosService.liberarCredito(
+      +id,
+      req.empresaId,
+      body.aprovado ?? false,
+      req.user?.id ?? 0,
+      body.motivo,
+    );
   }
 
   @Delete(':id')

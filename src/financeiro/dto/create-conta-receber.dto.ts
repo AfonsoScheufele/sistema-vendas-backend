@@ -10,6 +10,10 @@ export class CreateContaReceberDto {
   @IsString()
   cliente!: string;
 
+  @IsOptional()
+  @IsNumber()
+  clienteId?: number;
+
   @IsNotEmpty()
   @IsNumber()
   valor!: number;

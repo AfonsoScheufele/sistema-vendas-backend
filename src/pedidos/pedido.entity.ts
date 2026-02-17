@@ -68,6 +68,18 @@ export class Pedido {
   @Column({ nullable: true })
   origem: string;
 
+  @Column({ name: 'aguardando_liberacao_credito', default: false })
+  aguardandoLiberacaoCredito!: boolean;
+
+  @Column({ name: 'liberado_por', nullable: true })
+  liberadoPor?: number;
+
+  @Column({ name: 'liberado_em', type: 'timestamp', nullable: true })
+  liberadoEm?: Date;
+
+  @Column({ name: 'motivo_liberacao', type: 'text', nullable: true })
+  motivoLiberacao?: string;
+
   @OneToMany(() => ItemPedido, item => item.pedido)
   itens: ItemPedido[];
 

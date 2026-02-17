@@ -9,6 +9,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { Usuario } from '../auth/usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
 import { FiscalService } from '../fiscal/fiscal.service';
+import { CreditoService } from '../credito/credito.service';
 
 type PedidoComTotais = Pedido & {
   totalComissao: number;
@@ -48,6 +49,7 @@ export class PedidosService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => FiscalService))
     private fiscalService: FiscalService,
+    private creditoService: CreditoService,
   ) {}
 
   private calcularTotalComissao(pedido: Pedido): number {
@@ -118,6 +120,31 @@ export class PedidosService {
     if (!cliente) {
       throw new NotFoundException('Cliente não encontrado.');
     }
+
+    const desconto = Number(data.desconto || 0);
+    const frete = Number(data.frete || 0);
+    let subtotalPrevio = 0;
+    if (data.itens?.length) {
+      for (const item of data.itens) {
+        const qtd = Number(item.quantidade || 0);
+        const preco = Number(item.precoUnitario || 0);
+        subtotalPrevio += qtd * preco;
+      }
+    }
+    const totalEstimado = Math.max(subtotalPrevio - (subtotalPrevio * desconto) / 100 + frete, 0);
+
+    const credito = await this.creditoService.verificarCredito(
+      Number(data.clienteId),
+      empresaId,
+      totalEstimado,
+    );
+    if (credito.bloqueado && credito.acao === 'bloqueio_total') {
+      throw new BadRequestException(
+        credito.mensagem ?? 'Cliente bloqueado por inadimplência. Entre em contato com o financeiro.',
+      );
+    }
+
+    const aguardandoLiberacao = credito.bloqueado && credito.acao === 'alcada';
 
     if (!data.itens || data.itens.length === 0) {
       throw new BadRequestException('Adicione pelo menos um item ao pedido.');
@@ -202,8 +229,6 @@ export class PedidosService {
       })
     );
 
-    const desconto = Number(data.desconto || 0);
-    const frete = Number(data.frete || 0);
     const descontoValor = (subtotal * desconto) / 100;
     const total = Math.max(subtotal - descontoValor + frete, 0);
 
@@ -227,6 +252,7 @@ export class PedidosService {
       pedido.enderecoEntrega = data.enderecoEntrega ? String(data.enderecoEntrega) : null;
       pedido.transportadora = data.transportadora ? String(data.transportadora) : null;
       pedido.origem = data.origem ? String(data.origem) : null;
+      pedido.aguardandoLiberacaoCredito = aguardandoLiberacao;
 
       const pedidoSalvo = await this.pedidoRepo.save(pedido);
 
@@ -242,6 +268,13 @@ export class PedidosService {
       );
 
       await this.itemPedidoRepo.save(itens);
+
+      if (aguardandoLiberacao) {
+        const pedidoRetornado = await this.obterPedido(pedidoSalvo.id, empresaId);
+        (pedidoRetornado as any).aguardandoLiberacaoCredito = true;
+        (pedidoRetornado as any).mensagemCredit = 'Pedido criado e aguardando liberação do financeiro.';
+        return pedidoRetornado;
+      }
 
       const produtosComEstoqueBaixo: Array<{ produto: Produto; estoqueAnterior: number; estoqueAtual: number }> = [];
       const avisosEstoque: Array<{ produto: string; ficaraSemEstoque: boolean; ficaraEstoqueBaixo: boolean; estoqueRestante: number; estoqueMinimo: number }> = [];
@@ -326,6 +359,60 @@ export class PedidosService {
     const pedido = await this.obterPedido(id, empresaId);
     Object.assign(pedido, data, { empresaId });
     await this.pedidoRepo.save(pedido);
+    return this.obterPedido(id, empresaId);
+  }
+
+  async listarAguardandoLiberacao(empresaId: string): Promise<PedidoComTotais[]> {
+    const pedidos = await this.pedidoRepo.find({
+      where: { empresaId, aguardandoLiberacaoCredito: true },
+      relations: ['cliente', 'vendedor', 'itens', 'itens.produto'],
+      order: { dataPedido: 'DESC' },
+    });
+    return pedidos.map((p) => this.mapPedidoComTotais(p));
+  }
+
+  async liberarCredito(
+    id: number,
+    empresaId: string,
+    aprovado: boolean,
+    usuarioId: number,
+    motivo?: string,
+  ): Promise<PedidoComTotais> {
+    const pedido = await this.pedidoRepo.findOne({
+      where: { id, empresaId, aguardandoLiberacaoCredito: true },
+      relations: ['itens', 'itens.produto'],
+    });
+    if (!pedido) {
+      throw new NotFoundException('Pedido não encontrado ou já foi processado.');
+    }
+
+    pedido.aguardandoLiberacaoCredito = false;
+    pedido.liberadoPor = usuarioId;
+    pedido.liberadoEm = new Date();
+    pedido.motivoLiberacao = motivo ?? (aprovado ? 'Liberado pelo financeiro' : 'Rejeitado pelo financeiro');
+    await this.pedidoRepo.save(pedido);
+
+    if (!aprovado) {
+      pedido.status = 'cancelado';
+      await this.pedidoRepo.save(pedido);
+      return this.obterPedido(id, empresaId);
+    }
+
+    for (const item of pedido.itens ?? []) {
+      await this.produtoRepo.decrement(
+        { id: item.produtoId, empresaId },
+        'estoque',
+        Number(item.quantidade),
+      );
+    }
+
+    try {
+      await this.criarNotaFiscalAutomatica(pedido, empresaId);
+    } catch (nfError: any) {
+      console.error('[PedidosService] Erro ao criar NF após liberação:', nfError);
+    }
+
+    await this.notificarPedidoCriado(pedido, empresaId);
     return this.obterPedido(id, empresaId);
   }
 

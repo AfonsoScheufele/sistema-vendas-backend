@@ -1,18 +1,20 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
-  UseGuards, 
-  Req, 
-  Body, 
-  HttpCode, 
-  HttpStatus, 
+import {
+  Controller,
+  Post,
+  Get,
+  UseGuards,
+  Req,
+  Body,
+  Query,
+  HttpCode,
+  HttpStatus,
   UnauthorizedException,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Request } from 'express';
+import { Usuario } from './usuario.entity';
 
 interface AuthRequest extends Request {
   user: {
@@ -28,18 +30,30 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { cpf: string; senha: string }) {
-    
+  async login(@Req() req: Request, @Body() body: { cpf: string; senha: string }) {
     const user = await this.authService.validateUser(body.cpf, body.senha);
-    
+
     if (!user) {
+      await this.authService.logSecurityEvent(
+        null,
+        'Tentativa de login falhada',
+        req.ip,
+        req.get('user-agent'),
+        body.cpf,
+      );
       throw new UnauthorizedException('CPF ou senha inválidos');
     }
 
     const tokens = await this.authService.login(user);
+    await this.authService.logSecurityEvent(
+      user.id,
+      'Login realizado',
+      req.ip,
+      req.get('user-agent'),
+    );
     const userResponse = await this.authService.buildUserResponse(user);
     const empresas = await this.authService.obterEmpresasDoUsuario(user.id);
-    
+
     return {
       token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -106,6 +120,9 @@ export class AuthController {
         ...formattedFallback,
         dataCriacao: new Date(),
         ultimoLogin: new Date(),
+        twoFactorEnabled: false,
+        notificacoesLogin: true,
+        bloquearAposTentativas: true,
       };
     }
 
@@ -114,6 +131,9 @@ export class AuthController {
       ...response,
       dataCriacao: user.dataCriacao,
       ultimoLogin: user.ultimoLogin,
+      twoFactorEnabled: user.twoFactorEnabled === true,
+      notificacoesLogin: user.notificacoesLogin !== false,
+      bloquearAposTentativas: user.bloquearAposTentativas !== false,
     };
   }
 
@@ -205,10 +225,94 @@ export class AuthController {
       body.senhaAtual,
       body.novaSenha
     );
+    await this.authService.logSecurityEvent(
+      req.user.id,
+      'Senha alterada',
+      (req as any).ip,
+      (req as any).get?.('user-agent'),
+    );
 
     return {
       message: result.message,
       success: result.success
     };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('2fa/status')
+  async get2FAStatus(@Req() req: AuthRequest) {
+    return this.authService.get2FAStatus(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('2fa')
+  @HttpCode(HttpStatus.OK)
+  async set2FA(@Req() req: AuthRequest, @Body() body: { enabled: boolean }) {
+    const result = await this.authService.set2FA(req.user.id, !!body.enabled);
+    await this.authService.logSecurityEvent(
+      req.user.id,
+      body.enabled ? '2FA ativado' : '2FA desativado',
+      (req as any).ip,
+      (req as any).get?.('user-agent'),
+    );
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  async getSessions(@Req() req: AuthRequest) {
+    const ip = (req as any).ip;
+    const userAgent = (req as any).get?.('user-agent');
+    return this.authService.getSessions(req.user.id, ip, userAgent);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('sessions/revoke-all')
+  @HttpCode(HttpStatus.OK)
+  async revokeAllSessions(@Req() req: AuthRequest) {
+    const result = await this.authService.revokeAllSessions(req.user.id);
+    await this.authService.logSecurityEvent(
+      req.user.id,
+      'Todas as sessões encerradas',
+      (req as any).ip,
+      (req as any).get?.('user-agent'),
+    );
+    return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('security-logs')
+  async getSecurityLogs(@Req() req: AuthRequest, @Query('limit') limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.authService.getSecurityLogs(req.user.id, isNaN(limitNum) ? 50 : limitNum);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('preferences')
+  async getPreferences(@Req() req: AuthRequest) {
+    const user = await this.authService.findById(req.user.id);
+    if (!user) return { notificacoesLogin: true, bloquearAposTentativas: true };
+    return {
+      notificacoesLogin: user.notificacoesLogin !== false,
+      bloquearAposTentativas: user.bloquearAposTentativas !== false,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('preferences')
+  @HttpCode(HttpStatus.OK)
+  async updatePreferences(
+    @Req() req: AuthRequest,
+    @Body() body: { notificacoesLogin?: boolean; bloquearAposTentativas?: boolean },
+  ) {
+    const user = await this.authService.findById(req.user.id);
+    if (!user) throw new BadRequestException('Usuário não encontrado');
+    const updates: Partial<Usuario> = {};
+    if (typeof body.notificacoesLogin === 'boolean') updates.notificacoesLogin = body.notificacoesLogin;
+    if (typeof body.bloquearAposTentativas === 'boolean') updates.bloquearAposTentativas = body.bloquearAposTentativas;
+    if (Object.keys(updates).length > 0) {
+      await this.authService.updateUserPreferences(req.user.id, updates);
+    }
+    return { message: 'Preferências atualizadas', success: true };
   }
 }

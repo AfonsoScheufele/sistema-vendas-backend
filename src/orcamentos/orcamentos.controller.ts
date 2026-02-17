@@ -33,7 +33,7 @@ export class OrcamentosController {
 
   @Get(':id/pdf')
   async gerarPdf(@Param('id') id: number, @Req() req: any, @Res() res: Response) {
-    const orcamento = await this.orcamentosService.buscarPorId(id, req.empresaId);
+    const orcamento = await this.orcamentosService.buscarPorIdParaPdf(id, req.empresaId);
     const pdfBuffer = this.pdfService.gerarPdfOrcamento(orcamento as any);
 
     res.setHeader('Content-Type', 'application/pdf');

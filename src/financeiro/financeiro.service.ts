@@ -31,6 +31,7 @@ import { UpdateOrcamentoCentroDto } from './dto/update-orcamento-centro.dto';
 import { CreateOrcamentoMetaDto } from './dto/create-orcamento-meta.dto';
 import { UpdateOrcamentoMetaDto } from './dto/update-orcamento-meta.dto';
 import { CreateOrcamentoAlertaDto } from './dto/create-orcamento-alerta.dto';
+import { ContaReceberEntity } from './conta-receber.entity';
 
 @Injectable()
 export class FinanceiroService {
@@ -55,6 +56,8 @@ export class FinanceiroService {
     private readonly orcamentoMetaRepository: Repository<OrcamentoMetaMensal>,
     @InjectRepository(OrcamentoAlertaEntity)
     private readonly orcamentoAlertasRepository: Repository<OrcamentoAlertaEntity>,
+    @InjectRepository(ContaReceberEntity)
+    private readonly contaReceberRepo: Repository<ContaReceberEntity>,
   ) {}
 
   private async seedInvestimentos() {
@@ -90,7 +93,7 @@ export class FinanceiroService {
     return conta;
   }
 
-  criarConta(dto: CreateContaReceberDto, empresaId: string): ContaReceber {
+  async criarConta(dto: CreateContaReceberDto, empresaId: string): Promise<ContaReceber> {
     const agora = new Date().toISOString();
     const status: StatusReceber = dto.status ?? 'aberta';
     const conta: ContaReceber = {
@@ -112,6 +115,31 @@ export class FinanceiroService {
       atualizadoEm: agora,
     };
     this.contas = [conta, ...this.contas];
+
+    if (dto.clienteId != null) {
+      try {
+        const ent = this.contaReceberRepo.create({
+          titulo: dto.titulo,
+          cliente: dto.cliente,
+          clienteId: dto.clienteId,
+          valor: dto.valor,
+          valorPago: dto.valorPago ?? 0,
+          emissao: new Date(dto.emissao),
+          vencimento: new Date(dto.vencimento),
+          pagamento: dto.pagamento ? new Date(dto.pagamento) : undefined,
+          status: (status as any),
+          categoria: dto.categoria,
+          formaPagamento: dto.formaPagamento,
+          responsavel: dto.responsavel,
+          observacoes: dto.observacoes,
+          empresaId,
+        });
+        await this.contaReceberRepo.save(ent);
+      } catch (e) {
+        console.warn('[FinanceiroService] Erro ao persistir conta para crédito:', e);
+      }
+    }
+
     return conta;
   }
 

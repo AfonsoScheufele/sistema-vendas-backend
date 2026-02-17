@@ -63,6 +63,7 @@ import { ImpostoEntity } from './fiscal/imposto.entity';
 import { Produto } from './produtos/produto.entity';
 import { Cliente } from './clientes/cliente.entity';
 import { Usuario } from './auth/usuario.entity';
+import { SecurityLog } from './auth/security-log.entity';
 import { Pedido } from './pedidos/pedido.entity';
 import { ItemPedido } from './pedidos/item-pedido.entity';
 import { Notification } from './notifications/notification.entity';
@@ -93,6 +94,9 @@ import { EmpresasModule } from './empresas/empresas.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ComissaoEntity } from './comissoes/comissao.entity';
 import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
+import { ContaReceberEntity } from './financeiro/conta-receber.entity';
+import { ConfiguracaoCreditoEntity } from './credito/configuracao-credito.entity';
+import { CreditoModule } from './credito/credito.module';
 dns.setDefaultResultOrder('ipv4first');
 
 @Module({
@@ -130,6 +134,7 @@ dns.setDefaultResultOrder('ipv4first');
             Produto,
             Cliente,
             Usuario,
+            SecurityLog,
             Pedido,
             ItemPedido,
             Notification,
@@ -149,6 +154,8 @@ dns.setDefaultResultOrder('ipv4first');
             OrcamentoAlertaEntity,
             ComissaoEntity,
             ComissaoVendedorEntity,
+            ContaReceberEntity,
+            ConfiguracaoCreditoEntity,
             MetaEntity,
             MetaProgressoEntity,
             GrupoVendedores,
@@ -219,6 +226,7 @@ dns.setDefaultResultOrder('ipv4first');
     ComissoesModule,
     VendedoresModule,
     FinanceiroModule,
+    CreditoModule,
     AutomacaoModule,
     UsuarioModule,
     PerfisModule,

@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
+import { SecurityLog } from './security-log.entity';
 import { EmailService } from '../config/email.service';
 import { UsuarioEmpresaService } from '../empresas/usuario-empresa.service';
 import * as bcrypt from 'bcryptjs';
@@ -17,6 +18,8 @@ export class AuthService {
     private usuarioRepo: Repository<Usuario>,
     @InjectRepository(Perfil)
     private perfilRepo: Repository<Perfil>,
+    @InjectRepository(SecurityLog)
+    private securityLogRepo: Repository<SecurityLog>,
     private emailService: EmailService,
     @Inject(forwardRef(() => UsuarioEmpresaService))
     private usuarioEmpresaService?: UsuarioEmpresaService,
@@ -134,7 +137,7 @@ export class AuthService {
     });
   }
 
-  private async revokeRefreshToken(userId: number) {
+  async revokeRefreshToken(userId: number) {
     await this.usuarioRepo.update(userId, {
       refreshTokenHash: null,
       refreshTokenExpires: null,
@@ -286,5 +289,79 @@ export class AuthService {
       message: 'Senha alterada com sucesso',
       success: true
     };
+  }
+
+  async get2FAStatus(userId: number): Promise<{ enabled: boolean }> {
+    const user = await this.usuarioRepo.findOne({ where: { id: userId }, select: ['id', 'twoFactorEnabled'] });
+    return { enabled: !!user?.twoFactorEnabled };
+  }
+
+  async set2FA(userId: number, enabled: boolean): Promise<{ message: string; success: boolean }> {
+    await this.usuarioRepo.update(userId, { twoFactorEnabled: enabled });
+    return { message: enabled ? '2FA ativado' : '2FA desativado', success: true };
+  }
+
+  getSessions(userId: number, ip?: string, userAgent?: string): { id: string; device: string; location: string; lastActive: string; current: boolean; ip: string }[] {
+    const device = this.parseUserAgent(userAgent || '');
+    const location = 'Sessão atual';
+    return [{
+      id: 'current',
+      device,
+      location,
+      lastActive: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      current: true,
+      ip: ip || '',
+    }];
+  }
+
+  private parseUserAgent(ua: string): string {
+    if (!ua) return 'Dispositivo desconhecido';
+    if (ua.includes('Chrome') && !ua.includes('Edg')) return 'Chrome';
+    if (ua.includes('Firefox')) return 'Firefox';
+    if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+    if (ua.includes('Edg')) return 'Edge';
+    if (ua.includes('iPhone')) return 'Safari - iPhone';
+    if (ua.includes('Android')) return 'Android';
+    return 'Navegador';
+  }
+
+  async revokeAllSessions(userId: number): Promise<{ message: string; success: boolean }> {
+    await this.revokeRefreshToken(userId);
+    return { message: 'Todas as outras sessões foram encerradas', success: true };
+  }
+
+  async getSecurityLogs(userId: number, limit = 50): Promise<{ id: number; action: string; ip?: string; userAgent?: string; details?: string; createdAt: Date; status: string }[]> {
+    const logs = await this.securityLogRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+    return logs.map((log) => ({
+      id: log.id,
+      action: log.action,
+      ip: log.ip,
+      userAgent: log.userAgent,
+      details: log.details,
+      createdAt: log.createdAt,
+      status: log.action.includes('falha') || log.action.includes('falhada') ? 'failed' : 'success',
+    }));
+  }
+
+  async logSecurityEvent(userId: number | null, action: string, ip?: string, userAgent?: string, details?: string): Promise<void> {
+    try {
+      await this.securityLogRepo.insert({
+        userId: userId ?? undefined,
+        action,
+        ip,
+        userAgent,
+        details,
+      });
+    } catch (e) {
+      console.warn('[AuthService] logSecurityEvent failed', e);
+    }
+  }
+
+  async updateUserPreferences(userId: number, updates: Partial<Pick<Usuario, 'notificacoesLogin' | 'bloquearAposTentativas'>>): Promise<void> {
+    await this.usuarioRepo.update(userId, updates);
   }
 }

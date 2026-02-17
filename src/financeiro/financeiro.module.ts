@@ -9,10 +9,12 @@ import { InvestimentoAlerta } from './investimento-alerta.entity';
 import { OrcamentoCentroCustoEntity } from './orcamento-centro.entity';
 import { OrcamentoMetaMensal } from './orcamento-meta.entity';
 import { OrcamentoAlertaEntity } from './orcamento-alerta.entity';
+import { ContaReceberEntity } from './conta-receber.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
+      ContaReceberEntity,
       InvestimentoCarteira,
       InvestimentoAtivo,
       InvestimentoHistorico,

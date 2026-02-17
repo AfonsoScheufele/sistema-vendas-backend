@@ -12,12 +12,14 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { Usuario } from '../auth/usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
 import { FiscalExpandedModule } from '../fiscal/fiscal-expanded.module';
+import { CreditoModule } from '../credito/credito.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Pedido, ItemPedido, PedidoHistorico, Cliente, Produto, Usuario, Perfil]),
     NotificationsModule,
     forwardRef(() => FiscalExpandedModule),
+    CreditoModule,
   ],
   providers: [PedidosService, PdfService],
   controllers: [PedidosController],

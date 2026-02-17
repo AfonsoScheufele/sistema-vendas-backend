@@ -31,6 +31,9 @@ export class Orcamento {
   @Column({ nullable: true })
   observacoes: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  itens: Array<{ produtoId: number; quantidade: number; precoUnitario?: number; valorUnitario?: number; subtotal?: number; comissao?: number }>;
+
   @ManyToOne(() => Usuario)
   vendedor: Usuario;
 
