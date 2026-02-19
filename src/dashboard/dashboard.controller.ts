@@ -13,62 +13,62 @@ export class DashboardController {
 
   @Get('stats')
   async getStats(@Req() req: any, @Query('periodo') periodo?: string) {
-    return await this.dashboardService.getStats(periodo, req.empresaId);
+    return await this.dashboardService.getStats(periodo, req.empresaId, req.user);
   }
 
   @Get('insights')
   getInsights(@Req() req: any) {
-    return this.dashboardService.getInsights(req.empresaId);
+    return this.dashboardService.getInsights(req.empresaId, req.user);
   }
 
   @Get('vendas-mensais')
   getVendasMensais(@Req() req: any, @Query('ano') ano?: number) {
-    return this.dashboardService.getVendasMensais(ano, req.empresaId);
+    return this.dashboardService.getVendasMensais(ano, req.empresaId, req.user);
   }
 
   @Get('clientes-novos')
   getClientesNovos(@Req() req: any, @Query('periodo') periodo?: string) {
-    return this.dashboardService.getClientesNovos(periodo, req.empresaId);
+    return this.dashboardService.getClientesNovos(periodo, req.empresaId, req.user);
   }
 
   @Get('produtos-mais-vendidos')
   getProdutosMaisVendidos(@Req() req: any, @Query('limite') limite?: number) {
-    return this.dashboardService.getProdutosMaisVendidos(limite, req.empresaId);
+    return this.dashboardService.getProdutosMaisVendidos(limite, req.empresaId, req.user);
   }
 
   @Get('faturamento-diario')
   getFaturamentoDiario(@Req() req: any, @Query('periodo') periodo?: string) {
-    return this.dashboardService.getFaturamentoDiario(periodo, req.empresaId);
+    return this.dashboardService.getFaturamentoDiario(periodo, req.empresaId, req.user);
   }
 
   @Get('distribuicao-categorias')
   getDistribuicaoCategorias(@Req() req: any) {
-    return this.dashboardService.getDistribuicaoCategorias(req.empresaId);
+    return this.dashboardService.getDistribuicaoCategorias(req.empresaId, req.user);
   }
 
   @Get('relatorios/vendas')
   getRelatorioVendas(@Req() req: any, @Query('periodo') periodo?: string) {
-    return this.dashboardService.getRelatorioVendas(periodo, req.empresaId);
+    return this.dashboardService.getRelatorioVendas(periodo, req.empresaId, req.user);
   }
 
   @Get('relatorios/clientes')
   getRelatorioClientes(@Req() req: any, @Query('periodo') periodo?: string) {
-    return this.dashboardService.getRelatorioClientes(periodo, req.empresaId);
+    return this.dashboardService.getRelatorioClientes(periodo, req.empresaId, req.user);
   }
 
   @Get('relatorios/estoque')
   getRelatorioEstoque(@Req() req: any, @Query('periodo') periodo?: string) {
-    return this.dashboardService.getRelatorioEstoque(periodo, req.empresaId);
+    return this.dashboardService.getRelatorioEstoque(periodo, req.empresaId, req.user);
   }
 
   @Get('relatorios/financeiro')
   getRelatorioFinanceiro(@Req() req: any, @Query('periodo') periodo?: string, @Query('tipo') tipo?: string) {
-    return this.dashboardService.getRelatorioFinanceiro(periodo, tipo, req.empresaId);
+    return this.dashboardService.getRelatorioFinanceiro(periodo, tipo, req.empresaId, req.user);
   }
 
   @Get('relatorios/compras')
   getRelatorioCompras(@Req() req: any) {
-    return this.dashboardService.getRelatorioCompras(req.empresaId);
+    return this.dashboardService.getRelatorioCompras(req.empresaId, req.user);
   }
 
   @Get('estoque-baixo')

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, Logger } from '@nestjs/common';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { Pedido } from './pedido.entity';
 import { ItemPedido } from './item-pedido.entity';
 import { Cliente } from '../clientes/cliente.entity';
@@ -10,6 +10,7 @@ import { Usuario } from '../auth/usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
 import { FiscalService } from '../fiscal/fiscal.service';
 import { CreditoService } from '../credito/credito.service';
+import { CreatePedidoDto } from './dto/create-pedido.dto';
 
 type PedidoComTotais = Pedido & {
   totalComissao: number;
@@ -50,7 +51,10 @@ export class PedidosService {
     @Inject(forwardRef(() => FiscalService))
     private fiscalService: FiscalService,
     private creditoService: CreditoService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
+
+  private readonly logger = new Logger(PedidosService.name);
 
   private calcularTotalComissao(pedido: Pedido): number {
     if (!pedido.itens?.length) {
@@ -105,254 +109,203 @@ export class PedidosService {
     return this.mapPedidoComTotais(pedido);
   }
 
-  async criar(data: any, empresaId: string): Promise<PedidoComTotais> {
+  async criar(createPedidoDto: CreatePedidoDto, empresaId: string): Promise<PedidoComTotais> {
     if (!empresaId) {
       throw new BadRequestException('Empresa não identificada. Por favor, selecione uma empresa.');
     }
 
-    if (!data.clienteId) {
-      throw new BadRequestException('Cliente é obrigatório.');
-    }
+    return this.dataSource.transaction(async (manager: EntityManager) => {
+      const { clienteId, itens, desconto = 0, frete = 0 } = createPedidoDto;
 
-    const cliente = await this.clienteRepo.findOne({
-      where: { id: data.clienteId, empresaId },
-    });
-    if (!cliente) {
-      throw new NotFoundException('Cliente não encontrado.');
-    }
-
-    const desconto = Number(data.desconto || 0);
-    const frete = Number(data.frete || 0);
-    let subtotalPrevio = 0;
-    if (data.itens?.length) {
-      for (const item of data.itens) {
-        const qtd = Number(item.quantidade || 0);
-        const preco = Number(item.precoUnitario || 0);
-        subtotalPrevio += qtd * preco;
+      // 1. Validar Cliente
+      const cliente = await manager.findOne(Cliente, {
+        where: { id: clienteId, empresaId },
+      });
+      if (!cliente) {
+        throw new NotFoundException('Cliente não encontrado.');
       }
-    }
-    const totalEstimado = Math.max(subtotalPrevio - (subtotalPrevio * desconto) / 100 + frete, 0);
 
-    const credito = await this.creditoService.verificarCredito(
-      Number(data.clienteId),
-      empresaId,
-      totalEstimado,
-    );
-    if (credito.bloqueado && credito.acao === 'bloqueio_total') {
-      throw new BadRequestException(
-        credito.mensagem ?? 'Cliente bloqueado por inadimplência. Entre em contato com o financeiro.',
-      );
-    }
+      // 2. Calcular Totais e Validar Estoque (Leitura inicial)
+      let subtotalPrevio = 0;
+      const itensDetalhados: { produto: Produto; dto: any }[] = [];
 
-    const aguardandoLiberacao = credito.bloqueado && credito.acao === 'alcada';
-
-    if (!data.itens || data.itens.length === 0) {
-      throw new BadRequestException('Adicione pelo menos um item ao pedido.');
-    }
-
-    const ultimoPedido = await this.pedidoRepo.findOne({
-      where: { empresaId },
-      order: { id: 'DESC' },
-    });
-    
-    let numeroSequencial = 1;
-    if (ultimoPedido && ultimoPedido.numero) {
-      const numeroExtraido = ultimoPedido.numero.replace(/\D/g, '');
-      if (numeroExtraido) {
-        numeroSequencial = parseInt(numeroExtraido, 10) + 1;
+      if (!itens || itens.length === 0) {
+        throw new BadRequestException('Adicione pelo menos um item ao pedido.');
       }
-    }
-    
-    const numero = `PED-${numeroSequencial.toString().padStart(6, '0')}`;
-    
-    if (!numero || numero.trim() === '') {
-      throw new BadRequestException('Erro ao gerar número do pedido.');
-    }
 
-    let subtotal = 0;
-    const itensParaCriar = await Promise.all(
-      (data.itens || []).map(async (item: any) => {
-        if (!item.produtoId) {
-          throw new BadRequestException('Produto é obrigatório em todos os itens.');
-        }
-
-        const produto = await this.produtoRepo.findOne({
-          where: { id: item.produtoId },
+      for (const itemDto of itens) {
+        const produto = await manager.findOne(Produto, {
+          where: { id: itemDto.produtoId },
         });
+
         if (!produto) {
-          throw new NotFoundException(`Produto com ID ${item.produtoId} não encontrado.`);
+          throw new NotFoundException(`Produto com ID ${itemDto.produtoId} não encontrado.`);
         }
         if (produto.empresaId !== empresaId) {
-          throw new BadRequestException(`Produto com ID ${item.produtoId} não pertence à empresa selecionada.`);
+          throw new BadRequestException(`Produto com ID ${itemDto.produtoId} não pertence à empresa selecionada.`);
         }
 
-        const precoUnitario = Number(item.precoUnitario || produto.preco || 0);
-        const quantidade = Number(item.quantidade || 0);
-        if (quantidade <= 0) {
-          throw new BadRequestException('Quantidade deve ser maior que zero.');
+        const qtd = Number(itemDto.quantidade || 0);
+        if (qtd <= 0) {
+          throw new BadRequestException(`Quantidade inválida para o produto ${produto.nome}.`);
         }
-
-        if (produto.estoque < quantidade) {
-          throw new BadRequestException(
-            `Estoque insuficiente para o produto "${produto.nome}". Estoque disponível: ${produto.estoque}, solicitado: ${quantidade}`
+        
+        // Validar Estoque Imediatamente
+        if (produto.estoque < qtd) {
+             throw new BadRequestException(
+            `Estoque insuficiente para o produto "${produto.nome}". Estoque disponível: ${produto.estoque}, solicitado: ${qtd}`
           );
         }
 
-        const estoqueRestante = produto.estoque - quantidade;
-        const estoqueMinimo = produto.estoqueMinimo || 0;
-        const ficaraEstoqueBaixo = estoqueRestante <= estoqueMinimo && estoqueRestante > 0;
-        const ficaraSemEstoque = estoqueRestante === 0;
+        const preco = Number(itemDto.precoUnitario || produto.preco || 0);
+        subtotalPrevio += qtd * preco;
+        itensDetalhados.push({ produto, dto: { ...itemDto, precoUnitario: preco } });
+      }
 
-        if (ficaraSemEstoque || ficaraEstoqueBaixo) {
-          (item as any).avisoEstoque = {
-            produto: produto.nome,
-            estoqueAtual: produto.estoque,
-            estoqueRestante,
-            estoqueMinimo,
-            ficaraSemEstoque,
-            ficaraEstoqueBaixo,
-          };
+      const totalEstimado = Math.max(subtotalPrevio - (subtotalPrevio * Number(desconto)) / 100 + Number(frete), 0);
+
+      // 3. Verificar Crédito
+      const credito = await this.creditoService.verificarCredito(
+        Number(clienteId),
+        empresaId,
+        totalEstimado,
+      );
+
+      if (credito.bloqueado && credito.acao === 'bloqueio_total') {
+        throw new BadRequestException(
+          credito.mensagem ?? 'Cliente bloqueado por inadimplência. Entre em contato com o financeiro.',
+        );
+      }
+
+      const aguardandoLiberacao = credito.bloqueado && credito.acao === 'alcada';
+
+      // 4. Gerar Número do Pedido
+      const ultimoPedido = await manager.findOne(Pedido, {
+        where: { empresaId },
+        order: { id: 'DESC' },
+      });
+      
+      let numeroSequencial = 1;
+      if (ultimoPedido && ultimoPedido.numero) {
+        const numeroExtraido = ultimoPedido.numero.replace(/\D/g, '');
+        if (numeroExtraido) {
+          numeroSequencial = parseInt(numeroExtraido, 10) + 1;
         }
+      }
+      const numero = `PED-${numeroSequencial.toString().padStart(6, '0')}`;
 
-        const subtotalItem = precoUnitario * quantidade;
-        subtotal += subtotalItem;
-        
-        const comissaoPercentual = Number(item.comissao || 0);
-        
-        return {
-          produtoId: item.produtoId,
-          quantidade,
-          precoUnitario,
-          subtotal: subtotalItem,
-          comissao: comissaoPercentual,
-        };
-      })
-    );
-
-    const descontoValor = (subtotal * desconto) / 100;
-    const total = Math.max(subtotal - descontoValor + frete, 0);
-
-    try {
+      // 5. Preparar Entidade Pedido
       const pedido = new Pedido();
-      pedido.numero = String(numero);
-      pedido.clienteId = Number(data.clienteId);
-      pedido.vendedorId = data.vendedorId ? Number(data.vendedorId) : null;
-      pedido.empresaId = String(empresaId);
-      pedido.total = Number(total.toFixed(2));
-      pedido.status = String(data.status || 'pendente');
-      pedido.statusPagamento = String(data.statusPagamento || 'pendente');
-      pedido.dataPedido = data.dataPedido ? new Date(data.dataPedido) : new Date();
-      pedido.dataSaida = data.dataSaida ? new Date(data.dataSaida) : null;
-      pedido.dataEntregaPrevista = data.dataEntregaPrevista ? new Date(data.dataEntregaPrevista) : null;
+      pedido.numero = numero;
+      pedido.clienteId = clienteId;
+      pedido.vendedorId = createPedidoDto.vendedorId ? Number(createPedidoDto.vendedorId) : null;
+      pedido.empresaId = empresaId;
+      pedido.total = Number(totalEstimado.toFixed(2));
+      pedido.status = createPedidoDto.status || 'pendente';
+      pedido.statusPagamento = createPedidoDto.statusPagamento || 'pendente';
+      pedido.dataPedido = createPedidoDto.dataPedido ? new Date(createPedidoDto.dataPedido) : new Date();
+      pedido.dataSaida = createPedidoDto.dataSaida ? new Date(createPedidoDto.dataSaida) : null;
+      pedido.dataEntregaPrevista = createPedidoDto.dataEntregaPrevista ? new Date(createPedidoDto.dataEntregaPrevista) : null;
       pedido.desconto = Number(desconto.toFixed(2));
       pedido.frete = Number(frete.toFixed(2));
-      pedido.condicaoPagamento = data.condicaoPagamento ? String(data.condicaoPagamento) : null;
-      pedido.formaPagamento = data.formaPagamento ? String(data.formaPagamento) : null;
-      pedido.observacoes = data.observacoes ? String(data.observacoes) : null;
-      pedido.enderecoEntrega = data.enderecoEntrega ? String(data.enderecoEntrega) : null;
-      pedido.transportadora = data.transportadora ? String(data.transportadora) : null;
-      pedido.origem = data.origem ? String(data.origem) : null;
+      pedido.condicaoPagamento = createPedidoDto.condicaoPagamento;
+      pedido.formaPagamento = createPedidoDto.formaPagamento;
+      pedido.observacoes = createPedidoDto.observacoes;
+      pedido.enderecoEntrega = createPedidoDto.enderecoEntrega;
+      pedido.transportadora = createPedidoDto.transportadora;
+      pedido.origem = createPedidoDto.origem;
       pedido.aguardandoLiberacaoCredito = aguardandoLiberacao;
 
-      const pedidoSalvo = await this.pedidoRepo.save(pedido);
+      // 6. Salvar Pedido
+      const pedidoSalvo = await manager.save(Pedido, pedido);
 
-      const itens = itensParaCriar.map((item: any) =>
-        this.itemPedidoRepo.create({
-          produtoId: item.produtoId,
-          pedidoId: pedidoSalvo.id,
-          quantidade: item.quantidade,
-          precoUnitario: Number(item.precoUnitario.toFixed(2)),
-          subtotal: Number(item.subtotal.toFixed(2)),
-          comissao: Number(item.comissao.toFixed(2)),
-        })
-      );
-
-      await this.itemPedidoRepo.save(itens);
-
-      if (aguardandoLiberacao) {
-        const pedidoRetornado = await this.obterPedido(pedidoSalvo.id, empresaId);
-        (pedidoRetornado as any).aguardandoLiberacaoCredito = true;
-        (pedidoRetornado as any).mensagemCredit = 'Pedido criado e aguardando liberação do financeiro.';
-        return pedidoRetornado;
-      }
-
+      // 7. Processar Itens e Baixar Estoque
       const produtosComEstoqueBaixo: Array<{ produto: Produto; estoqueAnterior: number; estoqueAtual: number }> = [];
-      const avisosEstoque: Array<{ produto: string; ficaraSemEstoque: boolean; ficaraEstoqueBaixo: boolean; estoqueRestante: number; estoqueMinimo: number }> = [];
+      const avisosEstoque: Array<any> = [];
 
-      for (const item of itensParaCriar) {
-        const produto = await this.produtoRepo.findOne({
-          where: { id: item.produtoId, empresaId },
+      for (const { produto, dto } of itensDetalhados) {
+        // Criar ItemPedido
+        const itemEntity = manager.create(ItemPedido, {
+          produtoId: produto.id,
+          pedidoId: pedidoSalvo.id,
+          quantidade: dto.quantidade,
+          precoUnitario: Number(dto.precoUnitario.toFixed(2)),
+          subtotal: Number((dto.quantidade * dto.precoUnitario).toFixed(2)),
+          comissao: Number((dto.comissao || 0).toFixed(2)),
         });
-        if (produto) {
-          const estoqueAnterior = produto.estoque;
-          const quantidadeReduzir = Number(item.quantidade);
-          
-          await this.produtoRepo.decrement(
-            { id: item.produtoId, empresaId },
-            'estoque',
-            quantidadeReduzir
-          );
-          
-          const produtoAtualizado = await this.produtoRepo.findOne({
-            where: { id: item.produtoId, empresaId },
-          });
-          
-          if (produtoAtualizado && (estoqueAnterior - produtoAtualizado.estoque) !== quantidadeReduzir) {
-            console.error(`[PedidosService] ERRO: A quantidade reduzida (${quantidadeReduzir}) não corresponde à diferença real (${estoqueAnterior - produtoAtualizado.estoque})`);
-          }
+        await manager.save(ItemPedido, itemEntity);
 
-          if (produtoAtualizado) {
-            const estoqueRestanteAtual = produtoAtualizado.estoque;
-            const estoqueMinimoAtual = produtoAtualizado.estoqueMinimo || 0;
-            const estaSemEstoqueAgora = estoqueRestanteAtual === 0;
-            const estaEstoqueBaixoAgora = estoqueRestanteAtual <= estoqueMinimoAtual && estoqueRestanteAtual > 0;
-
-            if (estaSemEstoqueAgora || estaEstoqueBaixoAgora) {
-              produtosComEstoqueBaixo.push({
-                produto: produtoAtualizado,
+        // Baixar Estoque
+        const estoqueAnterior = produto.estoque;
+        produto.estoque -= dto.quantidade;
+        await manager.save(Produto, produto);
+        
+        const estoqueRestante = produto.estoque;
+        const estoqueMinimo = produto.estoqueMinimo || 0;
+        
+        if (estoqueRestante <= estoqueMinimo) {
+            produtosComEstoqueBaixo.push({
+                produto,
                 estoqueAnterior,
-                estoqueAtual: estoqueRestanteAtual,
+                estoqueAtual: estoqueRestante,
+            });
+             avisosEstoque.push({
+                produto: produto.nome,
+                ficaraSemEstoque: estoqueRestante === 0,
+                ficaraEstoqueBaixo: true,
+                estoqueRestante,
+                estoqueMinimo,
               });
-              avisosEstoque.push({
-                produto: produtoAtualizado.nome,
-                ficaraSemEstoque: estaSemEstoqueAgora,
-                ficaraEstoqueBaixo: estaEstoqueBaixoAgora,
-                estoqueRestante: estoqueRestanteAtual,
-                estoqueMinimo: estoqueMinimoAtual,
-              });
-            }
-          }
-
-          if ((item as any).avisoEstoque) {
-            avisosEstoque.push((item as any).avisoEstoque);
-          }
-        } else {
-          console.warn(`[PedidosService] Produto ${item.produtoId} não encontrado para atualizar estoque`);
         }
       }
 
-      await this.notificarPedidoCriado(pedidoSalvo, empresaId);
+      // Hack para retornar info extra sem sujar a entidade (compatibilidade com frontend)
+      (pedidoSalvo as any).avisosEstoque = avisosEstoque;
+
+      // 8. Pós-Processamento (Fora da transação crítica, mas dentro do bloco para simplicidade, 
+      // ou se falhar, a transação aborta? 
+      // Notificações e NF não deveriam abortar o pedido.
+      // Então vamos executar APÓS o commit ou usar try-catch interno que não relança erro)
       
-      if (produtosComEstoqueBaixo.length > 0) {
-        await this.notificarEstoqueBaixo(produtosComEstoqueBaixo, empresaId);
-      }
+      // Armazenamos para executar depois
+      return { pedidoSalvo, produtosComEstoqueBaixo, aguardandoLiberacao };
+    })
+    .then(async ({ pedidoSalvo, produtosComEstoqueBaixo, aguardandoLiberacao }) => {
+        // Executado se a transação commitou com sucesso
+        
+        // Notificações
+        this.notificarPedidoCriado(pedidoSalvo, empresaId).catch(err => 
+            this.logger.error(`Erro ao notificar pedido criado: ${err.message}`, err.stack)
+        );
 
-      try {
-        await this.criarNotaFiscalAutomatica(pedidoSalvo, empresaId);
-      } catch (nfError: any) {
-        console.error('[PedidosService] Erro ao criar NF automática:', nfError);
-      }
+        if (produtosComEstoqueBaixo.length > 0) {
+            this.notificarEstoqueBaixo(produtosComEstoqueBaixo, empresaId).catch(err => 
+                this.logger.error(`Erro ao notificar estoque baixo: ${err.message}`, err.stack)
+            );
+        }
 
-      const pedidoRetornado = await this.obterPedido(pedidoSalvo.id, empresaId);
-      (pedidoRetornado as any).avisosEstoque = avisosEstoque;
+        // NF Automática
+        if (!aguardandoLiberacao) {
+             this.criarNotaFiscalAutomatica(pedidoSalvo, empresaId).catch(err => 
+                this.logger.error(`Erro ao criar NF automática: ${err.message}`, err.stack)
+            );
+        }
+        
+        if (aguardandoLiberacao) {
+             const pedidoRetornado = await this.obterPedido(pedidoSalvo.id, empresaId);
+            (pedidoRetornado as any).aguardandoLiberacaoCredito = true;
+            (pedidoRetornado as any).mensagemCredit = 'Pedido criado e aguardando liberação do financeiro.';
+            return pedidoRetornado;
+        }
 
-      return pedidoRetornado;
-    } catch (error: any) {
-      console.error('Erro ao criar pedido:', error);
-      throw new BadRequestException(
-        error.message || 'Erro ao criar pedido. Verifique os dados e tente novamente.'
-      );
-    }
+        return this.obterPedido(pedidoSalvo.id, empresaId);
+    })
+    .catch((error) => {
+        this.logger.error(`Erro ao criar pedido: ${error.message}`, error.stack);
+        throw error instanceof BadRequestException || error instanceof NotFoundException
+            ? error
+            : new BadRequestException('Erro ao processar pedido.');
+    });
   }
 
   async atualizar(id: number, empresaId: string, data: Partial<Pedido>): Promise<PedidoComTotais> {
@@ -641,7 +594,7 @@ export class PedidosService {
         );
       }
     } catch (error) {
-      console.error('[PedidosService] Erro ao notificar criação de pedido:', error);
+      this.logger.error(`[PedidosService] Erro ao notificar criação de pedido: ${error}`, error);
     }
   }
 
@@ -673,7 +626,7 @@ export class PedidosService {
         }
       }
     } catch (error) {
-      console.error('[PedidosService] Erro ao notificar estoque baixo:', error);
+      this.logger.error(`[PedidosService] Erro ao notificar estoque baixo: ${error}`, error);
     }
   }
 
@@ -698,7 +651,8 @@ export class PedidosService {
       const proximoNumero = nfsExistentes.length > 0 
         ? Math.max(...nfsExistentes.map(nf => parseInt(nf.numero) || 0)) + 1
         : 1;
-      const itensNF: Array<{ produtoId: number; quantidade: number; valorUnitario: number; valorTotal: number; descricao?: string }> = pedidoCompleto.itens.map(item => ({
+
+      const itensNF = pedidoCompleto.itens.map(item => ({
         produtoId: item.produtoId,
         quantidade: item.quantidade,
         valorUnitario: Number(item.precoUnitario),
@@ -706,7 +660,7 @@ export class PedidosService {
         descricao: item.produto?.nome || `Produto ID: ${item.produtoId}`,
       }));
 
-      const notaFiscal = await this.fiscalService.criarNotaFiscal(empresaId, {
+      await this.fiscalService.criarNotaFiscal(empresaId, {
         numero: proximoNumero.toString(),
         serie: '001',
         tipo: 'saida',
@@ -721,8 +675,9 @@ export class PedidosService {
         itens: itensNF,
       });
     } catch (error: any) {
-      console.error(`[PedidosService] ❌ Erro ao criar NF automática para pedido ${pedido.id}:`, error);
-      throw error;
+      this.logger.error(`[PedidosService] ❌ Erro ao criar NF automática para pedido ${pedido.id}:`, error);
+      // Não relançamos o erro para não travar o processo principal se a NF falhar (opcional)
+      // throw error; 
     }
   }
 }

@@ -58,6 +58,7 @@ import { EmpresaEntity } from './empresas/empresa.entity';
 import { UsuarioEmpresaEntity } from './empresas/usuario-empresa.entity';
 import { NotaFiscalEntity } from './fiscal/nota-fiscal.entity';
 import { ItemNotaFiscalEntity } from './fiscal/item-nota-fiscal.entity';
+import { NotaFiscalServicoEntity } from './fiscal/nota-fiscal-servico.entity';
 import { SpedEntity } from './fiscal/sped.entity';
 import { ImpostoEntity } from './fiscal/imposto.entity';
 import { Produto } from './produtos/produto.entity';
@@ -97,6 +98,10 @@ import { ComissaoVendedorEntity } from './comissoes/comissao-vendedor.entity';
 import { ContaReceberEntity } from './financeiro/conta-receber.entity';
 import { ConfiguracaoCreditoEntity } from './credito/configuracao-credito.entity';
 import { CreditoModule } from './credito/credito.module';
+import { ServicosModule } from './servicos/servicos.module';
+import { Servico } from './servicos/servico.entity';
+import { PdvModule } from './pdv/pdv.module';
+import { DevolucoesModule } from './devolucoes/devolucoes.module';
 dns.setDefaultResultOrder('ipv4first');
 
 @Module({
@@ -131,6 +136,7 @@ dns.setDefaultResultOrder('ipv4first');
           password: password,
           database: database,
           entities: [
+            Servico,
             Produto,
             Cliente,
             Usuario,
@@ -178,6 +184,7 @@ dns.setDefaultResultOrder('ipv4first');
             PerfilPermissaoEntity,
             NotaFiscalEntity,
             ItemNotaFiscalEntity,
+            NotaFiscalServicoEntity,
             SpedEntity,
             ImpostoEntity,
             ExpedicaoEntity,
@@ -239,6 +246,9 @@ dns.setDefaultResultOrder('ipv4first');
     AuditoriaModule,
     BackupModule,
     TasksModule,
+    ServicosModule,
+    PdvModule,
+    DevolucoesModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: EmpresaContextInterceptor },
