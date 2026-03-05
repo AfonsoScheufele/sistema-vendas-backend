@@ -17,9 +17,12 @@ export class EmpresaContextInterceptor implements NestInterceptor {
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
+    const path = request.url || request.path || '';
+    const isListarMinhasEmpresas = path.includes('minhas-empresas');
+
     const empresaHeader = (
-      request.headers?.['empresa'] ?? 
-      request.headers?.['x-empresa-id'] ?? 
+      request.headers?.['empresa'] ??
+      request.headers?.['x-empresa-id'] ??
       request.headers?.['empresa-id']
     ) as string | undefined;
 
@@ -30,20 +33,7 @@ export class EmpresaContextInterceptor implements NestInterceptor {
       }
     }
 
-    let empresaId: string | undefined = empresaHeader && typeof empresaHeader === 'string' ? empresaHeader : undefined;
-    let empresaAutoSelecionada = false;
-
-    if (!empresaId && request.user?.id && this.usuarioEmpresaService) {
-      try {
-        const empresas = await this.usuarioEmpresaService.listarEmpresasDoUsuario(request.user.id);
-        if (empresas && empresas.length > 0) {
-          empresaId = empresas[0].id;
-          empresaAutoSelecionada = true;
-        }
-      } catch (error) {
-        console.warn('Erro ao obter empresas do usuário:', error);
-      }
-    }
+    const empresaId: string | undefined = empresaHeader && typeof empresaHeader === 'string' ? empresaHeader.trim() || undefined : undefined;
 
     if (!empresaId) {
       request.empresaId = undefined;
@@ -52,7 +42,7 @@ export class EmpresaContextInterceptor implements NestInterceptor {
 
     request.empresaId = empresaId;
 
-    if (request.user?.id && this.usuarioEmpresaService && !empresaAutoSelecionada) {
+    if (!isListarMinhasEmpresas && request.user?.id && this.usuarioEmpresaService) {
       try {
         const temAcesso = await this.usuarioEmpresaService.verificarAcesso(request.user.id, empresaId);
         if (!temAcesso) {

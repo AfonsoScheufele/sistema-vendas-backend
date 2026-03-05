@@ -13,6 +13,7 @@ import { Usuario } from '../auth/usuario.entity';
 import { Perfil } from '../perfis/perfil.entity';
 import { FiscalExpandedModule } from '../fiscal/fiscal-expanded.module';
 import { CreditoModule } from '../credito/credito.module';
+import { MetasModule } from '../metas/metas.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { CreditoModule } from '../credito/credito.module';
     NotificationsModule,
     forwardRef(() => FiscalExpandedModule),
     CreditoModule,
+    MetasModule,
   ],
   providers: [PedidosService, PdfService],
   controllers: [PedidosController],

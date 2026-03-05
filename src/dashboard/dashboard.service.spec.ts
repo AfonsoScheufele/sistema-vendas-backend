@@ -75,7 +75,6 @@ describe('DashboardService', () => {
           }),
         }),
       );
-      // Validar se totalVendas foi calculado corretamente
       expect(result.totalVendas).toBe(300);
     });
 
@@ -89,7 +88,6 @@ describe('DashboardService', () => {
 
       const result = await service.getStats('30d', 'empresa-1', user);
 
-      // Admin logic uses FinanceiroService, verifies generic call
       expect(mockFinanceiroService.listarContasReceber).toHaveBeenCalledWith('empresa-1');
       expect(result.totalVendas).toBe(500);
     });

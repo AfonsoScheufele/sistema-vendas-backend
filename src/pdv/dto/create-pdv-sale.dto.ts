@@ -13,7 +13,7 @@ class ItemPdvDto {
 
 class PagamentoPdvDto {
   @IsString()
-  forma: string; // DINHEIRO, CARTAO_CREDITO, CARTAO_DEBITO, PIX
+  forma: string;
 
   @IsNumber()
   valor: number;
@@ -22,8 +22,7 @@ class PagamentoPdvDto {
 export class CreatePdvSaleDto {
   @IsNumber()
   @IsOptional()
-  clienteId?: number; // Se não enviado, tentar usar Consumidor Final
-
+  clienteId?: number;
   @IsArray()
   @IsNotEmpty()
   itens: ItemPdvDto[];

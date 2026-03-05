@@ -69,7 +69,6 @@ export class DevolucoesService {
             devolucao.tipoReembolso = dto.tipoReembolso;
             devolucao.valorReembolso = dto.valorReembolso || 0;
 
-            // Reentrada no estoque?
             if (dto.reentradaEstoque) {
                 for (const item of devolucao.itens) {
                     const produto = await manager.findOne(Produto, { where: { id: item.produtoId } });

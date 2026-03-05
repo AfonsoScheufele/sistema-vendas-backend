@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsString, IsOptional, IsEmail, IsBoolean, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateEmpresaDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -15,6 +16,7 @@ export class CreateEmpresaDto {
   razaoSocial?: string;
 
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEmail({}, { message: 'Email inválido' })
   email?: string;
 

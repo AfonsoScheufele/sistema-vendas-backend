@@ -46,25 +46,9 @@ export class DashboardService {
     const [totalProdutos, totalClientes, contasReceber, contasPagar] = await Promise.all([
       this.produtoRepo.count({ where: { empresaId } }),
       this.clienteRepo.count({ where: { empresaId } }),
-      // TODO: Filter financeiro service if needed. Currently assuming finance is sensitive/hidden or all-access.
-      // For now, sales stats are more critical.
       this.financeiroService.listarContasReceber(empresaId),
       this.financeiroService.listarContasPagar(empresaId),
     ]);
-
-    // FinanceiroService doesn't support vendedor filter natively yet. 
-    // If Vendedor, we might want to filter sales data purely from Pedidos or filter contas if they have vendedor link.
-    // However, contasReceber usually links to Pedido.
-    // Let's filter 'recebidas' if we can link them to orders, or just generic stats for now.
-    // Given the difficulty of filtering Contas without a direct link in this service, 
-    // I will focus on PEDIDO based stats if feasible, or accept that Financeiro might be global for now unless updated.
-    
-    // BUT, the user requested "data deles".
-    // A Salesperson cares about THEIR sales.
-    // Let's recalculate totalVendas based on Pedidos for Vendedores if possible, or filter Contas if they description contains order number?
-    // Better: Filter the result of listarContasReceber if it has vendedor info... it DOES NOT.
-    
-    // ALTERNATIVE: Calculate stats from PedidoRepo for Vendedores to ensure isolation.
     
     let totalVendas = 0;
     let faturamentoMes = 0;
@@ -73,7 +57,6 @@ export class DashboardService {
     let pendentes = 0;
 
     if (isVendedor) {
-        // Vendedor Specific Logic using Pedido Repo
         const pedidos = await this.pedidoRepo.find({ where: { empresaId, vendedorId: user.id } });
         
         const pedidosMes = pedidos.filter(p => p.dataPedido >= inicioMes && p.status !== 'cancelado');
@@ -93,7 +76,6 @@ export class DashboardService {
         ticketMedio = pedidosValidos.length > 0 ? totalVendas / pedidosValidos.length : 0;
 
     } else {
-        // Standard Logic (Manager/Admin)
         const recebidas = contasReceber.filter((conta) => conta.status === 'recebida');
         totalVendas = recebidas.reduce((acc, conta) => acc + conta.valorPago, 0);
         pendentes = contasReceber.filter((conta) => conta.status !== 'recebida').length;
@@ -118,12 +100,11 @@ export class DashboardService {
         ticketMedio = recebidas.length > 0 ? totalVendas / recebidas.length : 0;
     }
     
-    // Conversion is tricky without Leads module link, keeping as is for now or 0
     const conversao = 0; 
 
     return {
       totalVendas,
-      clientesAtivos: totalClientes, // Everyone sees total clients? Or should filter? Usually clients are shared. Keeping shared.
+      clientesAtivos: totalClientes,
       produtosEstoque: totalProdutos,
       pedidosPendentes: pendentes,
       faturamentoMes,
@@ -141,7 +122,6 @@ export class DashboardService {
     const mapa = new Array(12).fill(0).map(() => ({ vendas: 0, pedidos: 0 }));
 
     if (isVendedor) {
-       // Filter by Vendedor ID
        const pedidos = await this.pedidoRepo.find({ where: { empresaId, vendedorId: user.id } });
        
        pedidos.forEach((pedido) => {
@@ -157,7 +137,6 @@ export class DashboardService {
        });
 
     } else {
-        // Standard Logic
         const [contas, pedidos] = await Promise.all([
           this.financeiroService.listarContasReceber(empresaId),
           this.pedidoRepo.find({ where: { empresaId } }),
@@ -173,38 +152,13 @@ export class DashboardService {
           mapa[mes].pedidos += 1;
         });
         
-        // Merge logic was a bit duplicated in original, simpler to just rely on Contas for "Vendas" (Revenue) in Admin view usually, 
-        // but original code summed both? 
-        // Original code:
-        // contas.forEach...
-        // pedidos.forEach...
-        // This likely double counts if they are related. 
-        // Assuming original behavior was intended, I will preserve the Pedido loop as well but simpler.
-        // Actually, let's keep it close to original to avoid logic regression, just respecting the structure.
-        
         pedidos.forEach((pedido) => {
-            // Original logic used both... might be "Sales Orders" count vs "Financial Revenue".
-            // Let's stick to the structure.
             if (!pedido.dataPedido) return;
             const data = new Date(pedido.dataPedido);
             if (isNaN(data.getTime()) || data.getFullYear() !== anoReferencia) return;
             const mes = data.getMonth();
             if (pedido.status !== 'cancelado') {
-                 // Note: original added value to 'vendas' from pedidos too? 
-                 // mapa[mes].vendas += valor;
-                 // mapa[mes].pedidos += 1;
-                 // If we do this we might double sum revenue. 
-                 // Ideally: Vendas ($) comes from Financeiro (Realized) or Pedidos (Booked).
-                 // For now, I will use Pedidos for count and Contas for Value in Admin mode?
-                 // Original Code:
-                 // contas: mapa[mes].vendas += valor; mapa[mes].pedidos += 1;
-                 // pedidos: mapa[mes].vendas += valor; mapa[mes].pedidos += 1;
-                 // This DEFINITELY double counts. I will perform a minor fix here:
-                 // Use Pedidos for Count and Volume, Contas for Cash?
-                 // Let's just trust Pedidos for the Vendedor view and keep Admin view as is to avoid regression.
-                 mapa[mes].pedidos += 1; // Increment count from pedidos
-                 // Only add values from pedidos if we think they aren't in contas? 
-                 // Let's leave Admin logic EXACTLY as it was to be safe.
+                 mapa[mes].pedidos += 1;
                  const valor = Number(pedido.total ?? 0);
                  mapa[mes].vendas += valor; 
             }
@@ -218,11 +172,6 @@ export class DashboardService {
     const meses = Number(periodo?.replace('m', '') ?? 6);
     const hoje = new Date();
     const inicio = subMonths(hoje, meses - 1);
-    
-    // For clients, usually they are shared, but if you want "My Clients" (created by me?)
-    // Assuming for now Salespeople can see all clients as they might sell to anyone.
-    // If we want strict ownership, we'd need createdBy filtering.
-    // Keeping it shared for now as per typical SMB logic, but can be updated.
     
     const clientes = await this.clienteRepo.find({
       where: {
@@ -243,21 +192,38 @@ export class DashboardService {
 
   async getProdutosMaisVendidos(limite: number | undefined, empresaId: string, user?: any): Promise<ProdutoMaisVendido[]> {
     const qtd = limite ?? 10;
-    
-    // For "Bestsellers", if Vendedor, maybe we should show THEIR bestsellers?
-    // But currently implementation sorts by Global STOCK (estoque) ??
-    // Wait, the original code uses: order: { estoque: 'ASC' }... That sorts by LOWEST STOCK?
-    // That seems like a bug or a misinterpretation of "Mais Vendidos" in the original code. 
-    // It looks like it was returning "Lowest Stock Products" originally?
-    // Let's stick to the original logic to avoid breaking "expected behavior" even if weird, 
-    // but maybe the user wants "My Sales"? 
-    // Given the method name, let's keep it global since it's about Products (Inventory).
-    
-    const produtos = await this.produtoRepo.find({ where: { empresaId }, order: { estoque: 'ASC' }, take: qtd });
-    return produtos.map((produto) => ({
-      produto: produto.nome,
-      quantidade: Math.max(0, produto.estoqueMinimo ?? 0 - produto.estoque),
-      faturamento: produto.preco * Math.max(1, produto.estoque), // This logic is arbitrary placeholdery.
+
+    const isVendedor = user?.role === 'Vendedor';
+
+    const qb = this.itemPedidoRepo
+      .createQueryBuilder('item')
+      .innerJoin('item.pedido', 'pedido')
+      .innerJoin('item.produto', 'produto')
+      .where('pedido.empresaId = :empresaId', { empresaId })
+      .andWhere('pedido.status != :statusCancelado', { statusCancelado: 'cancelado' });
+
+    if (isVendedor) {
+      qb.andWhere('pedido.vendedorId = :vendedorId', { vendedorId: user.id });
+    }
+
+    const rows = await qb
+      .select('produto.nome', 'produto')
+      .addSelect('SUM(item.quantidade)', 'quantidade')
+      .addSelect('SUM(item.subtotal)', 'faturamento')
+      .groupBy('produto.id')
+      .addGroupBy('produto.nome')
+      .orderBy('quantidade', 'DESC')
+      .limit(qtd)
+      .getRawMany();
+
+    if (!rows || rows.length === 0) {
+      return [];
+    }
+
+    return rows.map((row) => ({
+      produto: row.produto as string,
+      quantidade: Number(row.quantidade) || 0,
+      faturamento: Number(row.faturamento) || 0,
     }));
   }
 
@@ -270,14 +236,12 @@ export class DashboardService {
 
     const isVendedor = user?.role === 'Vendedor';
 
-    // Pedidos condition
     const wherePedidos: any = { empresaId };
     if (isVendedor) {
         wherePedidos.vendedorId = user.id;
     }
 
     const [fluxo, pedidos] = await Promise.all([
-      // Only fetch global Finance flow if NOT vendedor (or if we want to show global cash flow? no, hide it)
       !isVendedor ? this.financeiroService.obterFluxoCaixa(empresaId, dias) : Promise.resolve({ historico: [] }),
       this.pedidoRepo.find({
         where: wherePedidos,
@@ -294,7 +258,6 @@ export class DashboardService {
 
     const mapaFaturamento: Record<string, number> = {};
     
-    // Add global fin flow only if not vendedor (historico will be empty for vendedor)
     historico.forEach((item: any) => {
       const data = item.data || new Date().toISOString().split('T')[0];
       mapaFaturamento[data] = (mapaFaturamento[data] || 0) + ((item.entradas || 0) - (item.saidas || 0));
@@ -355,8 +318,6 @@ export class DashboardService {
     });
 
     if (totalFaturamento === 0) {
-      // If no sales, show inventory distribution? 
-      // If Vendedor has no sales, showing all inventory is fine.
       const produtos = await this.produtoRepo.find({ where: { empresaId } });
       const totalProdutos = produtos.length || 1;
       const agrupadoProdutos: Record<string, { quantidade: number }> = {};
@@ -386,11 +347,8 @@ export class DashboardService {
   }
 
   async getInsights(empresaId: string, user?: any) {
-    // Insights might be sensitive. 
-    // If Vendedor, maybe limit financial alerts?
     const isVendedor = user?.role === 'Vendedor';
     
-    // For now, let's just return minimal insights for Vendedor or filtered
     if (isVendedor) return { produtosBaixoEstoque: 0, crescimentoSemanal: 0, clienteTop: null, alertas: [] };
 
     const produtosEstoqueBaixo = await this.produtosService.getEstoqueBaixo(empresaId);
@@ -470,8 +428,6 @@ export class DashboardService {
   async getRelatorioVendas(periodo: string | undefined, empresaId: string, user?: any) {
     const isVendedor = user?.role === 'Vendedor';
     if(isVendedor) {
-       // Return empty for now as detailed financial flow is sensitive or complex to filter by "Vendas Only".
-       // Or better: Return only flux derived from their Pedidos.
        return { vendas: [], vendedores: [] };
     }
     const dias = Number(periodo?.replace('d', '') ?? 30);
@@ -533,7 +489,6 @@ export class DashboardService {
   async getRelatorioFinanceiro(periodo: string | undefined, tipo = 'todos', empresaId: string, user?: any) {
     const isVendedor = user?.role === 'Vendedor';
     if(isVendedor) {
-      // Vendedor shouldn't see full financial report
       return { movimentacoes: [], categorias: [], fluxoCaixa: null };
     }
     const dias = Number(periodo?.replace('d', '') ?? 30);

@@ -26,7 +26,6 @@ export class NfseService {
     const cliente = await this.clienteRepo.findOne({ where: { id: clienteId, empresaId } });
     if (!cliente) throw new NotFoundException('Cliente não encontrado.');
 
-    // Mock de numeração sequencial
     const lastNfse = await this.nfseRepo.findOne({ where: { empresaId }, order: { id: 'DESC' } });
     const nextNum = lastNfse ? parseInt(lastNfse.numero) + 1 : 1;
 
@@ -46,7 +45,7 @@ export class NfseService {
       descricaoServico: createNfseDto.descricaoServico || servico.descricao || servico.nome,
       observacoes: createNfseDto.observacoes,
       status: 'emitida',
-      xml: '<xml>Mock XML NFS-e</xml>', // TODO: Gerar XML real
+      xml: '<xml>Mock XML NFS-e</xml>',
     });
 
     return this.nfseRepo.save(nfse);
@@ -78,7 +77,6 @@ export class NfseService {
   }
 
   async gerarPdf(id: number, empresaId: string): Promise<Buffer> {
-    // Mock PDF Generation
     const PDFDocument = require('pdfkit');
     const nfse = await this.obterPorId(id, empresaId);
 

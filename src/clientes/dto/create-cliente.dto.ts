@@ -73,4 +73,8 @@ export class CreateClienteDto {
   @IsOptional()
   @IsBoolean()
   consentimentoMarketing?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  ativo?: boolean;
 }

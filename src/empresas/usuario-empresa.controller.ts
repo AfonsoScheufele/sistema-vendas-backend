@@ -17,6 +17,13 @@ import { UsuarioEmpresaService, VincularUsuarioEmpresaDto } from './usuario-empr
 export class UsuarioEmpresaController {
   constructor(private readonly usuarioEmpresaService: UsuarioEmpresaService) {}
 
+  /** Empresas do usuário logado (para seletor no front). Deve vir antes de rotas com :usuarioId. */
+  @Get('minhas-empresas')
+  async listarMinhasEmpresas(@Req() req: any) {
+    const empresas = await this.usuarioEmpresaService.listarEmpresasDoUsuario(req.user.id);
+    return empresas.map((emp) => ({ id: emp.id, nome: emp.nome, cnpj: emp.cnpj, ativo: emp.ativo }));
+  }
+
   @Post('vincular')
   vincular(@Body() dto: VincularUsuarioEmpresaDto) {
     return this.usuarioEmpresaService.vincularUsuarioEmpresa(dto);

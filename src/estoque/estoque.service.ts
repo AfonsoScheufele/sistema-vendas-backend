@@ -204,6 +204,7 @@ export class EstoqueService {
     if (!entity) return null;
     return {
       id: entity.id,
+      produtoId: entity.produtoId,
       empresaId: entity.empresaId,
       tipo: entity.tipo,
       quantidade: entity.quantidade,

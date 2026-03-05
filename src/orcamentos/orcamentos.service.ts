@@ -34,6 +34,7 @@ export class OrcamentosService {
       .createQueryBuilder('orcamento')
       .leftJoinAndSelect('orcamento.cliente', 'cliente')
       .leftJoinAndSelect('orcamento.vendedor', 'vendedor')
+      .leftJoinAndSelect('orcamento.alteradoStatusPor', 'alteradoStatusPor')
       .where('orcamento.empresaId = :empresaId', { empresaId });
 
     if (filtros?.status && filtros.status !== 'todos') {
@@ -54,7 +55,7 @@ export class OrcamentosService {
   async buscarPorId(id: number, empresaId: string): Promise<Orcamento> {
     const orcamento = await this.orcamentoRepo.findOne({
       where: { id, empresaId },
-      relations: ['cliente', 'vendedor'],
+      relations: ['cliente', 'vendedor', 'alteradoStatusPor'],
     });
 
     if (!orcamento) {
@@ -117,10 +118,29 @@ export class OrcamentosService {
   }
 
   async atualizar(id: number, empresaId: string, data: any): Promise<Orcamento> {
-    await this.ensureOrcamento(id, empresaId);
+    const orcamento = await this.orcamentoRepo.findOne({
+      where: { id, empresaId },
+      relations: ['cliente', 'vendedor'],
+    });
+    if (!orcamento) {
+      throw new NotFoundException('Orçamento não encontrado');
+    }
+
     const itens = Array.isArray(data.itens) ? data.itens : undefined;
-    const { itens: _, ...restData } = data;
-    const updatePayload: any = { ...restData };
+    if (data.status !== undefined) orcamento.status = data.status;
+    if (data.observacoes !== undefined) orcamento.observacoes = data.observacoes;
+    if (data.desconto !== undefined) orcamento.desconto = data.desconto;
+    if (data.dataValidade !== undefined) {
+      orcamento.dataValidade = data.dataValidade instanceof Date ? data.dataValidade : new Date(data.dataValidade);
+    }
+    if (data.alteradoStatusPorId !== undefined) {
+      const uid = data.alteradoStatusPorId != null ? Number(data.alteradoStatusPorId) : null;
+      orcamento.alteradoStatusPor = Number.isNaN(uid) || uid == null ? null : ({ id: uid } as any);
+    }
+    if (data.alteradoStatusEm !== undefined) {
+      orcamento.alteradoStatusEm = data.alteradoStatusEm instanceof Date ? data.alteradoStatusEm : new Date(data.alteradoStatusEm);
+    }
+
     if (itens !== undefined) {
       const itensNorm = itens.map((item: OrcamentoItem) => ({
         produtoId: item.produtoId,
@@ -129,13 +149,13 @@ export class OrcamentosService {
         subtotal: (item.quantidade || 0) * (item.valorUnitario ?? item.precoUnitario ?? 0),
         comissao: item.comissao ?? 0,
       }));
-      updatePayload.itens = itensNorm;
+      orcamento.itens = itensNorm;
       if (itensNorm.length > 0) {
-        const valorTotal = itensNorm.reduce((acc: number, i: any) => acc + (i.subtotal || 0), 0);
-        updatePayload.valorTotal = valorTotal;
+        orcamento.valorTotal = itensNorm.reduce((acc: number, i: any) => acc + (i.subtotal || 0), 0) as any;
       }
     }
-    await this.orcamentoRepo.update({ id, empresaId }, updatePayload);
+
+    await this.orcamentoRepo.save(orcamento);
     return this.buscarPorId(id, empresaId);
   }
 

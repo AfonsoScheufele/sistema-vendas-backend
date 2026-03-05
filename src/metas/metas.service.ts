@@ -190,6 +190,47 @@ export class MetasService {
     return this.obterPorId(empresaId, id);
   }
 
+  /**
+   * Atualiza na hora as metas dos grupos do vendedor quando um pedido é confirmado (liberado).
+   * Chamado pelo PedidosService após liberar crédito.
+   */
+  async atualizarMetasPorPedidoConfirmado(
+    empresaId: string,
+    vendedorId: number | null,
+    dataPedido: Date,
+  ): Promise<void> {
+    if (vendedorId == null) return;
+
+    const vendedoresNoGrupo = await this.grupoVendedorUsuarioRepository.find({
+      where: { usuarioId: vendedorId },
+      select: ['grupoId'],
+    });
+    const grupoIds = vendedoresNoGrupo.map((g) => g.grupoId);
+    if (grupoIds.length === 0) return;
+
+    const dataPedidoNorm = new Date(dataPedido);
+    dataPedidoNorm.setHours(12, 0, 0, 0);
+
+    const metas = await this.metaRepository.find({
+      where: {
+        empresaId,
+        grupoVendedoresId: In(grupoIds),
+        tipo: In(['faturamento', 'vendas'] as MetaTipo[]),
+        status: In(['ativa', 'atrasada'] as MetaStatus[]),
+      },
+    });
+
+    for (const meta of metas) {
+      const inicio = new Date(meta.periodoInicio);
+      const fim = new Date(meta.periodoFim);
+      inicio.setHours(0, 0, 0, 0);
+      fim.setHours(23, 59, 59, 999);
+      if (dataPedidoNorm >= inicio && dataPedidoNorm <= fim) {
+        await this.atualizarProgressoAutomatico(meta);
+      }
+    }
+  }
+
   async listarProgresso(empresaId: string, id: string) {
     await this.ensureMeta(empresaId, id);
     const registros = await this.progressoRepository.find({
@@ -313,21 +354,26 @@ export class MetasService {
       dataPedido: Between(periodoInicio, periodoFim),
     };
 
-    if (tipoMeta === 'faturamento') {
-      whereConditions.status = 'entregue';
-    }
-
+    // Não filtra por status aqui: faturamento/vendas contam também pedidos confirmados (liberados)
     const pedidos = await this.pedidoRepository.find({
       where: whereConditions,
     });
 
+    // Pedido "confirmado" = entregue, liberado (crédito aprovado) ou aprovado (ex.: PDV)
+    const pedidoConfirmado = (p: Pedido) =>
+      p.status === 'entregue' || p.liberadoEm != null || p.status === 'aprovado';
+
     switch (tipoMeta) {
       case 'faturamento':
-        return pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
+        return pedidos
+          .filter(pedidoConfirmado)
+          .reduce((acc, p) => acc + Number(p.total || 0), 0);
 
       case 'vendas':
-        return pedidos.filter((p) => 
-          ['entregue', 'enviado', 'processando'].includes(p.status)
+        return pedidos.filter(
+          (p) =>
+            ['entregue', 'enviado', 'processando', 'aprovado'].includes(p.status) ||
+            p.liberadoEm != null,
         ).length;
 
       case 'novos_clientes':

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
 
 @Entity('produtos')
 export class Produto {
@@ -19,6 +19,14 @@ export class Produto {
 
   @Column('int', { default: 0 })
   estoque!: number;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  ensureEstoqueNonNegative() {
+    if (this.estoque != null && Number(this.estoque) < 0) {
+      this.estoque = 0;
+    }
+  }
 
   @Column('int', { default: 0 })
   estoqueMinimo!: number;

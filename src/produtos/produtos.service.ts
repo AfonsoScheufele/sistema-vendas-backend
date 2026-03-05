@@ -131,12 +131,15 @@ export class ProdutosService {
     const produto = await this.findOne(id, empresaId);
 
     if (tipo === 'entrada') {
-      produto.estoque += quantidade;
+      produto.estoque = Math.max(0, Number(produto.estoque ?? 0) + quantidade);
     } else {
-      if (produto.estoque < quantidade) {
-        throw new BadRequestException('Estoque insuficiente');
+      const estoqueAtual = Number(produto.estoque ?? 0);
+      if (estoqueAtual < quantidade) {
+        throw new BadRequestException(
+          `Estoque insuficiente. Disponível: ${estoqueAtual}, solicitado: ${quantidade}.`
+        );
       }
-      produto.estoque -= quantidade;
+      produto.estoque = Math.max(0, estoqueAtual - quantidade);
     }
 
     return this.produtoRepo.save(produto);
@@ -153,13 +156,15 @@ export class ProdutosService {
   }
 
   async update(id: number, empresaId: string, dto: UpdateProdutoDto) {
-    if (dto.nome && (!dto.categoria || !dto.categoria.trim())) {
-      const categoriaDetectada = this.categoriaDetector.detectarCategoria(dto.nome);
+    const produto = await this.findOne(id, empresaId);
+
+    if (!dto.categoria || !dto.categoria.trim()) {
+      const nomeParaDetectar = dto.nome ?? produto.nome;
+      const categoriaDetectada = this.categoriaDetector.detectarCategoria(nomeParaDetectar);
       if (categoriaDetectada) {
         dto.categoria = categoriaDetectada;
       }
     }
-    const produto = await this.findOne(id, empresaId);
 
     Object.assign(produto, dto);
     return this.produtoRepo.save(produto);

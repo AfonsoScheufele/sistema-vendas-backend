@@ -33,6 +33,8 @@ import { UpdateOrcamentoMetaDto } from './dto/update-orcamento-meta.dto';
 import { CreateOrcamentoAlertaDto } from './dto/create-orcamento-alerta.dto';
 import { ContaReceberEntity } from './conta-receber.entity';
 
+const roundCentavos = (x: number) => Math.round(Number(x) * 100) / 100;
+
 @Injectable()
 export class FinanceiroService {
   private contas: ContaReceber[] = [];
@@ -248,12 +250,14 @@ export class FinanceiroService {
   criarContaPagar(dto: CreateContaPagarDto, empresaId: string): ContaPagar {
     const agora = new Date().toISOString();
     const status: StatusPagar = dto.status ?? 'aberta';
+    const valor = roundCentavos(dto.valor);
+    const valorPago = roundCentavos(dto.valorPago ?? 0);
     const conta: ContaPagar = {
       id: randomUUID(),
       titulo: dto.titulo,
       fornecedor: dto.fornecedor,
-      valor: dto.valor,
-      valorPago: dto.valorPago ?? 0,
+      valor,
+      valorPago,
       emissao: dto.emissao,
       vencimento: dto.vencimento,
       pagamento: dto.pagamento,
@@ -291,8 +295,8 @@ export class FinanceiroService {
     const conta = this.obterContaPagar(empresaId, id);
     if (dto.titulo !== undefined) conta.titulo = dto.titulo;
     if (dto.fornecedor !== undefined) conta.fornecedor = dto.fornecedor;
-    if (dto.valor !== undefined) conta.valor = dto.valor;
-    if (dto.valorPago !== undefined) conta.valorPago = dto.valorPago;
+    if (dto.valor !== undefined) conta.valor = roundCentavos(dto.valor);
+    if (dto.valorPago !== undefined) conta.valorPago = roundCentavos(dto.valorPago);
     if (dto.emissao !== undefined) conta.emissao = dto.emissao;
     if (dto.vencimento !== undefined) conta.vencimento = dto.vencimento;
     if (dto.pagamento !== undefined) conta.pagamento = dto.pagamento;
@@ -766,7 +770,25 @@ export class FinanceiroService {
     await this.orcamentoAlertasRepository.remove(alerta);
   }
 
-  obterFluxoCaixa(empresaId: string, dias?: number) {
+  async obterFluxoCaixa(empresaId: string, dias?: number) {
+    const emptyResponse = () => {
+      const hoje = new Date();
+      const chave = hoje.toISOString().split('T')[0];
+      return {
+        periodo: { inicio: chave, fim: chave },
+        resumo: { entradas: 0, saidas: 0, saldo: 0 },
+        historico: [] as Array<{ data: string; entradas: number; saidas: number; saldoDiario: number; saldoAcumulado: number }>,
+        proximosEventos: [] as any[],
+      };
+    };
+
+    try {
+    const toDateSafe = (v: unknown): Date | null => {
+      if (v == null || v === '') return null;
+      const d = v instanceof Date ? v : new Date(v as string | number);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
     const rangeDias = dias && dias > 0 ? Math.min(dias, 180) : 30;
     const hojeBase = new Date();
     const hoje = new Date(hojeBase.getFullYear(), hojeBase.getMonth(), hojeBase.getDate());
@@ -793,20 +815,26 @@ export class FinanceiroService {
       }
     };
 
-    this.contas
-      .filter((conta) => conta.empresaId === empresaId)
-      .forEach((conta) => {
-        const valor = conta.status === 'recebida' ? conta.valorPago : conta.valor;
-        const dataReferencia = conta.status === 'recebida' && conta.pagamento ? conta.pagamento : conta.vencimento;
-        registrar(new Date(dataReferencia), 'entrada', valor);
-      });
+    const contasReceberDb = await this.contaReceberRepo.find({
+      where: { empresaId },
+      order: { vencimento: 'ASC' },
+    });
+    contasReceberDb.forEach((conta) => {
+      const dataRef = conta.status === 'recebida' && conta.pagamento ? conta.pagamento : conta.vencimento;
+      const data = toDateSafe(dataRef);
+      if (!data) return;
+      const valor = conta.status === 'recebida' ? Number(conta.valorPago ?? 0) : Number(conta.valor ?? 0);
+      registrar(data, 'entrada', valor);
+    });
 
     this.contasPagar
       .filter((conta) => conta.empresaId === empresaId)
       .forEach((conta) => {
-        const valor = conta.status === 'paga' ? conta.valorPago : conta.valor;
         const dataReferencia = conta.status === 'paga' && conta.pagamento ? conta.pagamento : conta.vencimento;
-        registrar(new Date(dataReferencia), 'saida', valor);
+        const data = toDateSafe(dataReferencia);
+        if (!data) return;
+        const valor = conta.status === 'paga' ? conta.valorPago : conta.valor;
+        registrar(data, 'saida', valor);
       });
 
     const historico: Array<{
@@ -844,27 +872,39 @@ export class FinanceiroService {
     );
     const saldo = resumo.entradas - resumo.saidas;
 
+    const eventosReceberDb = contasReceberDb.map((conta) => {
+      const dataRaw = conta.status === 'recebida' && conta.pagamento ? conta.pagamento : conta.vencimento;
+      const d = toDateSafe(dataRaw);
+      if (!d) return null;
+      const dataStr = d.toISOString().split('T')[0];
+      return {
+        tipo: 'receber' as const,
+        titulo: conta.titulo,
+        pessoa: conta.cliente,
+        valor: Number(conta.valor ?? 0),
+        data: dataStr,
+        status: conta.status,
+      };
+    }).filter((e): e is NonNullable<typeof e> => e != null);
     const proximosEventos = [
-      ...this.contas
-        .filter((conta) => conta.empresaId === empresaId)
-        .map((conta) => ({
-          tipo: 'receber' as const,
-          titulo: conta.titulo,
-          pessoa: conta.cliente,
-          valor: conta.valor,
-          data: conta.status === 'recebida' && conta.pagamento ? conta.pagamento : conta.vencimento,
-          status: conta.status,
-        })),
+      ...eventosReceberDb,
       ...this.contasPagar
         .filter((conta) => conta.empresaId === empresaId)
-        .map((conta) => ({
-          tipo: 'pagar' as const,
-          titulo: conta.titulo,
-          pessoa: conta.fornecedor,
-          valor: conta.valor,
-          data: conta.status === 'paga' && conta.pagamento ? conta.pagamento : conta.vencimento,
-          status: conta.status,
-        })),
+        .map((conta) => {
+          const dataRaw = conta.status === 'paga' && conta.pagamento ? conta.pagamento : conta.vencimento;
+          const d = toDateSafe(dataRaw);
+          if (!d) return null;
+          const dataStr = d.toISOString().split('T')[0];
+          return {
+            tipo: 'pagar' as const,
+            titulo: conta.titulo,
+            pessoa: conta.fornecedor,
+            valor: conta.valor,
+            data: dataStr,
+            status: conta.status,
+          };
+        })
+        .filter((e): e is NonNullable<typeof e> => e != null),
     ]
       .filter((evento) => {
         const data = new Date(evento.data);
@@ -887,6 +927,10 @@ export class FinanceiroService {
       historico,
       proximosEventos,
     };
+    } catch (err) {
+      console.error('[FinanceiroService] obterFluxoCaixa error:', err);
+      return emptyResponse();
+    }
   }
 
   obterConsolidadoConcilicao(empresaId: string) {
@@ -934,9 +978,9 @@ export class FinanceiroService {
     };
   }
 
-  obterTesouraria(empresaId: string) {
+  async obterTesouraria(empresaId: string) {
     const contas = this.listarContasBancarias(empresaId);
-    const fluxo = this.obterFluxoCaixa(empresaId, 30);
+    const fluxo = await this.obterFluxoCaixa(empresaId, 30);
     const receber = this.listarContasReceber(empresaId);
     const pagar = this.listarContasPagar(empresaId);
 

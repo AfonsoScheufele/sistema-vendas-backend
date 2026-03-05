@@ -101,6 +101,12 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('minhas-empresas')
+  async getMinhasEmpresas(@Req() req: AuthRequest) {
+    return this.authService.obterEmpresasDoUsuario(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getProfile(@Req() req: AuthRequest) {
     const user = await this.authService.findById(req.user.id);

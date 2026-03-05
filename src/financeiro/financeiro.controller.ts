@@ -124,6 +124,9 @@ export class FinanceiroController {
 
   @Get('fluxo-caixa')
   async listarFluxoCaixa(@Req() req: any, @Query('dias') dias?: string) {
+    if (!req.empresaId) {
+      return { periodo: { inicio: '', fim: '' }, resumo: { entradas: 0, saidas: 0, saldo: 0 }, historico: [], proximosEventos: [] };
+    }
     const diasNumero = dias ? Number(dias) : undefined;
     return this.financeiroService.obterFluxoCaixa(req.empresaId, diasNumero);
   }

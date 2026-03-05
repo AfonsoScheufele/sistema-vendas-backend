@@ -5,7 +5,10 @@ import { Pedido } from '../pedidos/pedido.entity';
 import { ItemPedido } from '../pedidos/item-pedido.entity';
 import { Produto } from '../produtos/produto.entity';
 import { Cliente } from '../clientes/cliente.entity';
+import { ComissaoEntity } from '../comissoes/comissao.entity';
 import { CreatePdvSaleDto } from './dto/create-pdv-sale.dto';
+import { PedidosService } from '../pedidos/pedidos.service';
+import { MetasService } from '../metas/metas.service';
 
 @Injectable()
 export class PdvService {
@@ -17,28 +20,26 @@ export class PdvService {
     @InjectRepository(Cliente)
     private clienteRepo: Repository<Cliente>,
     private dataSource: DataSource,
+    private pedidosService: PedidosService,
+    private metasService: MetasService,
   ) {}
 
   async realizarVenda(dto: CreatePdvSaleDto, empresaId: string, usuarioId: number) {
-    return this.dataSource.transaction(async (manager: EntityManager) => {
-      // 1. Identificar Cliente (ou usar Consumidor Final se ID não fornecido)
+    const pedidoSalvo = await this.dataSource.transaction(async (manager: EntityManager) => {
       let clienteId = dto.clienteId;
       if (!clienteId) {
-        // Tentar buscar um cliente padrão "Consumidor Final"
         const consumidorFinal = await manager.findOne(Cliente, {
           where: { empresaId, nome: 'Consumidor Final' }
         });
         if (consumidorFinal) {
           clienteId = consumidorFinal.id;
         } else {
-             // Fallback: pegar o primeiro cliente da empresa (perigoso, mas para dev serve)
              const primeiro = await manager.findOne(Cliente, { where: { empresaId } });
              if (primeiro) clienteId = primeiro.id;
              else throw new BadRequestException('Nenhum cliente identificado e Consumidor Final não encontrado.');
         }
       }
 
-      // 2. Calcular Totais e Validar Estoque
       let totalItens = 0;
       const itensParaSalvar: ItemPedido[] = [];
 
@@ -49,17 +50,32 @@ export class PdvService {
         });
 
         if (!produto) throw new NotFoundException(`Produto ${itemDto.produtoId} não encontrado.`);
-        
-        if (produto.estoque < itemDto.quantidade) {
-            throw new BadRequestException(`Estoque insuficiente para ${produto.nome}.`);
+        const estoqueDisponivel = Number(produto.estoque ?? 0);
+        const qtd = Number(itemDto.quantidade ?? 0);
+        if (estoqueDisponivel < qtd) {
+          throw new BadRequestException(
+            `Estoque insuficiente para "${produto.nome}". Disponível: ${estoqueDisponivel}, solicitado: ${qtd}.`
+          );
         }
-
-        // Baixar Estoque
-        produto.estoque -= itemDto.quantidade;
+        produto.estoque = Math.max(0, estoqueDisponivel - qtd);
         await manager.save(produto);
 
         const subtotal = Number(itemDto.quantidade) * Number(itemDto.precoUnitario);
         totalItens += subtotal;
+
+        let percentualComissao = 0;
+        const comissao = await manager.getRepository(ComissaoEntity).findOne({
+          where: { produtoId: itemDto.produtoId, empresaId, ativo: true },
+          relations: ['vendedores'],
+        });
+        if (comissao) {
+          const vendedorRegra = (comissao.vendedores as any[])?.find((v) => v.vendedorId === usuarioId);
+          if (vendedorRegra && (vendedorRegra.tipo === 'percentual' || vendedorRegra.tipo === 'misto') && vendedorRegra.percentual != null) {
+            percentualComissao = Number(vendedorRegra.percentual);
+          } else if (comissao.tipoComissaoBase === 'percentual') {
+            percentualComissao = Number(comissao.comissaoBase);
+          }
+        }
 
         const novoItem = new ItemPedido();
         novoItem.produto = produto;
@@ -67,15 +83,13 @@ export class PdvService {
         novoItem.quantidade = itemDto.quantidade;
         novoItem.precoUnitario = itemDto.precoUnitario;
         novoItem.subtotal = subtotal;
+        novoItem.comissao = percentualComissao;
 
-        
         itensParaSalvar.push(novoItem);
       }
 
       const totalFinal = totalItens - (dto.desconto || 0);
 
-      // 3. Criar Pedido
-      // Gerar número
       const count = await manager.count(Pedido, { where: { empresaId } });
       const numero = `PDV-${new Date().getFullYear()}-${(count + 1).toString().padStart(6, '0')}`;
 
@@ -85,12 +99,11 @@ export class PdvService {
       pedido.clienteId = clienteId!;
       pedido.total = totalFinal;
       pedido.desconto = dto.desconto || 0;
-      pedido.status = 'aprovado'; // Venda PDV já nasce aprovada
+      pedido.status = 'aprovado';
       pedido.dataPedido = new Date();
       pedido.origem = 'PDV';
       pedido.vendedorId = usuarioId;
       
-      // Dados Pagamento
       if (dto.pagamento) {
           pedido.formaPagamento = dto.pagamento.forma;
           pedido.statusPagamento = 'pago';
@@ -101,7 +114,6 @@ export class PdvService {
 
       const pedidoSalvo = await manager.save(Pedido, pedido);
 
-      // 4. Salvar Itens
       for (const item of itensParaSalvar) {
           item.pedido = pedidoSalvo;
           await manager.save(ItemPedido, item);
@@ -109,5 +121,15 @@ export class PdvService {
 
       return pedidoSalvo;
     });
+
+    this.pedidosService.gerarNotaFiscalParaPedido(pedidoSalvo.id, empresaId).catch((err) => {
+      console.error('[PdvService] Erro ao gerar NF automática para PDV:', err?.message || err);
+    });
+
+    this.metasService
+      .atualizarMetasPorPedidoConfirmado(empresaId, pedidoSalvo.vendedorId ?? null, pedidoSalvo.dataPedido)
+      .catch(() => {});
+
+    return pedidoSalvo;
   }
 }

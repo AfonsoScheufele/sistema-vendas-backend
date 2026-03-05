@@ -18,7 +18,7 @@ export class NotaFiscalServicoEntity {
   serie: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  rps: string; // Recibo Provisório de Serviços
+  rps: string;
 
   @Column({ type: 'int' })
   clienteId: number;
@@ -50,7 +50,7 @@ export class NotaFiscalServicoEntity {
   descricaoServico: string;
 
   @Column({ type: 'varchar', length: 20, default: 'emitida' })
-  status: string; // emitida, cancelada, erro
+  status: string;
 
   @Column({ type: 'text', nullable: true })
   xml: string;

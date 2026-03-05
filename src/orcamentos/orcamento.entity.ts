@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Cliente } from '../clientes/cliente.entity';
 import { Usuario } from '../auth/usuario.entity';
 
@@ -39,6 +39,14 @@ export class Orcamento {
 
   @Column()
   vendedorId: number;
+
+  /** Usuário que aprovou ou recusou o orçamento (quando status = aceito | recusado) */
+  @ManyToOne(() => Usuario, { nullable: true })
+  @JoinColumn({ name: 'alteradoStatusPorId' })
+  alteradoStatusPor?: Usuario | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  alteradoStatusEm?: Date | null;
 
   @Column({ type: 'varchar', length: 64 })
   @Index()

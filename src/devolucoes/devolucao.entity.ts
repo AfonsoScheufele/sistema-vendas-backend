@@ -20,13 +20,13 @@ export class Devolucao {
   motivo: string;
 
   @Column({ type: 'varchar', length: 20, default: 'pendente' })
-  status: string; // pendente, aprovada, rejeitada, concluida
+  status: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   valorReembolso: number;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  tipoReembolso: string; // estorno, credito_loja
+  tipoReembolso: string;
 
   @Column({ type: 'text', nullable: true })
   observacoes: string;
@@ -59,5 +59,5 @@ export class ItemDevolucao {
   quantidade: number;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
-  condicao: string; // bom, defeito, aberto
+  condicao: string;
 }

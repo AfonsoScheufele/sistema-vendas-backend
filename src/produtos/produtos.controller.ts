@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+
+const EMPRESA_OBRIGATORIA = 'Empresa não identificada. Por favor, selecione uma empresa.';
 
 @Controller('produtos')
 @UseGuards(JwtAuthGuard)
@@ -11,41 +13,49 @@ export class ProdutosController {
 
   @Post()
   create(@Body() createProdutoDto: CreateProdutoDto, @Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.create(createProdutoDto, req.empresaId);
   }
 
   @Get()
   findAll(@Req() req: any, @Query('categoria') categoria?: string, @Query('ativo') ativo?: string, @Query('search') search?: string) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.findAll(req.empresaId, { categoria, ativo, search });
   }
 
   @Get('stats')
   getStats(@Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.getStats(req.empresaId);
   }
 
   @Get('categorias')
   getCategorias(@Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.getCategorias(req.empresaId);
   }
 
   @Get('estoque-baixo')
   getEstoqueBaixo(@Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.getEstoqueBaixo(req.empresaId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string, @Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.findOne(+id, req.empresaId);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateProdutoDto: UpdateProdutoDto, @Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.update(+id, req.empresaId, updateProdutoDto);
   }
 
   @Patch(':id/estoque')
   updateEstoque(@Param('id') id: string, @Body() body: { quantidade: number; tipo?: 'entrada' | 'saida' }, @Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     const quantidade = Number(body.quantidade ?? 0);
     const tipo = body.tipo ?? 'entrada';
     return this.produtosService.updateEstoque(+id, req.empresaId, quantidade, tipo);
@@ -53,6 +63,7 @@ export class ProdutosController {
 
   @Delete(':id')
   remove(@Param('id') id: string, @Req() req: any) {
+    if (!req.empresaId) throw new BadRequestException(EMPRESA_OBRIGATORIA);
     return this.produtosService.delete(+id, req.empresaId);
   }
 }

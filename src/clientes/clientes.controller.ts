@@ -29,6 +29,10 @@ export class ClientesController {
     @Query('orderBy') orderBy?: string,
     @Query('order') order?: 'ASC' | 'DESC',
   ) {
+    if (!req.empresaId) {
+      const limitNum = limit != null ? parseInt(limit, 10) : 20;
+      return { data: [], total: 0 };
+    }
     const filtros = { tipo, ativo, search };
     const pageNum = page != null ? parseInt(page, 10) : null;
     const limitNum = limit != null ? parseInt(limit, 10) : null;
@@ -47,11 +51,17 @@ export class ClientesController {
 
   @Get('stats')
   getStats(@Req() req: any) {
+    if (!req.empresaId) {
+      return { totalClientes: 0, clientesRecentes: 0 };
+    }
     return this.clientesService.getStats(req.empresaId);
   }
 
   @Get('tipos')
   getTipos(@Req() req: any) {
+    if (!req.empresaId) {
+      return [];
+    }
     return this.clientesService.getTipos(req.empresaId);
   }
 

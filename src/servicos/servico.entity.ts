@@ -15,7 +15,7 @@ export class Servico {
   preco: number;
 
   @Column({ nullable: true })
-  codigoServico: string; // Código LC 116
+  codigoServico: string;
 
   @Column('decimal', { precision: 5, scale: 2, default: 0 })
   aliquotaIss: number;

@@ -43,12 +43,19 @@ export class OrcamentosController {
 
   @Post()
   async criar(@Body() data: any, @Req() req: any) {
-    return this.orcamentosService.criar(req.empresaId, data);
+    const payload = { ...data, vendedorId: data.vendedorId ?? req.user?.id };
+    return this.orcamentosService.criar(req.empresaId, payload);
   }
 
   @Patch(':id')
   async atualizar(@Param('id') id: number, @Body() data: any, @Req() req: any) {
-    return this.orcamentosService.atualizar(id, req.empresaId, data);
+    const payload = { ...data };
+    if (payload.status === 'aceito' || payload.status === 'recusado') {
+      const userId = req.user?.id != null ? Number(req.user.id) : null;
+      payload.alteradoStatusPorId = userId;
+      payload.alteradoStatusEm = new Date();
+    }
+    return this.orcamentosService.atualizar(id, req.empresaId, payload);
   }
 
   @Delete(':id')
